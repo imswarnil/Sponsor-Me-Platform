@@ -10,8 +10,8 @@ import { channelConnections, messages, notifications, profiles, slots, sponsorsh
 import { getCurrentUserId } from './queries';
 import { getCreatorId, requireCreator } from './roles';
 import { CHANNEL_KEYS, toChannel } from '@/lib/channels';
+import { PROPERTY_KEYS } from '@/lib/properties';
 import { AD_TYPE_KEYS, AD_TYPES } from '@/lib/ad-types';
-import { createAdminClient } from '@/lib/supabase/admin';
 
 function slotPublicId() {
   return 'sl_' + randomBytes(4).toString('hex');
@@ -26,33 +26,6 @@ const httpUrl = z
   .refine((u) => /^https?:\/\//i.test(u), 'must be an http(s) URL');
 
 // ── Signup (server-side so we can auto-confirm; client then signs in) ────────────
-const signUpSchema = z.object({
-  email: z.string().trim().email().max(200),
-  password: z.string().min(8).max(128),
-  name: z.string().trim().min(1).max(80)
-});
-
-export async function signUpAction(input: {
-  email: string;
-  password: string;
-  name: string;
-}): Promise<{ error?: string }> {
-  const parsed = signUpSchema.safeParse(input);
-  if (!parsed.success) return { error: 'Please enter a valid name, email, and 8+ char password.' };
-
-  const admin = createAdminClient();
-  const { error } = await admin.auth.admin.createUser({
-    email: parsed.data.email,
-    password: parsed.data.password,
-    email_confirm: true, // no email step for this demo
-    user_metadata: { name: parsed.data.name }
-  });
-  if (error) {
-    return { error: /already/i.test(error.message) ? 'That email is already registered.' : error.message };
-  }
-  return {};
-}
-
 // ── Placements ───────────────────────────────────────────────────────────────
 // Only the creator lists placements — this platform funds one person's work.
 const optionalText = (max: number) => z.union([z.string().trim().max(max), z.literal('')]).optional();
@@ -63,6 +36,10 @@ const createSlotSchema = z.object({
   name: z.string().trim().min(1).max(80),
   price: z.coerce.number().int().min(1).max(1_000_000),
   channel: z.enum(CHANNEL_KEYS),
+  // '' means "across everything" — a real answer, stored as NULL. See lib/properties.ts.
+  property: z
+    .union([z.enum(PROPERTY_KEYS as [string, ...string[]]), z.literal('')])
+    .optional(),
   brief: optionalText(500),
   adType: z.enum(AD_TYPE_KEYS).optional(),
   previewImageUrl: z.union([httpUrl, z.literal('')]).optional(),
@@ -80,6 +57,7 @@ export async function createSlot(formData: FormData) {
     name: formData.get('name'),
     price: formData.get('price'),
     channel: formData.get('channel'),
+    property: formData.get('property') || '',
     brief: formData.get('brief') || '',
     adType: formData.get('adType') || undefined,
     previewImageUrl: formData.get('previewImageUrl') || '',
@@ -110,6 +88,7 @@ export async function createSlot(formData: FormData) {
       pricePoints: parsed.data.price,
       // The channel lives in `placement` — see lib/channels.ts for why.
       placement: parsed.data.channel,
+      property: parsed.data.property || null,
       brief: parsed.data.brief || null,
       adType: parsed.data.adType || null,
       previewImageUrl: parsed.data.previewImageUrl || null,
@@ -272,6 +251,10 @@ const editSchema = z.object({
   name: z.string().trim().min(1).max(80),
   price: z.coerce.number().int().min(1).max(1_000_000),
   channel: z.enum(CHANNEL_KEYS),
+  // '' means "across everything" — a real answer, stored as NULL. See lib/properties.ts.
+  property: z
+    .union([z.enum(PROPERTY_KEYS as [string, ...string[]]), z.literal('')])
+    .optional(),
   brief: optionalText(500),
   adType: z.enum(AD_TYPE_KEYS).optional(),
   previewImageUrl: z.union([httpUrl, z.literal('')]).optional(),
@@ -289,6 +272,7 @@ export async function updateSlot(formData: FormData) {
     name: formData.get('name'),
     price: formData.get('price'),
     channel: formData.get('channel'),
+    property: formData.get('property') || '',
     brief: formData.get('brief') || '',
     adType: formData.get('adType') || undefined,
     previewImageUrl: formData.get('previewImageUrl') || '',
@@ -329,6 +313,7 @@ export async function updateSlot(formData: FormData) {
         ...infoFields,
         pricePoints: parsed.data.price,
         placement: parsed.data.channel,
+        property: parsed.data.property || null,
         adType: parsed.data.adType || null,
         ...dimensions
       })

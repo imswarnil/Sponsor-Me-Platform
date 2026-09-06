@@ -15,7 +15,7 @@ export default function NotFound() {
         <div className="max-w-lead space-y-6 text-center">
           {/* The dot, alone: the mark degrades to this and nothing less. */}
           <span className="logo-dot mx-auto block text-3xl" aria-hidden />
-          <p className="font-mono text-2xs uppercase tracking-slate text-subtle">Error 404</p>
+          <p className="font-label text-2xs uppercase tracking-slate text-subtle">Error 404</p>
           <h1 className="font-display text-4xl font-bold tracking-tighter">Nothing in this slot</h1>
           <p className="text-md text-muted-foreground">
             The page you are looking for might have been removed, had its name changed, or is

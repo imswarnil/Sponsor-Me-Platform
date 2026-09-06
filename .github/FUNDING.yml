@@ -1,0 +1,4 @@
+# GitHub renders this as the "Sponsor" button on the repo.
+# The platform at sponsor.imswarnil.com reads the same listing through the API —
+# see lib/github-sponsors.ts.
+github: [imswarnil]

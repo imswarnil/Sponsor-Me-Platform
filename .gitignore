@@ -13,9 +13,8 @@ node_modules
 .next/
 /out/
 
-# monorepo build outputs
-dist/
-.turbo/
+# local dev server pid + log (scripts/dev.sh)
+.dev/
 
 # supabase (local stack; keep config.toml, ignore runtime + secrets)
 supabase/.branches

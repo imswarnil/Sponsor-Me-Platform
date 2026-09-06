@@ -1,917 +1,156 @@
 /* =============================================================================
-   05 · MOTION
-   Four durations. Four easings. Every animation in the theme is built from
-   this ladder — no component may invent a duration.
+   05 · MOTION — honest, and off when asked
 
-     dur-1 120ms  state flips: hover, press, focus, checkbox
-     dur-2 200ms  the default: colour, opacity, small transforms
-     dur-3 320ms  things that move a real distance: entrances, drawers
-     dur-4 560ms  the deliberate one: page/scene transitions, hero reveals
+   Five durations and four curves. The contract that matters is at the bottom:
+   the duration tokens collapse to 1ms under prefers-reduced-motion, so EVERY
+   component inherits the behaviour and NO component writes its own media query.
+   A component that writes its own is a component that will be forgotten in the
+   next audit.
+
+   Motion under 200ms reads as feedback. Motion over 400ms reads as an opinion
+   about your time.
+
+   PRINCIPLES #5: the finished state is the resting state. Nothing may be
+   unreachable if an animation never runs.
+
+   Layer: tokens.
    ========================================================================== */
 
-:root {
-	--dur-1: 120ms;
-	--dur-2: 200ms;
-	--dur-3: 320ms;
-	--dur-4: 560ms;
+@layer tokens {
+	:root {
+		--dur-1: 60ms;    /* a colour change you should not notice */
+		--dur-2: 120ms;   /* hover, focus */
+		--dur-3: 200ms;   /* the feedback ceiling */
+		--dur-4: 320ms;   /* something entering the page */
+		--dur-5: 480ms;   /* a full-width panel; the slowest thing allowed */
 
-	/* Easings.
-	   out    — things arriving (fast, then settle) · the default
-	   in     — things leaving
-	   inout  — things moving between two on-screen states
-	   spring — one overshoot, used sparingly for playful confirmations */
-	--ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
-	--ease-in:     cubic-bezier(0.55, 0, 1, 0.45);
-	--ease-inout:  cubic-bezier(0.65, 0, 0.35, 1);
-	--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-	--ease-linear: linear;
+		--ease-out:       cubic-bezier(0.22, 1, 0.36, 1);
+		--ease-inout:     cubic-bezier(0.65, 0, 0.35, 1);
+		--ease-snap:      cubic-bezier(0.2, 0, 0, 1);
+		--ease-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-	/* Stagger step for lists revealing on scroll. Multiply by the index. */
-	--stagger: 60ms;
-
-	/* Named transitions, so components stop re-declaring them. */
-	--t-colors: color var(--dur-2) var(--ease-out),
-	            background-color var(--dur-2) var(--ease-out),
-	            border-color var(--dur-2) var(--ease-out);
-	--t-transform: transform var(--dur-2) var(--ease-out);
-	--t-shadow: box-shadow var(--dur-2) var(--ease-out);
-	--t-all: var(--t-colors), var(--t-transform), var(--t-shadow),
-	         opacity var(--dur-2) var(--ease-out);
-}
-
-/* ── Keyframes ─────────────────────────────────────────────────────────────
-   Entrances travel a short distance — 16px, not 60. Long travel reads as
-   "loading", which is a lie when the content is already there. */
-
-@keyframes fx-rise {
-	from { opacity: 0; transform: translate3d(0, 16px, 0); }
-	to   { opacity: 1; transform: none; }
-}
-
-@keyframes fx-fade {
-	from { opacity: 0; }
-	to   { opacity: 1; }
-}
-
-@keyframes fx-slide-l {
-	from { opacity: 0; transform: translate3d(-24px, 0, 0); }
-	to   { opacity: 1; transform: none; }
-}
-
-@keyframes fx-slide-r {
-	from { opacity: 0; transform: translate3d(24px, 0, 0); }
-	to   { opacity: 1; transform: none; }
-}
-
-@keyframes fx-scale {
-	from { opacity: 0; transform: scale3d(0.96, 0.96, 1); }
-	to   { opacity: 1; transform: none; }
-}
-
-@keyframes fx-blur {
-	from { opacity: 0; filter: blur(10px); }
-	to   { opacity: 1; filter: blur(0); }
-}
-
-/* Scene wipe — the shutter opening. Used for media reveals. */
-@keyframes fx-clip {
-	from { clip-path: inset(0 0 100% 0); }
-	to   { clip-path: inset(0 0 0 0); }
-}
-
-/* The record light. The only looping animation allowed on a resting page. */
-@keyframes fx-pulse {
-	0%, 100% { opacity: 1;    transform: scale(1); }
-	50%      { opacity: 0.45; transform: scale(0.86); }
-}
-
-/* Skeleton shimmer */
-@keyframes fx-shimmer {
-	from { background-position: -160% 0; }
-	to   { background-position: 260% 0; }
-}
-
-/* Indeterminate progress rail */
-@keyframes fx-rail {
-	from { transform: translate3d(-100%, 0, 0); }
-	to   { transform: translate3d(300%, 0, 0); }
-}
-
-@keyframes fx-spin {
-	to { transform: rotate(360deg); }
-}
-
-/* Scanline sweep — media loading, and the video-flavoured page transition. */
-@keyframes fx-scan {
-	from { transform: translate3d(0, -110%, 0); }
-	to   { transform: translate3d(0, 320%, 0); }
-}
-
-/* Buffering dots */
-@keyframes fx-buffer {
-	0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
-	40%           { opacity: 1;    transform: translateY(-3px); }
-}
-
-/* ── Animation utilities ───────────────────────────────────────────────────
-   `both` fill so an element never flashes at its start state. */
-
-.fx-rise    { animation: fx-rise    var(--dur-3) var(--ease-out) both; }
-.fx-fade    { animation: fx-fade    var(--dur-3) var(--ease-out) both; }
-.fx-slide-l { animation: fx-slide-l var(--dur-3) var(--ease-out) both; }
-.fx-slide-r { animation: fx-slide-r var(--dur-3) var(--ease-out) both; }
-.fx-scale   { animation: fx-scale   var(--dur-3) var(--ease-out) both; }
-.fx-blur    { animation: fx-blur    var(--dur-4) var(--ease-out) both; }
-.fx-clip    { animation: fx-clip    var(--dur-4) var(--ease-inout) both; }
-.fx-pulse   { animation: fx-pulse   1.6s var(--ease-inout) infinite; }
-.fx-spin    { animation: fx-spin    var(--dur-4) var(--ease-linear) infinite; }
-
-/* Stagger children of a revealed group: set --i on each child. */
-.fx-stagger > * { animation-delay: calc(var(--i, 0) * var(--stagger)); }
-
-/* ── Hover behaviours ──────────────────────────────────────────────────────
-   Only applied where a real pointer exists — a touch device gets the resting
-   state, never a stuck hover. */
-
-@media (hover: hover) and (pointer: fine) {
-	.fx-lift {
-		transition: var(--t-transform), var(--t-shadow);
-	}
-	.fx-lift:hover {
-		transform: translate3d(0, -3px, 0);
-		box-shadow: var(--shadow-2);
+		/* Named bundles, so a component transitions the right set without
+		   listing four properties and accidentally including `all`. */
+		--t-colors: color var(--dur-2) var(--ease-out),
+			background-color var(--dur-2) var(--ease-out),
+			border-color var(--dur-2) var(--ease-out);
+		--t-transform: translate var(--dur-2) var(--ease-out), scale var(--dur-2) var(--ease-out);
+		--t-shadow: box-shadow var(--dur-3) var(--ease-out);
 	}
 
-	.fx-glow {
-		transition: var(--t-shadow), var(--t-colors);
-	}
-	.fx-glow:hover {
-		border-color: var(--line-accent);
-		box-shadow: var(--shadow-signal);
+	@keyframes fx-pulse {
+		0%, 100% { opacity: 1; }
+		50%      { opacity: 0.35; }
 	}
 
-	/* Tilt follows the pointer via --mx/--my set in JS; without JS it is a
-	   flat, harmless scale. */
-	.fx-tilt {
-		transition: transform var(--dur-3) var(--ease-out);
-		transform-style: preserve-3d;
-	}
-	.fx-tilt:hover {
-		transform: perspective(800px)
-		           rotateX(calc(var(--my, 0) * -4deg))
-		           rotateY(calc(var(--mx, 0) * 4deg))
-		           scale3d(1.01, 1.01, 1);
+	@keyframes fx-blink {
+		0%, 49%   { opacity: 1; }
+		50%, 100% { opacity: 0; }
 	}
 
-	/* Arrow nudge on links/buttons that go somewhere. */
-	.fx-shift > .fx-shift__icon {
-		transition: var(--t-transform);
-	}
-	.fx-shift:hover > .fx-shift__icon {
-		transform: translate3d(3px, 0, 0);
-	}
-}
+	@keyframes fx-spin { to { rotate: 360deg; } }
 
-/* ── Scroll-driven reveal ──────────────────────────────────────────────────
-   Native where supported, so no IntersectionObserver is needed for the common
-   case. JS may still add `.is-in` as a fallback. */
+	@keyframes fx-rise {
+		from { opacity: 0; translate: 0 8px; }
+		to   { opacity: 1; translate: 0 0; }
+	}
 
-@supports (animation-timeline: view()) {
-	@media (prefers-reduced-motion: no-preference) {
-		.fx-on-scroll {
-			animation: fx-rise var(--dur-4) var(--ease-out) both;
-			animation-timeline: view();
-			animation-range: entry 5% cover 26%;
+	@keyframes fx-fade { from { opacity: 0; } to { opacity: 1; } }
+
+	/* THE CONTRACT. Everything degrades to a plain, fast opacity change.
+	   Nothing is removed — the reveal still happens, it just stops moving. */
+	@media (prefers-reduced-motion: reduce) {
+		:root {
+			--dur-1: 1ms;
+			--dur-2: 1ms;
+			--dur-3: 1ms;
+			--dur-4: 1ms;
+			--dur-5: 1ms;
 		}
 	}
 }
 
-/* =============================================================================
-   MOTION · PART 2 — the full set
-   Thirteen named behaviours, each with one job. If a new animation is needed,
-   first check that none of these is the same idea with a different name.
-   ========================================================================== */
+/* ── Micro-interactions — the applied layer ──────────────────────────────
+   The keyframes above are vocabulary; these are the sentences. All honest
+   (PRINCIPLES #5): one property at a time, feedback under 200ms, the resting
+   state reachable if an animation never runs, and everything quiet under
+   reduced motion because the duration tokens collapse to 1ms. */
 
-/* 08 · flip — a card turning over. Reveals, before/after, answer cards. */
-@keyframes fx-flip {
-	from { opacity: 0; transform: perspective(900px) rotateX(-18deg) translate3d(0, 10px, 0); }
-	to   { opacity: 1; transform: none; }
-}
+@layer elements {
 
-/* 09 · swing — enters with one small overshoot. Confirmations only. */
-@keyframes fx-swing {
-	0%   { opacity: 0; transform: translate3d(0, 14px, 0) rotate(-1.5deg); }
-	70%  { opacity: 1; transform: translate3d(0, -3px, 0) rotate(0.4deg); }
-	100% { opacity: 1; transform: none; }
-}
+	/* Entrances. `both` keeps the first frame, so nothing flashes unstyled. */
+	.fx-rise { animation: fx-rise var(--dur-4) var(--ease-out) both; }
+	.fx-fade { animation: fx-fade var(--dur-3) var(--ease-out) both; }
 
-/* 10 · pop — scale from 92% with a spring. Badges, toasts, likes. */
-@keyframes fx-pop {
-	from { opacity: 0; transform: scale3d(0.92, 0.92, 1); }
-	to   { opacity: 1; transform: none; }
-}
+	/* Stagger a group: each child waits one beat longer than the last. */
+	.fx-stagger > * { animation: fx-rise var(--dur-4) var(--ease-out) both; }
+	.fx-stagger > :nth-child(2) { animation-delay: 60ms; }
+	.fx-stagger > :nth-child(3) { animation-delay: 120ms; }
+	.fx-stagger > :nth-child(4) { animation-delay: 180ms; }
+	.fx-stagger > :nth-child(5) { animation-delay: 240ms; }
+	.fx-stagger > :nth-child(n+6) { animation-delay: 300ms; }
 
-/* 11 · draw — a rule or underline growing from its origin. */
-@keyframes fx-draw {
-	from { transform: scaleX(0); }
-	to   { transform: scaleX(1); }
-}
-
-/* 12 · mask-wipe — content revealed by a moving edge, no movement of its own.
-   The most "editorial" reveal; use it for headlines, not for lists. */
-@keyframes fx-mask {
-	from { clip-path: inset(0 100% 0 0); }
-	to   { clip-path: inset(0 0 0 0); }
-}
-
-/* 13 · zoom-out — settles from slightly too big. Hero images only. */
-@keyframes fx-zoom {
-	from { opacity: 0; transform: scale3d(1.06, 1.06, 1); }
-	to   { opacity: 1; transform: none; }
-}
-
-.fx-flip  { animation: fx-flip  var(--dur-4) var(--ease-out) both; }
-.fx-swing { animation: fx-swing var(--dur-4) var(--ease-out) both; }
-.fx-pop   { animation: fx-pop   var(--dur-3) var(--ease-spring) both; }
-.fx-draw  { animation: fx-draw  var(--dur-3) var(--ease-out) both; transform-origin: left center; }
-.fx-mask  { animation: fx-mask  var(--dur-4) var(--ease-inout) both; }
-.fx-zoom  { animation: fx-zoom  var(--dur-4) var(--ease-out) both; }
-
-/* =============================================================================
-   TEXT EFFECTS
-   Twelve. Most need the text split into spans — one per character or per word,
-   each carrying its index as --i:
-
-     <span class="tx-chars"><span style="--i:0">S</span><span style="--i:1">w</span>…</span>
-
-   Splitting is five lines of JS at runtime, or done in the template. The CSS
-   below assumes it has happened; without spans every effect degrades to a
-   plain fade, which is a safe failure.
-
-   House rule: ONE text effect per screen. Two is a lava lamp.
-   ========================================================================== */
-
-/* T1 · type — the typewriter. The site's signature; hero only. */
-.tx-type {
-	display: inline-block;
-	overflow: hidden;
-	white-space: nowrap;
-	border-right: var(--border-2) solid var(--accent);
-	width: 0;
-	animation:
-		txType 2.4s steps(28, end) both,
-		txCaret 0.9s steps(1) infinite;
-}
-
-@keyframes txType { to { width: 100%; } }
-
-@keyframes txCaret { 50% { border-color: transparent; } }
-
-/* T2 · chars — each character rises. The workhorse for headlines. */
-.tx-chars > span {
-	display: inline-block;
-	animation: fx-rise var(--dur-3) var(--ease-out) both;
-	animation-delay: calc(var(--i, 0) * 28ms);
-}
-
-/* T3 · words — same idea, one span per word. Cheaper, and better for long
-   lines where per-character stagger reads as jitter. */
-.tx-words > span {
-	display: inline-block;
-	animation: fx-rise var(--dur-3) var(--ease-out) both;
-	animation-delay: calc(var(--i, 0) * 70ms);
-}
-
-/* T4 · wave — a slow vertical ripple. Loops, so: playful surfaces only. */
-.tx-wave > span {
-	display: inline-block;
-	animation: txWave 2.2s var(--ease-inout) infinite;
-	animation-delay: calc(var(--i, 0) * 55ms);
-}
-
-@keyframes txWave {
-	0%, 60%, 100% { transform: translateY(0); }
-	30%           { transform: translateY(-0.16em); }
-}
-
-/* T5 · shine — a highlight sweeps across the letterforms. For the one
-   number or word that matters on the page. */
-.tx-shine {
-	background: linear-gradient(
-		100deg,
-		currentColor 0%, currentColor 40%,
-		color-mix(in srgb, var(--accent) 85%, white) 50%,
-		currentColor 60%, currentColor 100%
-	);
-	background-size: 260% 100%;
-	-webkit-background-clip: text;
-	background-clip: text;
-	color: transparent;
-	animation: txShine 2.6s var(--ease-inout) infinite;
-}
-
-@keyframes txShine {
-	from { background-position: 160% 0; }
-	to   { background-position: -60% 0; }
-}
-
-/* T6 · underline — the link behaviour, promoted to a reveal. */
-.tx-underline {
-	position: relative;
-	display: inline-block;
-}
-
-.tx-underline::after {
-	content: '';
-	position: absolute;
-	left: 0;
-	right: 0;
-	bottom: -0.08em;
-	height: var(--border-2);
-	background: var(--accent);
-	transform-origin: left center;
-	animation: fx-draw var(--dur-3) var(--ease-out) both;
-	animation-delay: var(--dur-3);
-}
-
-/* T7 · highlight — a marker-pen sweep behind the words. */
-.tx-highlight {
-	background-image: linear-gradient(var(--accent-soft), var(--accent-soft));
-	background-repeat: no-repeat;
-	background-position: 0 88%;
-	background-size: 0% 0.55em;
-	animation: txHighlight var(--dur-4) var(--ease-out) both;
-	animation-delay: 200ms;
-	padding-inline: 0.1em;
-}
-
-@keyframes txHighlight { to { background-size: 100% 0.55em; } }
-
-/* T8 · gradient — colour flows through the text. The only place a gradient
-   is allowed on type, and only on a single word. */
-.tx-gradient {
-	background: linear-gradient(100deg, var(--accent), var(--craft), var(--accent));
-	background-size: 220% 100%;
-	-webkit-background-clip: text;
-	background-clip: text;
-	color: transparent;
-	animation: txFlow 6s var(--ease-linear) infinite;
-}
-
-@keyframes txFlow {
-	from { background-position: 0% 0; }
-	to   { background-position: 200% 0; }
-}
-
-/* T9 · glitch — two offset ghosts in accent and info. Signal/error moments,
-   the 404, the "something broke" scene. Never on body copy. */
-.tx-glitch {
-	position: relative;
-	display: inline-block;
-}
-
-.tx-glitch::before,
-.tx-glitch::after {
-	content: attr(data-text);
-	position: absolute;
-	inset: 0;
-	pointer-events: none;
-	clip-path: inset(0 0 55% 0);
-}
-
-.tx-glitch::before { color: var(--accent); animation: txGlitchA 2.6s steps(2) infinite; }
-.tx-glitch::after  { color: var(--info-line); clip-path: inset(55% 0 0 0); animation: txGlitchB 2.6s steps(2) infinite; }
-
-@keyframes txGlitchA {
-	0%, 88%, 100% { transform: none; opacity: 0; }
-	90%           { transform: translate(-2px, -1px); opacity: 0.9; }
-	94%           { transform: translate(2px, 1px); opacity: 0.9; }
-}
-
-@keyframes txGlitchB {
-	0%, 88%, 100% { transform: none; opacity: 0; }
-	91%           { transform: translate(2px, 1px); opacity: 0.8; }
-	96%           { transform: translate(-1px, -2px); opacity: 0.8; }
-}
-
-/* T10 · blur-in — text resolves into focus. Slow, cinematic, openers. */
-.tx-blur > span {
-	display: inline-block;
-	animation: fx-blur var(--dur-4) var(--ease-out) both;
-	animation-delay: calc(var(--i, 0) * 40ms);
-}
-
-/* T11 · mask-up — each line slides out from behind its own edge. Requires a
-   wrapper per line with overflow hidden. The most expensive-looking one. */
-.tx-mask { display: block; overflow: hidden; }
-
-.tx-mask > span {
-	display: block;
-	animation: txMaskUp var(--dur-4) var(--ease-out) both;
-	animation-delay: calc(var(--i, 0) * 90ms);
-}
-
-@keyframes txMaskUp {
-	from { transform: translateY(105%); }
-	to   { transform: none; }
-}
-
-/* T12 · flip-chars — characters rotate in on the X axis. Countdowns, stats,
-   the number in a stat grid changing. */
-.tx-flip > span {
-	display: inline-block;
-	transform-origin: 50% 60%;
-	animation: txFlipChar var(--dur-3) var(--ease-out) both;
-	animation-delay: calc(var(--i, 0) * 45ms);
-}
-
-@keyframes txFlipChar {
-	from { opacity: 0; transform: perspective(600px) rotateX(-90deg); }
-	to   { opacity: 1; transform: none; }
-}
-
-/* Bonus · count — a number rolling up. Pure CSS via @property, so it degrades
-   to the final value where unsupported. */
-@supports (background: paint(x)) {
-	@property --tx-num {
-		syntax: '<integer>';
-		initial-value: 0;
-		inherits: false;
+	/* Text entrances. Tracking-in is the title card move: letters settle
+	   from too-wide into place. Blink-caret is the terminal cursor for a
+	   heading that "was just typed" — pair with .t-mono or a hero line. */
+	.fx-tracking-in {
+		animation: fx-tracking-in var(--dur-5) var(--ease-out) both;
 	}
-}
 
-.tx-count {
-	counter-reset: n var(--tx-num, 0);
-	animation: txCount var(--dur-4) var(--ease-out) both;
-	font-variant-numeric: tabular-nums;
-}
+	@keyframes fx-tracking-in {
+		from { letter-spacing: 0.3em; opacity: 0; }
+		to   { letter-spacing: normal; opacity: 1; }
+	}
 
-.tx-count::after { content: counter(n); }
-
-@keyframes txCount { to { --tx-num: var(--tx-to, 100); } }
-
-
-/* =============================================================================
-   ANNOTATIONS — the hand-drawn layer
-   Marks that look like someone reached in and drew on the page. They all use
-   one trick: an SVG stroke with stroke-dasharray equal to its own length,
-   animating dashoffset to zero. Because the path is drawn rather than faded,
-   the eye reads it as a gesture instead of an effect.
-
-     <span class="an an-circle">
-       token<svg viewBox="0 0 220 70" preserveAspectRatio="none" aria-hidden="true">
-         <ellipse cx="110" cy="35" rx="103" ry="27" pathLength="100"/>
-       </svg>
-     </span>
-
-   pathLength="100" normalises every path, so one CSS rule drives all of them.
-   ========================================================================== */
-
-.an {
-	position: relative;
-	display: inline-block;
-	white-space: nowrap;
-}
-
-.an > svg {
-	position: absolute;
-	inset: -22% -8%;
-	width: 116%;
-	height: 144%;
-	overflow: visible;
-	pointer-events: none;
-	fill: none;
-	stroke: var(--an-color, var(--accent));
-	stroke-width: var(--an-weight, 2.4);
-	stroke-linecap: round;
-	stroke-linejoin: round;
-	stroke-dasharray: 100;
-	stroke-dashoffset: 100;
-	animation: anDraw var(--an-dur, 700ms) var(--ease-out) both;
-	animation-delay: var(--an-delay, 250ms);
-}
-
-@keyframes anDraw { to { stroke-dashoffset: 0; } }
-
-/* The circle. Slightly over-rotated and not quite closed, because a perfect
-   ellipse reads as a shape and a wonky one reads as a pen. */
-.an-circle > svg { rotate: -1.5deg; }
-
-/* Two loops — the "I really mean this one" version. Draws the second pass a
-   beat after the first. */
-.an-circle-2 > svg { --an-dur: 1100ms; rotate: -2deg; }
-
-/* Underline: one confident swipe under the word. */
-.an-underline > svg { inset: auto -4% -18%; height: 40%; width: 108%; }
-
-/* Strike-through, for the thing that turned out to be wrong. */
-.an-strike > svg { inset: 34% -6% auto; height: 30%; width: 112%; --an-color: var(--danger-line); }
-
-/* Box — a rectangle drawn round a whole phrase. */
-.an-box > svg { inset: -30% -6%; height: 160%; width: 112%; }
-
-/* Arrow — points at the thing from below-left. Its own element, placed by the
-   markup rather than wrapping text. */
-.an-arrow {
-	display: inline-block;
-	width: 4.5rem;
-	height: 3rem;
-	color: var(--craft);
-}
-
-.an-arrow > svg {
-	position: static;
-	width: 100%;
-	height: 100%;
-	inset: auto;
-	stroke: currentColor;
-	--an-weight: 2;
-}
-
-/* Colour + weight modifiers */
-.an-craft  { --an-color: var(--craft); }
-.an-ink    { --an-color: var(--fg-default); }
-.an-thin   { --an-weight: 1.6; }
-.an-thick  { --an-weight: 3.4; }
-
-/* The marker highlight, rebuilt: the sweep now has soft ends and a slight
-   tilt, the way a real marker leaves the page. */
-.tx-highlight {
-	background-image: linear-gradient(
-		101deg,
-		color-mix(in srgb, var(--accent) 22%, transparent) 0%,
-		color-mix(in srgb, var(--accent) 30%, transparent) 55%,
-		color-mix(in srgb, var(--accent) 18%, transparent) 100%
-	);
-	background-repeat: no-repeat;
-	background-position: 0 84%;
-	background-size: 0% 0.62em;
-	border-radius: 0.1em;
-	animation: txHighlight var(--dur-4) var(--ease-out) both;
-	animation-delay: 220ms;
-	padding-inline: 0.14em;
-	box-decoration-break: clone;
-	-webkit-box-decoration-break: clone;
-}
-
-.tx-highlight-craft { --accent: var(--craft); }
-
-/* =============================================================================
-   MICRO-INTERACTIONS — eight hover behaviours
-   All pointer-gated, all one property, none of them longer than 200ms. The
-   rule: a hover tells you something is interactive, then gets out of the way.
-   ========================================================================== */
-
-@media (hover: hover) and (pointer: fine) {
-
-	/* 1 · swipe — an underline that runs in from the left and out to the right */
-	.hx-swipe { position: relative; }
-	.hx-swipe::after {
+	.fx-caret::after {
 		content: '';
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: -0.12em;
-		height: var(--border-2);
+		display: inline-block;
+		inline-size: 0.55em;
+		block-size: 1em;
+		margin-inline-start: 0.08em;
+		vertical-align: text-bottom;
 		background: var(--accent);
-		transform: scaleX(0);
-		transform-origin: right center;
-		transition: transform var(--dur-2) var(--ease-out);
-	}
-	.hx-swipe:hover::after { transform: scaleX(1); transform-origin: left center; }
-
-	/* 2 · wipe — the background fills from the bottom */
-	.hx-wipe {
-		position: relative;
-		isolation: isolate;
-		transition: color var(--dur-2) var(--ease-out);
-	}
-	.hx-wipe::before {
-		content: '';
-		position: absolute;
-		inset: 0;
-		z-index: -1;
-		background: var(--bg-inverse);
-		transform: scaleY(0);
-		transform-origin: bottom;
-		transition: transform var(--dur-2) var(--ease-out);
-	}
-	.hx-wipe:hover { color: var(--fg-on-inverse); }
-	.hx-wipe:hover::before { transform: scaleY(1); }
-
-	/* 3 · sheen — a single specular pass. Cards with media, never text. */
-	.hx-sheen { position: relative; overflow: hidden; }
-	.hx-sheen::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.14) 50%, transparent 65%);
-		transform: translateX(-120%);
-		transition: transform var(--dur-4) var(--ease-out);
-		pointer-events: none;
-	}
-	.hx-sheen:hover::after { transform: translateX(120%); }
-
-	/* 4 · magnet — the element leans toward the pointer. --mx/--my from JS. */
-	.hx-magnet {
-		transition: transform var(--dur-2) var(--ease-out);
-	}
-	.hx-magnet:hover {
-		transform: translate3d(calc(var(--mx, 0) * 4px), calc(var(--my, 0) * 4px), 0);
+		animation: fx-blink 1.1s steps(1) infinite;
 	}
 
-	/* 5 · press — physical key travel. Buttons and tiles. */
-	.hx-press { transition: transform var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out); }
-	.hx-press:hover { transform: translate3d(0, -1px, 0); box-shadow: var(--shadow-2); }
-	.hx-press:active { transform: translate3d(0, 1px, 0); box-shadow: var(--shadow-0); }
+	/* States. */
+	.fx-pulse { animation: fx-pulse 2s var(--ease-inout) infinite; }
+	.fx-spin  { animation: fx-spin 0.7s linear infinite; }
 
-	/* 6 · reveal — a caption slides up from the bottom edge of a card */
-	.hx-reveal { position: relative; overflow: hidden; }
-	.hx-reveal > .hx-reveal__panel {
-		position: absolute;
-		inset: auto 0 0;
-		transform: translateY(100%);
-		transition: transform var(--dur-3) var(--ease-out);
+	/* Hover lift — guarded, because touch has no hover to un-lift. */
+	@media (hover: hover) and (pointer: fine) {
+		.fx-lift { transition: translate var(--dur-2) var(--ease-out), box-shadow var(--dur-3) var(--ease-out); }
+		.fx-lift:hover { translate: 0 -2px; box-shadow: var(--elevation-2); }
 	}
-	.hx-reveal:hover > .hx-reveal__panel { transform: none; }
 
-	/* 7 · swap — two glyphs trade places on hover (play ↔ pause, → ↔ ✓) */
-	.hx-swap { position: relative; display: inline-grid; overflow: hidden; }
-	.hx-swap > * { grid-area: 1 / 1; transition: transform var(--dur-2) var(--ease-out), opacity var(--dur-2) var(--ease-out); }
-	.hx-swap > :last-child { transform: translateY(110%); opacity: 0; }
-	.hx-swap:hover > :first-child { transform: translateY(-110%); opacity: 0; }
-	.hx-swap:hover > :last-child { transform: none; opacity: 1; }
+	/* Press: the click acknowledged in the finger. */
+	.fx-press { transition: scale var(--dur-1) var(--ease-out); }
+	.fx-press:active { scale: 0.97; }
 
-	/* 8 · trace — the border draws itself round the element */
-	.hx-trace { position: relative; }
-	.hx-trace::before,
-	.hx-trace::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		border-radius: inherit;
-		pointer-events: none;
-		border: var(--border-2) solid transparent;
-		transition: border-color var(--dur-1) var(--ease-out);
-	}
-	.hx-trace::before { transition-delay: 0ms; }
-	.hx-trace:hover::before { border-top-color: var(--accent); border-right-color: var(--accent); }
-	.hx-trace:hover::after { border-bottom-color: var(--accent); border-left-color: var(--accent); transition-delay: var(--dur-1); }
-}
-
-/* =============================================================================
-   SECTION PRESETS — five ways for a block to arrive
-   Put one on a <section>; its children carry --i for the stagger. Native
-   scroll-driven where supported, so no observer is needed.
-   ========================================================================== */
-
-.sec-fx > * { --sec-ease: var(--ease-out); }
-
-/* 1 · cascade — children rise in sequence. The default for card decks. */
-.sec-cascade > * {
-	animation: fx-rise var(--dur-3) var(--sec-ease, var(--ease-out)) both;
-	animation-delay: calc(var(--i, 0) * 70ms);
-}
-
-/* 2 · curtain — the whole block is wiped down from its top edge. Heroes. */
-.sec-curtain {
-	animation: secCurtain var(--dur-4) var(--ease-inout) both;
-}
-
-@keyframes secCurtain {
-	from { clip-path: inset(0 0 100% 0); }
-	to   { clip-path: inset(0 0 0 0); }
-}
-
-/* 3 · split — odd children come from the left, even from the right. Two-column
-   sections, before/after, comparisons. */
-.sec-split > *:nth-child(odd)  { animation: fx-slide-l var(--dur-4) var(--ease-out) both; }
-.sec-split > *:nth-child(even) { animation: fx-slide-r var(--dur-4) var(--ease-out) both; }
-.sec-split > * { animation-delay: calc(var(--i, 0) * 60ms); }
-
-/* 4 · focus — the block resolves from blur, like a lens finding it. Quotes,
-   single-statement sections. */
-.sec-focus { animation: fx-blur var(--dur-4) var(--ease-out) both; }
-
-/* 5 · lift — everything scales up a hair from 97% while fading in. Galleries
-   and stat grids, where individual movement would look busy. */
-.sec-lift > * {
-	animation: secLift var(--dur-4) var(--ease-out) both;
-	animation-delay: calc(var(--i, 0) * 45ms);
-}
-
-@keyframes secLift {
-	from { opacity: 0; transform: scale3d(0.97, 0.97, 1) translate3d(0, 8px, 0); }
-	to   { opacity: 1; transform: none; }
-}
-
-/* Fire any preset on scroll rather than on load. */
-@supports (animation-timeline: view()) {
-	@media (prefers-reduced-motion: no-preference) {
-		.sec-on-scroll,
-		.sec-on-scroll > * {
-			animation-timeline: view();
-			animation-range: entry 4% cover 24%;
-		}
+	@media (prefers-reduced-motion: reduce) {
+		.fx-rise, .fx-fade, .fx-stagger > *, .fx-tracking-in { animation: fx-fade 1ms linear both; }
+		.fx-pulse, .fx-spin { animation: none; }
+		.fx-caret::after { animation: none; }
+		.fx-lift, .fx-lift:hover { translate: 0 0; box-shadow: none; }
 	}
 }
 
-/* =============================================================================
-   STINGS — the three-second brand hits
-   Full-canvas idents. Five of them, one per context. Each is a single element
-   plus two children, and each ends on the wordmark so the last frame is always
-   the same image.
+/* ── Page transitions ─────────────────────────────────────────────────────
+   Cross-document view transitions: one rule opts a same-origin site into
+   animated navigation, and the browser snapshots old and new for us. The
+   default here is a fast cross-fade — the honest one, because a fade never
+   claims spatial relationships the pages do not have. Browsers without
+   support (or users with reduced motion) get an instant navigation, which is
+   the correct fallback rather than a missing feature. */
 
-     <div class="sting sting-drop">
-       <span class="sting__dot"></span>
-       <span class="sting__word"> … logo markup … </span>
-     </div>
-   ========================================================================== */
-
-.sting {
-	position: relative;
-	display: grid;
-	place-items: center;
-	aspect-ratio: var(--ratio-video);
-	background: var(--ink-1000);
-	color: var(--pure-white);
-	overflow: hidden;
-	isolation: isolate;
-	border-radius: var(--radius-media);
+@view-transition {
+	navigation: auto;
 }
 
-/* The dot is only used by the drop ident: it falls, lands, and hands over to
-   the wordmark's own tittle — which is the point of the whole thing. Every
-   other sting hides it, because the mark already contains it. */
-.sting__dot {
-	position: absolute;
-	width: 5%;
-	aspect-ratio: 1;
-	border-radius: var(--radius-full);
-	background: var(--accent);
-	opacity: 0;
-}
-
-.sting__word {
-	position: relative;
-	z-index: 2;
-	display: inline-flex;
-}
-
-/* 1 · drop — the dot falls in, lands hard, and the wordmark shocks outward
-   from the impact. The house ident: it is the record light arriving. */
-.sting-drop .sting__dot { animation: stingDrop 1.5s var(--ease-out) both; }
-.sting-drop .sting__word { animation: stingShock 1.5s var(--ease-out) both; }
-.sting-drop::after {
-	content: '';
-	position: absolute;
-	inset: 0;
-	background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--accent) 55%, transparent), transparent 60%);
-	opacity: 0;
-	animation: stingFlash 1.5s var(--ease-out) both;
-}
-
-@keyframes stingDrop {
-	0%   { transform: translate3d(0, -260%, 0) scale(0.6); opacity: 0; }
-	10%  { opacity: 1; }
-	38%  { transform: none; opacity: 1; }
-	46%  { transform: scale(1.6); opacity: 1; }
-	56%  { transform: scale(0.9); opacity: 0; }   /* hands over to the tittle */
-	100% { transform: scale(0.9); opacity: 0; }
-}
-
-@keyframes stingShock {
-	0%, 36% { opacity: 0; letter-spacing: 0.6em; filter: blur(6px); }
-	52%     { opacity: 1; letter-spacing: -0.02em; filter: blur(0); }
-	100%    { opacity: 1; letter-spacing: -0.045em; }
-}
-
-@keyframes stingFlash {
-	0%, 36% { opacity: 0; }
-	44%     { opacity: 0.9; }
-	100%    { opacity: 0; }
-}
-
-/* 2 · static — the frame tunes in through TV noise. Videos and the /videos
-   collection. */
-.sting-static::before {
-	content: '';
-	position: absolute;
-	inset: 0;
-	z-index: 3;
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
-	background-size: 180px 180px;
-	animation: stingStatic 1.4s steps(6) both;
-}
-
-.sting-static .sting__word { animation: fx-fade 1.4s var(--ease-out) both; animation-delay: 500ms; }
-.sting-static .sting__dot { display: none; }
-
-@keyframes stingStatic {
-	0%   { opacity: 0.9; }
-	70%  { opacity: 0.35; }
-	100% { opacity: 0; }
-}
-
-/* 3 · shutter — the camera opens onto the mark. Photography, travel. */
-.sting-shutter .sting__word { animation: stingIris 1.3s var(--ease-inout) both; }
-.sting-shutter .sting__dot { display: none; }
-
-@keyframes stingIris {
-	0%   { clip-path: circle(0% at 50% 50%); opacity: 0; }
-	40%  { opacity: 1; }
-	100% { clip-path: circle(75% at 50% 50%); opacity: 1; }
-}
-
-/* 4 · type — the mark types itself out. Build logs, code, the docs. */
-.sting-type .sting__dot { display: none; }
-.sting-type .sting__word {
-	overflow: hidden;
-	white-space: nowrap;
-	border-right: 3px solid var(--accent);
-	width: 0;
-	animation: stingType 1.4s steps(9, end) both, txCaret 0.8s steps(1) 6;
-}
-
-@keyframes stingType { to { width: 100%; } }
-
-/* 5 · sweep — a light bar passes and leaves the mark behind. The quiet one:
-   essays, the newsletter, anything that shouldn't shout. */
-.sting-sweep .sting__dot { display: none; }
-.sting-sweep .sting__word { animation: fx-fade 1.2s var(--ease-out) both; animation-delay: 350ms; }
-.sting-sweep::after {
-	content: '';
-	position: absolute;
-	top: 0;
-	bottom: 0;
-	width: 22%;
-	background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.16), transparent);
-	animation: stingSweep 1.6s var(--ease-inout) both;
-}
-
-@keyframes stingSweep {
-	from { transform: translateX(-160%); }
-	to   { transform: translateX(560%); }
-}
-
-/* Replay affordance for the preview — remove the class and re-add it to fire
-   any sting again. */
-.sting-paused *,
-.sting-paused::after,
-.sting-paused::before { animation-play-state: paused; }
-
-/* ── Reduced motion ────────────────────────────────────────────────────────
-   Everything degrades to a plain, fast opacity change. Nothing is removed —
-   the reveal still happens, it just stops moving. */
+::view-transition-old(root) { animation: fx-fade var(--dur-2) var(--ease-out) reverse both; }
+::view-transition-new(root) { animation: fx-fade var(--dur-3) var(--ease-out) both; }
 
 @media (prefers-reduced-motion: reduce) {
-	:root {
-		--dur-1: 1ms;
-		--dur-2: 1ms;
-		--dur-3: 1ms;
-		--dur-4: 1ms;
-		--stagger: 0ms;
-	}
-
-	.fx-rise, .fx-slide-l, .fx-slide-r, .fx-scale, .fx-blur, .fx-clip {
-		animation: fx-fade 160ms var(--ease-out) both;
-	}
-
-	.fx-pulse, .fx-spin {
-		animation: none;
-	}
-
-	.fx-lift:hover, .fx-tilt:hover {
-		transform: none;
-	}
-
-	/* Text effects: keep the reveal, drop the movement and every loop. */
-	.tx-chars > span, .tx-words > span, .tx-blur > span,
-	.tx-mask > span, .tx-flip > span {
-		animation: fx-fade 160ms var(--ease-out) both;
-		transform: none;
-	}
-
-	.tx-wave > span, .tx-shine, .tx-gradient { animation: none; }
-	.tx-glitch::before, .tx-glitch::after { display: none; }
-	.tx-type { width: auto; border-right: 0; animation: none; }
-	.tx-highlight { background-size: 100% 0.55em; animation: none; }
-	.tx-underline::after { transform: none; animation: none; }
-	.win-term__cursor { animation: none; }
-
-	/* Annotations draw instantly; stings hold their last frame; hovers stop. */
-	.an > svg { animation: none; stroke-dashoffset: 0; }
-	.sting__dot, .sting__word,
-	.sting::after, .sting::before { animation: none !important; opacity: 1; }
-	.sting-type .sting__word { width: auto; border-right: 0; }
-	.sting-shutter .sting__word { clip-path: none; }
-	.sec-cascade > *, .sec-split > *, .sec-lift > * { animation: fx-fade 160ms var(--ease-out) both; }
-	.sec-curtain, .sec-focus { animation: fx-fade 160ms var(--ease-out) both; clip-path: none; filter: none; }
-
-	*, *::before, *::after {
-		animation-duration: 1ms !important;
-		animation-iteration-count: 1 !important;
-		transition-duration: 1ms !important;
-		scroll-behavior: auto !important;
-	}
+	::view-transition-old(root),
+	::view-transition-new(root) { animation: none; }
 }

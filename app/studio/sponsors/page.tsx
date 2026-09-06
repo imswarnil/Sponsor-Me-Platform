@@ -47,7 +47,7 @@ export default async function SponsorsPage() {
       </StatRow>
 
       <section className="mt-10">
-        <h2 className="mb-3 font-mono text-2xs uppercase tracking-slate text-subtle">
+        <h2 className="mb-3 font-label text-2xs uppercase tracking-slate text-subtle">
           Running now
         </h2>
         {active.length === 0 ? (
@@ -80,7 +80,7 @@ export default async function SponsorsPage() {
                   </div>
 
                   <div className="mt-4 border-t border-line-subtle pt-4">
-                    <p className="font-mono text-2xs uppercase tracking-slate text-subtle">
+                    <p className="font-label text-2xs uppercase tracking-slate text-subtle">
                       Their creative
                     </p>
                     <p className="mt-1.5 text-sm">{slot.adHeadline}</p>
@@ -98,7 +98,7 @@ export default async function SponsorsPage() {
 
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <ChannelBadge placement={slot.placement} />
-                    <span className="font-mono text-2xs uppercase tracking-slate text-subtle">
+                    <span className="font-label text-2xs uppercase tracking-slate text-subtle">
                       {slot.sponsoredStart ? fmtDate(slot.sponsoredStart) : '—'} –{' '}
                       {slot.sponsoredUntil ? fmtDate(slot.sponsoredUntil) : '—'}
                     </span>
@@ -112,7 +112,7 @@ export default async function SponsorsPage() {
 
       {past.length > 0 ? (
         <section className="mt-10">
-          <h2 className="mb-3 font-mono text-2xs uppercase tracking-slate text-subtle">
+          <h2 className="mb-3 font-label text-2xs uppercase tracking-slate text-subtle">
             Past advertisers
           </h2>
           <div className="space-y-3">
@@ -126,7 +126,7 @@ export default async function SponsorsPage() {
                         {h.slotName} · {fmtDate(h.startAt)} – {fmtDate(h.endAt)}
                       </p>
                     </div>
-                    <span className="font-mono text-2xs uppercase tracking-slate text-subtle">
+                    <span className="font-label text-2xs uppercase tracking-slate text-subtle">
                       {h.amount.toLocaleString()} pts
                     </span>
                   </div>
@@ -169,7 +169,7 @@ export default async function SponsorsPage() {
       ) : null}
 
       <section className="mt-10">
-        <h2 className="mb-3 font-mono text-2xs uppercase tracking-slate text-subtle">
+        <h2 className="mb-3 font-label text-2xs uppercase tracking-slate text-subtle">
           Everyone who has advertised
         </h2>
         {ledger.length === 0 ? (
@@ -184,16 +184,16 @@ export default async function SponsorsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-line-subtle text-left">
-                    <th className="px-5 py-3 font-mono text-2xs uppercase tracking-slate text-subtle">
+                    <th className="px-5 py-3 font-label text-2xs uppercase tracking-slate text-subtle">
                       Advertiser
                     </th>
-                    <th className="px-5 py-3 font-mono text-2xs uppercase tracking-slate text-subtle">
+                    <th className="px-5 py-3 font-label text-2xs uppercase tracking-slate text-subtle">
                       Placement
                     </th>
-                    <th className="px-5 py-3 font-mono text-2xs uppercase tracking-slate text-subtle">
+                    <th className="px-5 py-3 font-label text-2xs uppercase tracking-slate text-subtle">
                       When
                     </th>
-                    <th className="px-5 py-3 text-right font-mono text-2xs uppercase tracking-slate text-subtle">
+                    <th className="px-5 py-3 text-right font-label text-2xs uppercase tracking-slate text-subtle">
                       Paid
                     </th>
                   </tr>

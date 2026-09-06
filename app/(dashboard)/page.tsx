@@ -16,6 +16,8 @@ import { ChannelIcon } from '@/components/marketing/channel-icon';
 import { SwarnilWordmark } from '@/components/logo';
 import { StartConversationForm } from '@/components/marketing/start-conversation-form';
 import { AudienceStats } from '@/components/marketing/audience-stats';
+import { PropertiesGrid } from '@/components/marketing/properties-grid';
+import { GitHubSponsors } from '@/components/marketing/github-sponsors';
 import { channels, site } from '@/lib/site';
 
 export default function HomePage() {
@@ -126,7 +128,7 @@ export default function HomePage() {
                 <p className="mt-2 flex-1 text-sm text-muted-foreground">{c.blurb}</p>
 
                 <div className="mt-5 border-t border-line-subtle pt-4">
-                  <p className="font-mono text-2xs uppercase tracking-slate text-subtle">
+                  <p className="font-label text-2xs uppercase tracking-slate text-subtle">
                     What an advertiser gets
                   </p>
                   <p className="mt-1.5 text-sm">{c.placement}</p>
@@ -144,6 +146,23 @@ export default function HomePage() {
             </Card>
           ))}
         </div>
+      </section>
+
+      {/* ── Every site a sponsorship covers — see lib/properties.ts ───────── */}
+      <section id="sites" className="mx-auto max-w-site px-gutter py-section-md">
+        <SectionHeading
+          eyebrow="Where it runs"
+          title="One sponsorship, everything I build"
+          sub="The sites, courses, themes and open-source projects your name would sit beside."
+        />
+        <div className="mt-12">
+          <PropertiesGrid />
+        </div>
+      </section>
+
+      {/* ── The recurring route. Renders nothing without a GITHUB_TOKEN. ──── */}
+      <section className="mx-auto max-w-site px-gutter pb-section-md">
+        <GitHubSponsors />
       </section>
 
       {/* ── How it works, from the advertiser's side ─────────────────────── */}
@@ -235,7 +254,7 @@ export default function HomePage() {
           <div className="mt-8">
             <StartConversationForm next="/placements" />
           </div>
-          <p className="mt-10 flex items-center justify-center gap-2 font-mono text-2xs uppercase tracking-slate text-subtle">
+          <p className="mt-10 flex items-center justify-center gap-2 font-label text-2xs uppercase tracking-slate text-subtle">
             Everything here funds the work of <SwarnilWordmark size="xs" />
           </p>
         </div>
@@ -284,7 +303,7 @@ function StepCard({
           <span className="grid size-10 place-items-center rounded-md bg-pop/12 text-signal">
             {icon}
           </span>
-          <span className="font-mono text-2xs uppercase tracking-slate text-faint">{n}</span>
+          <span className="font-label text-2xs uppercase tracking-slate text-faint">{n}</span>
         </div>
         <h3 className="font-display text-lg font-semibold tracking-tight">{title}</h3>
         <p className="mt-2 text-sm text-muted-foreground">{body}</p>

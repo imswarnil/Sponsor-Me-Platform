@@ -86,6 +86,38 @@ creator's *own audience members* who want to support them visibly.
   ad-fraud/low-quality creative (approval flow + validation); platform ToS of embed targets;
   payments compliance (why merchant-of-record, not raw Stripe Connect, at the start).
 
+## AI-era extensions (groomed 2026-09-04)
+
+The thesis: AI raises this product's value on both sides. Generated content floods the
+internet → a real human's endorsement becomes premium inventory ("sponsorships that
+survive the AI summary" — in-content mentions, newsletter lines, README badges outlive
+banner ads in an AI-answers world). Meanwhile brands adopt AI agents for media buying →
+whoever exposes bookable inventory machine-readably gets found and transacted first.
+
+Ranked by leverage:
+
+1. **Agent-bookable inventory** — placements as structured data: `llms.txt`/JSON feed,
+   then an MCP server (`list_placements`, `check_availability`, `book_sponsorship`).
+   When a brand's AI agent goes shopping for creator placements, this storefront is the
+   one it can actually book. Cheap (mostly the API we need anyway), early, great
+   build-in-public story.
+2. **AI sponsorship manager** — on-site agent that answers sponsor questions 24/7,
+   drafts proposals, negotiates within creator-set price bounds, hands over a
+   ready-to-approve booking.
+3. **AI creative studio** — logo + URL in, on-brand ad variants out (matching the
+   creator's design system and voice); creator approves before live. Kills the
+   "I don't have a banner" checkout drop-off.
+4. **AI campaign reports** — verified numbers only (widget events, YouTube/Ghost APIs),
+   AI-written post-campaign report + proof-of-placement. Reports drive renewals.
+5. **Pricing copilot** — suggested pricing from real reach/demand/booking history;
+   at full scale becomes the "creators like you charge X" cold-start solver.
+6. **AI matchmaking/outbound** — scan the creator's content, shortlist fitting brands,
+   draft pitches that link to the live storefront (the differentiator vs. AI spam:
+   the pitch ends in a bookable page, not "hop on a call").
+
+Order for the personal build: ship the rebuild, then #1 and #4 (discoverable to AI
+buyers + renewable sponsors), then #2/#3 once real bookings flow.
+
 ## Sequencing
 
 1. Run the personal version for real — Swarnil's actual sponsors, actual money (now).

@@ -12,23 +12,95 @@ import {
   threads,
   txns
 } from './schema';
-import { createClient } from '@/lib/supabase/server';
+import { cache } from 'react';
+import { getAuth, isAuthConfigured } from '@/lib/auth/server';
 
-/** The current Supabase Auth user id, or null. */
+/**
+ * The signed-in Neon Auth session, or null.
+ *
+ * **Memoised per request** with React's `cache()`, and that is not a
+ * micro-optimisation: every gate in roles.ts and every owner-scoped query calls
+ * through here, so one render was making the same HTTP round-trip to the auth
+ * server five or six times. Deduped it asks once. The cache lives for exactly
+ * one request, so no visitor's session can leak into another's render.
+ */
+const getSessionUser = cache(async function getSessionUser() {
+  // A deployment with no auth configured should render the public pages as a
+  // signed-out visitor rather than crash with a 500.
+  if (!isAuthConfigured()) return null;
+  const { data } = await getAuth().getSession();
+  return data?.user ?? null;
+});
+
+/** The current `neon_auth.user.id`, or null. */
 export async function getCurrentUserId(): Promise<string | null> {
-  const supabase = await createClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   return user?.id ?? null;
 }
 
-/** The current user's profile row (name, points, role), or null. */
+/**
+ * The current user's profile row (name, points, role), or null.
+ *
+ * Creates the row on first sight. Under Supabase this was a `handle_new_user()`
+ * trigger on `auth.users`; Neon provisions and migrates the `neon_auth` tables
+ * itself, so hanging our trigger off them would mean writing into a schema we
+ * do not own. Doing it here instead means the profile appears on the new
+ * account's first authenticated request rather than at the instant of signup —
+ * a distinction with no user-visible difference, since the first thing every
+ * signed-up account does is load a page.
+ */
 export async function getCurrentUser() {
-  const uid = await getCurrentUserId();
-  if (!uid) return null;
-  const rows = await db.select().from(profiles).where(eq(profiles.id, uid)).limit(1);
-  return rows[0] ?? null;
+  const user = await getSessionUser();
+  if (!user) return null;
+
+  const rows = await db.select().from(profiles).where(eq(profiles.id, user.id)).limit(1);
+  if (rows[0]) return rows[0];
+
+  return ensureProfile(user.id, user.email ?? null, user.name ?? '');
+}
+
+/**
+ * Create the profile for a freshly authenticated account, and tell the creator
+ * a new sponsor has arrived.
+ *
+ * `onConflictDoNothing` rather than a read-then-write: two requests from the
+ * same new account can race here, and the primary key is the only reliable
+ * arbiter. The notification is only inserted when this call actually created
+ * the row, so a race cannot announce the same sponsor twice.
+ */
+export async function ensureProfile(id: string, email: string | null, name: string) {
+  const inserted = await db
+    .insert(profiles)
+    .values({ id, email, name })
+    .onConflictDoNothing()
+    .returning();
+
+  if (inserted[0]) {
+    const creatorEmail = process.env.CREATOR_EMAIL?.trim().toLowerCase() ?? null;
+    const isCreator = creatorEmail !== null && email?.toLowerCase() === creatorEmail;
+
+    if (!isCreator) {
+      // Same signal the old DB trigger raised: the creator's bell, not email.
+      const creator = await db
+        .select({ id: profiles.id })
+        .from(profiles)
+        .where(eq(profiles.email, creatorEmail ?? ''))
+        .limit(1);
+      if (creator[0]) {
+        await db.insert(notifications).values({
+          userId: creator[0].id,
+          type: 'system',
+          title: `New sponsor: ${name || email || 'someone'}`,
+          body: 'They just created an account.',
+          href: '/studio/sponsors'
+        });
+      }
+    }
+    return inserted[0];
+  }
+
+  const existing = await db.select().from(profiles).where(eq(profiles.id, id)).limit(1);
+  return existing[0] ?? null;
 }
 
 export async function getUserById(id: string) {

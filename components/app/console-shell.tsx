@@ -43,12 +43,12 @@ export function ConsoleShell({
         <div className="space-y-3 border-t border-line-subtle p-3">
           <BackToSite className="w-full justify-center" />
           <div className="flex items-center gap-2.5 px-1">
-            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-inverse font-mono text-2xs font-semibold text-on-inverse">
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-inverse font-label text-2xs font-semibold text-on-inverse">
               {initials}
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-medium">{user.name || 'You'}</span>
-              <span className="block truncate font-mono text-2xs uppercase tracking-slate text-subtle">
+              <span className="block truncate font-label text-2xs uppercase tracking-slate text-subtle">
                 {roleLabel}
               </span>
             </span>

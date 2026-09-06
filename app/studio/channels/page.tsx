@@ -62,7 +62,7 @@ export default async function ChannelsPage({
                     </div>
                     <Badge variant="live">Live</Badge>
                   </div>
-                  <div className="mt-4 flex gap-5 font-mono text-2xs uppercase tracking-slate text-subtle">
+                  <div className="mt-4 flex gap-5 font-label text-2xs uppercase tracking-slate text-subtle">
                     <span className="inline-flex items-center gap-1.5">
                       <FileText className="size-3.5" /> {ghost.postCount.toLocaleString()} posts
                     </span>
@@ -107,7 +107,7 @@ export default async function ChannelsPage({
 
       <Card className="mt-8">
         <CardContent className="p-6">
-          <h2 className="mb-4 font-mono text-2xs uppercase tracking-slate text-subtle">
+          <h2 className="mb-4 font-label text-2xs uppercase tracking-slate text-subtle">
             Name a channel
           </h2>
           <form action={addChannelConnection} className="flex flex-wrap items-end gap-3">

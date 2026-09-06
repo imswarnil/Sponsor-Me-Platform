@@ -20,7 +20,7 @@ export function BackToSite({ className, label = false }: { className?: string; l
       )}
     >
       <SwarnilWordmark size="xs" />
-      {label ? <span className="hidden font-mono text-2xs uppercase tracking-slate sm:inline">.com</span> : null}
+      {label ? <span className="hidden font-label text-2xs uppercase tracking-slate sm:inline">.com</span> : null}
       <ArrowUpRight className="size-3.5 text-faint transition-transform duration-200 ease-out group-hover:-translate-y-px group-hover:translate-x-px group-hover:text-signal" />
       <span className="sr-only">Back to imswarnil.com</span>
     </a>

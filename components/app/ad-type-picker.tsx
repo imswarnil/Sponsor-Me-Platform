@@ -52,6 +52,8 @@ export function AdTypePicker({
 
   return (
     <div className="grid gap-2 sm:grid-cols-2">
+      {/* Disabled radios submit nothing; locked means unchanged, not absent. */}
+      {disabled ? <input type="hidden" name={name} value={selected} /> : null}
       {AD_TYPE_LIST.map((t) => {
         const active = t.key === selected;
         return (
@@ -76,7 +78,7 @@ export function AdTypePicker({
             <div>
               <p className="text-sm font-medium">{t.label}</p>
               <p className="text-xs text-muted-foreground">{t.description}</p>
-              <p className="mt-1 font-mono text-2xs uppercase tracking-slate text-subtle">
+              <p className="mt-1 font-label text-2xs uppercase tracking-slate text-subtle">
                 {t.sizeLabel}
               </p>
             </div>

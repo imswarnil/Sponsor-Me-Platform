@@ -42,7 +42,7 @@ export function ThreadView({
               >
                 {m.body}
               </div>
-              <p className="mt-1 font-mono text-2xs uppercase tracking-slate text-subtle">
+              <p className="mt-1 font-label text-2xs uppercase tracking-slate text-subtle">
                 {senderName(m.senderId)} · {fmtTime(m.createdAt)}
               </p>
             </div>

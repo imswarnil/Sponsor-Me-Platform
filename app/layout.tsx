@@ -1,37 +1,41 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
-import { IBM_Plex_Mono, Inter, Space_Grotesk } from 'next/font/google';
+import { IBM_Plex_Mono, Inter } from 'next/font/google';
 import { RegisterServiceWorker } from '@/components/register-service-worker';
 import { site } from '@/lib/site';
 
-/* Three faces, three jobs — see creator/02-typography.css.
-   display → Space Grotesk (headlines, stats) · body → Inter (everything you
-   actually read) · slate → IBM Plex Mono (the metadata voice: labels, counts,
-   timecodes, code). */
-const display = Space_Grotesk({
+/* Two faces — see creator/02-typography.css for the argument.
+   Inter sets the headline and the sentence alike: a headline is Inter worn
+   large with the tracking closed, and a label is Inter worn small, uppercase
+   and tracked open. IBM Plex Mono comes out for code and nothing else, which is
+   why it loads a single weight — a mono headline or a mono badge is a bug now.
+
+   Space Grotesk used to set the headlines. Dropping it removes a font from the
+   critical path and a second set of metrics from every heading/paragraph pair. */
+const body = Inter({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-space-grotesk',
+  // 300 for the data voice (small, light, tabular), 600 for headings and labels.
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-inter',
   display: 'swap'
 });
-const body = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
-const slate = IBM_Plex_Mono({
+const mono = IBM_Plex_Mono({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
+  weight: ['400'],
   variable: '--font-plex-mono',
   display: 'swap'
 });
 
 export const metadata: Metadata = {
   title: {
-    default: 'Advertise With Me — back the work, not the ad network',
-    template: '%s · Advertise With Me'
+    default: 'Sponsor Swarnil — back the work, not the ad network',
+    template: '%s · Sponsor Swarnil'
   },
-  description: `Advertise with ${site.creator} directly: a video, a newsletter issue, a blog slot, a post, or an open-source project. No ad network, no middleman, no tracking cookies.`,
+  description: `Sponsor ${site.creator} directly: a placement on any of his sites, or a membership that puts you on the sponsor wall. No ad network, no middleman, no tracking cookies.`,
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Advertise'
+    title: 'Sponsor'
   }
 };
 
@@ -60,7 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${display.variable} ${body.variable} ${slate.variable}`}
+      className={`${body.variable} ${mono.variable}`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />

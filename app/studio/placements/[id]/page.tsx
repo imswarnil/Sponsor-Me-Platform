@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/app/page-header';
 import { SlotAnalytics } from '@/components/app/slot-analytics';
 import { EmbedSnippet } from '@/components/app/embed-snippet';
 import { ChannelPicker } from '@/components/app/channel-picker';
+import { PropertyPicker } from '@/components/app/property-picker';
 import { AdTypePicker } from '@/components/app/ad-type-picker';
 import { ChannelBadge } from '@/components/app/channel-badge';
 import { Button } from '@/components/ui/button';
@@ -101,7 +102,7 @@ export default async function ManagePlacementPage({
         {sponsored ? (
           <Card>
             <CardContent className="p-6">
-              <h2 className="font-mono text-2xs uppercase tracking-slate text-subtle">
+              <h2 className="font-label text-2xs uppercase tracking-slate text-subtle">
                 Current advertiser
               </h2>
               <p className="mt-3 font-display text-lg font-semibold tracking-tight">
@@ -134,7 +135,7 @@ export default async function ManagePlacementPage({
                   ))}
                 </ul>
               ) : null}
-              <p className="mt-3 font-mono text-2xs uppercase tracking-slate text-subtle">
+              <p className="mt-3 font-label text-2xs uppercase tracking-slate text-subtle">
                 {slot.sponsoredStart
                   ? new Date(slot.sponsoredStart).toLocaleDateString(undefined, {
                       month: 'short',
@@ -160,7 +161,7 @@ export default async function ManagePlacementPage({
         ) : (
           <Card>
             <CardContent className="p-6">
-              <h2 className="font-mono text-2xs uppercase tracking-slate text-subtle">
+              <h2 className="font-label text-2xs uppercase tracking-slate text-subtle">
                 Performance
               </h2>
               <p className="mt-3 text-sm text-muted-foreground">
@@ -176,7 +177,7 @@ export default async function ManagePlacementPage({
         {channel.embeddable ? (
           <Card>
             <CardContent className="p-6">
-              <h2 className="mb-1 font-mono text-2xs uppercase tracking-slate text-subtle">
+              <h2 className="mb-1 font-label text-2xs uppercase tracking-slate text-subtle">
                 Embed
               </h2>
               <p className="mb-4 text-sm text-muted-foreground">
@@ -191,7 +192,7 @@ export default async function ManagePlacementPage({
         {/* Settings */}
         <Card>
           <CardContent className="p-6">
-            <h2 className="mb-5 font-mono text-2xs uppercase tracking-slate text-subtle">
+            <h2 className="mb-5 font-label text-2xs uppercase tracking-slate text-subtle">
               Settings
             </h2>
             <form action={updateSlot} className="space-y-6">
@@ -216,6 +217,16 @@ export default async function ManagePlacementPage({
               <div className="space-y-2">
                 <Label>Channel</Label>
                 <ChannelPicker defaultValue={channel.key} disabled={sponsored} />
+                {sponsored ? (
+                  <p className="text-xs text-muted-foreground">
+                    Locked while sponsored — moving it would change what your advertiser paid for.
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="property">Site</Label>
+                <PropertyPicker defaultValue={slot.property ?? ''} disabled={sponsored} />
                 {sponsored ? (
                   <p className="text-xs text-muted-foreground">
                     Locked while sponsored — moving it would change what your advertiser paid for.
@@ -248,13 +259,17 @@ export default async function ManagePlacementPage({
                   disabled={sponsored}
                   className="max-w-40"
                 />
+                {/* Disabled inputs submit nothing; carry the locked price explicitly. */}
+                {sponsored ? (
+                  <input type="hidden" name="price" value={slot.pricePoints} />
+                ) : null}
                 {sponsored ? (
                   <p className="text-xs text-muted-foreground">Locked while sponsored.</p>
                 ) : null}
               </div>
 
               <details className="group rounded-control border border-line-subtle">
-                <summary className="cursor-pointer list-none px-4 py-3 font-mono text-2xs uppercase tracking-slate text-subtle">
+                <summary className="cursor-pointer list-none px-4 py-3 font-label text-2xs uppercase tracking-slate text-subtle">
                   More options
                 </summary>
                 <div className="space-y-6 border-t border-line-subtle p-4">

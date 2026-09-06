@@ -8,6 +8,8 @@ import { AdPreviewShowcase } from '@/components/marketing/ad-preview-showcase';
 import { StartConversationForm } from '@/components/marketing/start-conversation-form';
 import { SlotGrid } from '@/components/marketing/slot-grid';
 import { AudienceStats } from '@/components/marketing/audience-stats';
+import { PropertiesGrid } from '@/components/marketing/properties-grid';
+import { GitHubSponsors } from '@/components/marketing/github-sponsors';
 import { Button } from '@/components/ui/button';
 import { Badge, Eyebrow } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -74,7 +76,7 @@ export default async function PlacementsPage() {
         </p>
 
         <section className="mt-10">
-          <h2 className="font-mono text-2xs uppercase tracking-slate text-subtle">
+          <h2 className="font-label text-2xs uppercase tracking-slate text-subtle">
             What you&rsquo;d be reaching
           </h2>
           <div className="mt-4">
@@ -84,7 +86,7 @@ export default async function PlacementsPage() {
 
         {/* What it actually looks like, per channel */}
         <section className="mt-12">
-          <h2 className="font-mono text-2xs uppercase tracking-slate text-subtle">
+          <h2 className="font-label text-2xs uppercase tracking-slate text-subtle">
             See it in action
           </h2>
           <div className="mt-4">
@@ -92,9 +94,32 @@ export default async function PlacementsPage() {
           </div>
         </section>
 
+        {/* Everything a sponsor would be backing — see lib/properties.ts */}
+        <section className="mt-16">
+          <h2 className="font-label text-2xs uppercase tracking-slate text-subtle">
+            Where it runs
+          </h2>
+          <p className="mt-2 max-w-lead text-sm text-muted-foreground">
+            One sponsorship, every site I build and maintain.
+          </p>
+          <div className="mt-4">
+            <PropertiesGrid />
+          </div>
+        </section>
+
+        {/* The other way to sponsor. Renders nothing without a GITHUB_TOKEN. */}
+        <section className="mt-16">
+          <h2 className="font-label text-2xs uppercase tracking-slate text-subtle">
+            Or sponsor the open-source work
+          </h2>
+          <div className="mt-4">
+            <GitHubSponsors />
+          </div>
+        </section>
+
         {/* Every channel that exists, even ones nothing is open on right now */}
         <section className="mt-16">
-          <h2 className="font-mono text-2xs uppercase tracking-slate text-subtle">
+          <h2 className="font-label text-2xs uppercase tracking-slate text-subtle">
             Every way to advertise
           </h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -108,7 +133,7 @@ export default async function PlacementsPage() {
                     <p className="font-display font-semibold tracking-tight">{channel.label}</p>
                     <p className="flex-1 text-sm text-muted-foreground">{channel.placement}</p>
                     {channel.key === 'blog' && ghost ? (
-                      <p className="font-mono text-2xs uppercase tracking-slate text-subtle">
+                      <p className="font-label text-2xs uppercase tracking-slate text-subtle">
                         {ghost.postCount.toLocaleString()} posts ·{' '}
                         {ghost.memberCount.toLocaleString()} subscribers
                       </p>
@@ -122,7 +147,7 @@ export default async function PlacementsPage() {
 
         {/* Open now */}
         <section className="mt-16">
-          <h2 className="font-mono text-2xs uppercase tracking-slate text-subtle">Open now</h2>
+          <h2 className="font-label text-2xs uppercase tracking-slate text-subtle">Open now</h2>
           {openRows.length === 0 ? (
             <div className="mt-4 space-y-6">
               <Card>
@@ -154,7 +179,7 @@ export default async function PlacementsPage() {
         {/* Currently sponsored — with a next-available date */}
         {sponsoredRows.length > 0 ? (
           <section className="mt-16">
-            <h2 className="font-mono text-2xs uppercase tracking-slate text-subtle">
+            <h2 className="font-label text-2xs uppercase tracking-slate text-subtle">
               Currently sponsored
             </h2>
             <SlotGrid
@@ -186,7 +211,7 @@ export default async function PlacementsPage() {
         {/* Past advertisers — social proof, no amounts */}
         {pastSponsors.length > 0 ? (
           <section className="mt-16">
-            <h2 className="font-mono text-2xs uppercase tracking-slate text-subtle">
+            <h2 className="font-label text-2xs uppercase tracking-slate text-subtle">
               Past advertisers
             </h2>
             <div className="mt-4 flex flex-wrap gap-3">
@@ -202,7 +227,7 @@ export default async function PlacementsPage() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={p.imageUrl} alt="" className="size-6 rounded-full object-cover" />
                   ) : (
-                    <span className="grid size-6 place-items-center rounded-full bg-sunken font-mono text-2xs">
+                    <span className="grid size-6 place-items-center rounded-full bg-sunken font-label text-2xs">
                       {p.headline?.[0]?.toUpperCase() ?? '?'}
                     </span>
                   )}

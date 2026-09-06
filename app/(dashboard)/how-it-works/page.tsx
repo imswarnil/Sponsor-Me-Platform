@@ -243,7 +243,7 @@ function Step({ n, title, body, last }: { n: number; title: string; body: string
   return (
     <li className="relative flex gap-4">
       <div className="flex flex-col items-center">
-        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-pop/12 font-mono text-2xs font-semibold text-signal">
+        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-pop/12 font-label text-2xs font-semibold text-signal">
           {n}
         </span>
         {!last ? <span className="mt-1 w-px flex-1 bg-border" /> : null}

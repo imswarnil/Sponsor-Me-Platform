@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { ChannelPicker } from '@/components/app/channel-picker';
+import { PropertyPicker } from '@/components/app/property-picker';
 import { AdTypePicker } from '@/components/app/ad-type-picker';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,15 @@ export function NewPlacementForm() {
       <div className="space-y-2">
         <Label>Channel</Label>
         <ChannelPicker onChange={setChannel} />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="property">Site</Label>
+        <PropertyPicker />
+        <p className="text-xs text-muted-foreground">
+          Which of my sites this runs on. Leave it on &ldquo;across everything&rdquo; for
+          anything that isn&rsquo;t tied to one — a newsletter issue, a video.
+        </p>
       </div>
 
       {channel === 'blog' ? (
@@ -79,7 +89,7 @@ export function NewPlacementForm() {
       </div>
 
       <details className="group rounded-control border border-line-subtle">
-        <summary className="cursor-pointer list-none px-4 py-3 font-mono text-2xs uppercase tracking-slate text-subtle">
+        <summary className="cursor-pointer list-none px-4 py-3 font-label text-2xs uppercase tracking-slate text-subtle">
           More options
         </summary>
         <div className="space-y-6 border-t border-line-subtle p-4">

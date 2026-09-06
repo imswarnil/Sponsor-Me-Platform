@@ -1,9 +1,18 @@
+/* ── The cascade contract ────────────────────────────────────────────────────
+   Declared before anything else, because the FIRST @layer statement fixes the
+   order and everything later just falls into place. The design system now ships
+   its rules inside `@layer tokens` / `@layer elements` (it did not used to), so
+   without this line those layers would land after Tailwind's and a DS element
+   rule would quietly outrank a utility class. Utilities last means a utility
+   always wins, which is the only reason to have utilities. */
+@layer theme, base, tokens, elements, components, utilities;
+
 @import "tailwindcss";
 @import "tw-animate-css";
 
 /* ── Creator Design System · "Frame & Signal" ────────────────────────────────
-   The token layer is vendored verbatim from ../../design-system/src/1-foundation
-   so it can be re-synced with a plain `cp`. Never hand-edit app/creator/*.css —
+   Vendored verbatim from ../../design.imswarnil.com/src so it re-syncs with a
+   plain `cp` — see the command in CLAUDE.md §4. Never hand-edit app/creator/*.css:
    customisation happens by overriding a token *after* the import, which is the
    entire customisation API of the system. */
 @import "./creator/01-color.css";
@@ -11,9 +20,15 @@
 @import "./creator/03-space.css";
 @import "./creator/04-elevation.css";
 @import "./creator/05-motion.css";
-@import "./creator/09-logo.css";
-@import "./creator/12-frame.css";
-@import "./creator/15-syntax.css";
+@import "./creator/09-shape.css";
+@import "./creator/22-code.css";
+
+/* App-owned, and deliberately NOT in creator/: the design system dropped the
+   window-chrome variants this app's ad preview is built on (.win-mac, .win-code,
+   .win-phone) and never had the wordmark at all, so these have no upstream to
+   re-sync from. Edit them here; they are ours. */
+@import "./design-local/frame.css";
+@import "./design-local/logo.css";
 
 /* Dark mode is the system's own contract: an explicit [data-theme] wins, and
    with no explicit choice we follow the OS. Mirrors 01-color.css exactly. */
@@ -28,13 +43,63 @@
   }
 }
 
-/* ── The three faces, bound to next/font ─────────────────────────────────────
-   Overriding the primitives (not the -effective aliases) so every DS class —
-   .t-h1, .t-slate, .t-stat — picks the loaded webfont up automatically. */
+/* ── The faces, bound to next/font ───────────────────────────────────────────
+   ONE FACE. The system used to pair Space Grotesk with Inter; it no longer
+   does, and the argument is worth keeping: a display family earns its keep only
+   if it says something the body family cannot. Inter at 600, tracking closed to
+   -0.02em and set large already reads as a headline — the SIZE and the TRACKING
+   do that work, not the family. So Space Grotesk is gone, and with it a font on
+   the critical path and a headline whose metrics disagreed with its paragraph.
+
+   Monospace is not the second voice any more either. It is a TOOL, and it comes
+   out for code only. A label is Inter worn small, uppercase and tracked open
+   (`font-label`); a count is Inter small, light and tabular. Setting every
+   technical-looking thing in mono is what made mono stop meaning anything.
+
+   These are app-local names so the @theme block below can point at them without
+   a variable referring to itself. Overriding the DS primitives here means every
+   system class — .t-h1, .t-label, .t-stat — picks the loaded webfont up too. */
 :root {
-  --font-display: var(--font-space-grotesk), "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-body: var(--font-inter), "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-slate: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, "SF Mono", "Cascadia Mono", monospace;
+  --face-body: var(--font-inter), "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --face-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, "SF Mono", "Cascadia Mono", monospace;
+
+  --font-body: var(--face-body);
+  --font-mono: var(--face-mono);
+}
+
+/* ── Tokens the system stopped shipping ──────────────────────────────────────
+   The new space and elevation ladders dropped these names. They are real
+   decisions this app still makes, so they live here as app-level choices rather
+   than as edits inside creator/ — which has to stay a verbatim copy.
+
+   Control heights and section rhythm are stated on the system's own ladders, so
+   they still move when the ladder does. */
+:root {
+  /* A button, an input and a select are the same object at three sizes. */
+  --control-sm: 2rem;
+  --control-md: 2.25rem;
+  --control-lg: 2.75rem;
+
+  /* Section rhythm, on the fluid space ladder. */
+  --section-sm: var(--space-12);
+  --section-md: var(--space-16);
+  --section-lg: var(--space-24);
+
+  /* Content columns. The system now ships a generic --width-* scale; these are
+     the four this app actually lays out against. */
+  --w-prose: 45rem;
+  --w-narrow: 60rem;
+  --w-site: 75rem;
+  --w-wide: 90rem;
+
+  /* Elevation stops at 4 upstream. The one step beyond it, and the inset, are
+     stated in the system's own idiom: a drop in light, a hairline in dark. */
+  --shadow-5: light-dark(
+    0 8px 16px oklch(12.5% 0.012 275 / 0.08), 0 40px 80px -20px oklch(12.5% 0.012 275 / 0.28),
+    0 0 0 1px oklch(100% 0 0 / 0.18));
+  --shadow-inset: light-dark(
+    inset 0 1px 2px oklch(12.5% 0.012 275 / 0.06),
+    inset 0 1px 2px oklch(0% 0 0 / 0.30));
 }
 
 /* ── Design tokens → Tailwind theme ──────────────────────────────────────────
@@ -117,19 +182,24 @@
   --color-info-soft: var(--info-bg);
   --color-info-line: var(--info-line);
 
-  /* Faces */
-  --font-sans: var(--font-body-effective);
-  --font-display: var(--font-heading-effective);
-  --font-mono: var(--font-slate);
+  /* Faces. `display` and `label` are the body face worn differently — same
+     family, different weight/size/tracking — which is the system's whole point.
+     `mono` is code, and only code. */
+  --font-sans: var(--face-body);
+  --font-display: var(--face-body);
+  --font-label: var(--face-body);
+  --font-mono: var(--face-mono);
 
   /* The rest of the fluid type scale, the tracking ladder and the radius
      ladder already live in creator/*.css under the exact names Tailwind emits
      (--text-sm, --tracking-tight, --radius-lg …), so those utilities pick up
      the system's values with no mapping at all. Only the steps Tailwind has no
      key for are restated here — keep them in step with 02-typography.css. */
-  --text-2xs: 0.6875rem; /* 11px · slate voice only */
+  --text-2xs: 0.6875rem; /* 11px · the label voice */
   --text-md: 1.0625rem; /* 17px · long-form body */
-  --tracking-slate: 0.14em; /* mono uppercase labels */
+  --tracking-label: 0.14em; /* Inter, small, uppercase — the label voice */
+  --tracking-slate: var(--tracking-label); /* the name the older markup uses */
+  --tracking-data: 0.05em; /* Inter, small, tabular — counts and timecodes */
 
   /* Component-level radius intents, so a corner is retuned in one place. */
   --radius-control: var(--radius-md);

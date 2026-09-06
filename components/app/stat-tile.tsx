@@ -18,7 +18,7 @@ export function StatTile({
 }) {
   return (
     <div className={cn('rounded-card border border-border bg-card p-5', className)}>
-      <p className="font-mono text-2xs uppercase tracking-slate text-subtle">{label}</p>
+      <p className="font-label text-2xs uppercase tracking-slate text-subtle">{label}</p>
       <p className="mt-2 font-display text-3xl font-bold tracking-tighter tabular-nums">
         {typeof value === 'number' ? value.toLocaleString() : value}
       </p>

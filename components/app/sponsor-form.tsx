@@ -191,7 +191,7 @@ export function SponsorForm({
         </div>
 
         <div className="mx-auto w-full max-w-[220px] space-y-1.5 sm:mx-0">
-          <p className="font-mono text-2xs uppercase tracking-slate text-subtle">Preview</p>
+          <p className="font-label text-2xs uppercase tracking-slate text-subtle">Preview</p>
           <AdCreativePreview
             headline={headline}
             imageUrl={imageUrl}

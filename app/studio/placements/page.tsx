@@ -56,10 +56,10 @@ export default async function PlacementsPage() {
               <section key={channel.key}>
                 <div className="mb-3 flex items-center gap-2">
                   <ChannelIcon name={channel.icon} className="size-4 text-signal" />
-                  <h2 className="font-mono text-2xs uppercase tracking-slate text-subtle">
+                  <h2 className="font-label text-2xs uppercase tracking-slate text-subtle">
                     {channel.label}
                   </h2>
-                  <span className="font-mono text-2xs tabular-nums text-faint">
+                  <span className="font-label text-2xs tracking-data tabular-nums text-faint">
                     {inChannel.length}
                   </span>
                 </div>
@@ -76,7 +76,7 @@ export default async function PlacementsPage() {
 
       {archived.length > 0 ? (
         <section className="mt-12 border-t border-line-subtle pt-8">
-          <h2 className="mb-3 font-mono text-2xs uppercase tracking-slate text-subtle">
+          <h2 className="mb-3 font-label text-2xs uppercase tracking-slate text-subtle">
             Archived
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">

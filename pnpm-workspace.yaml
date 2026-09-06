@@ -1,0 +1,15 @@
+# pnpm's settings file — NOT a monorepo declaration.
+#
+# There is no workspace here (no `packages:` key). Since pnpm 10 this is where
+# per-project pnpm settings live: `package.json`'s `pnpm.onlyBuiltDependencies`
+# is not read, and without this file every install fails with
+# ERR_PNPM_IGNORED_BUILDS. Deleting it as "monorepo leftover" is a mistake that
+# has already been made once.
+#
+# These four ship native binaries or codegen that must run at install time:
+# Tailwind's oxide engine, esbuild, sharp's image binary, core-js's postinstall.
+allowBuilds:
+  '@tailwindcss/oxide': true
+  esbuild: true
+  sharp: true
+  core-js: true

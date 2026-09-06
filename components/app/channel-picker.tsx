@@ -30,6 +30,9 @@ export function ChannelPicker({
 
   return (
     <div>
+      {/* A disabled radio submits nothing, and the server reads a missing channel
+          as invalid. Locked means unchanged, not absent — carry it explicitly. */}
+      {disabled ? <input type="hidden" name={name} value={selected} /> : null}
       <div className="grid gap-2 sm:grid-cols-2">
         {CHANNEL_LIST.map((c) => {
           const active = c.key === selected;
@@ -67,7 +70,7 @@ export function ChannelPicker({
         <div className="mt-3 rounded-control border border-line-subtle bg-sunken p-3">
           <p className="text-sm">{channel.placement}</p>
           <p className="mt-1.5 text-xs text-muted-foreground">{channel.unit}</p>
-          <p className="mt-2 font-mono text-2xs uppercase tracking-slate text-subtle">
+          <p className="mt-2 font-label text-2xs uppercase tracking-slate text-subtle">
             {channel.embeddable
               ? 'Serves through the widget · views and clicks counted'
               : 'Placed by hand · no automatic counting'}

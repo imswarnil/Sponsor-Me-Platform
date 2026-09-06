@@ -3,11 +3,11 @@ import { Slot as SlotPrimitive } from 'radix-ui';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
-/* A badge is a status, not a link. It speaks in the slate voice — mono,
-   uppercase, wide-tracked — so metadata never competes with content.
-   creator/2-elements/11-badge.css */
+/* A badge is a status, not a link. It speaks in the LABEL voice — Inter worn
+   small, uppercase and tracked open — so metadata never competes with content.
+   Not mono: the system reserves monospace for code. creator/22-code.css. */
 const badgeVariants = cva(
-  'inline-flex h-6 w-fit shrink-0 items-center gap-2 whitespace-nowrap rounded-pill border border-border bg-surface px-2 font-mono text-2xs font-medium uppercase tracking-slate text-muted-foreground transition-colors [&>svg]:size-3',
+  'inline-flex h-6 w-fit shrink-0 items-center gap-2 whitespace-nowrap rounded-pill border border-border bg-surface px-2 font-label text-2xs font-semibold uppercase tracking-slate text-muted-foreground transition-colors [&>svg]:size-3',
   {
     variants: {
       variant: {
@@ -39,13 +39,13 @@ function Badge({
   return <Comp data-slot="badge" className={cn(badgeVariants({ variant }), className)} {...props} />;
 }
 
-/** The line above a heading: a signal dot, then the slate voice. */
+/** The line above a heading: a signal dot, then the label voice. */
 function Eyebrow({ className, children, ...props }: React.ComponentProps<'p'>) {
   return (
     <p
       data-slot="eyebrow"
       className={cn(
-        'inline-flex items-center gap-2 font-mono text-xs font-medium uppercase tracking-slate text-subtle',
+        'inline-flex items-center gap-2 font-label text-xs font-semibold uppercase tracking-slate text-subtle',
         'before:size-1.5 before:shrink-0 before:rounded-full before:bg-pop before:content-[""]',
         className
       )}

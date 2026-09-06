@@ -39,7 +39,7 @@ pnpm install
 pnpm dev
 ```
 
-Open <http://localhost:3000>. That's it — the database is the hosted Supabase
+Open <http://localhost:3500>. That's it — the database is the hosted Supabase
 project, so there's nothing to start locally.
 
 Other commands you'll want occasionally:
@@ -83,11 +83,17 @@ shouldn't need to touch it.
 
 ## 4. First-time setup
 
-1. Start the app (§2).
-2. Go to <http://localhost:3000/login>, click **Sign up**.
-3. Register with **imswarnil@gmail.com** and a password of 8+ characters.
-4. You'll land on `/studio`. If you land on `/sponsor` instead, the email
+1. Set up the database and accounts once: `npm run db:setup`. That pushes the
+   schema, applies the `neon_auth` foreign key, and seeds two accounts.
+2. Start the app (§2).
+3. Go to <http://localhost:3500/login> and sign in as
+   **imswarnil@gmail.com** — the password is `ADMIN_PASSWORD` in `.env`.
+   You'll land on `/studio`. If you land on `/sponsor` instead, `CREATOR_EMAIL`
    didn't match — see §3.
+4. To see the sponsor side, click **Explore the demo account** on the same
+   page, or sign in as `demo@imswarnil.com` (`DEMO_PASSWORD` in `.env`).
+
+You can still sign up a fresh account instead; new ones start as sponsors.
 
 New accounts start with **1000 points**. Points are the stand-in for money
 while the flow is being proved out — nothing charges a card, anywhere. See §8.

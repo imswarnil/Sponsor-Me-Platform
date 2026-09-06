@@ -39,7 +39,7 @@ export function SlotAnalytics({ data }: { data: Point[] }) {
       <CardContent className="p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="font-mono text-2xs uppercase tracking-slate text-subtle">Last {n} days</p>
+            <p className="font-label text-2xs uppercase tracking-slate text-subtle">Last {n} days</p>
             <div className="mt-1.5 flex items-center gap-4 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
                 <span className="size-2 rounded-full" style={{ background: C_VIEWS }} /> Views {totalViews}
@@ -53,7 +53,7 @@ export function SlotAnalytics({ data }: { data: Point[] }) {
             <p className="font-display text-2xl font-bold tracking-tighter tabular-nums">
               {ctr.toFixed(1)}%
             </p>
-            <p className="font-mono text-2xs uppercase tracking-slate text-subtle">
+            <p className="font-label text-2xs uppercase tracking-slate text-subtle">
               Click-through rate
             </p>
           </div>

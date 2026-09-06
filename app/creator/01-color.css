@@ -1,397 +1,431 @@
 /* =============================================================================
-   01 · COLOUR
-   Tier 1 primitives (ramps) → Tier 2 semantic aliases (the only public names).
-   Components read aliases only. Never a ramp step, never a raw hex.
+   01 · COLOUR — the entire theming surface of the system
+
+   Two tiers, and the rule is absolute: A COMPONENT MAY ONLY READ TIER 2.
+   A component that reads --ink-700 has hard-coded an appearance and will be
+   wrong the moment the theme changes. A component that reads --fg-muted has
+   asked for a job, and the theme answers it.
+
+   ── ON HAVING A LOT OF COLOUR IN AN ALMOST-MONOCHROME SYSTEM ───────────────
+   Seven chromatic ramps sit in tier 1. That is not a contradiction of "almost
+   monochrome, so one colour can mean something", because tier 1 is a PALETTE
+   and tier 2 is the ARGUMENT. Only a handful of these hues are promoted to
+   semantics; the rest are there for the two jobs that genuinely need many
+   colours at once — data visualisation, and category coding — plus for you to
+   repoint --accent at with one line.
+
+   The restraint lives in tier 2. Widening tier 1 costs nothing and removes the
+   reason anyone would ever hard-code a hex.
+
+   ── WHY oklch() ───────────────────────────────────────────────────────────
+   Perceptual lightness. In hsl, two colours at the same stated lightness look
+   nothing alike — #0000ff and #ffff00 are both "50%" and one is nearly black
+   to the eye while the other is nearly white. So an hsl ramp has steps that
+   jump unevenly, and matching two hues at the same step is guesswork.
+
+   In oklch the first number IS perceived lightness, so ONE LIGHTNESS LADDER
+   IS SHARED BY EVERY RAMP BELOW. signal-500, mint-500 and iris-500 sit at the
+   same visual weight, which is what makes them safely interchangeable as an
+   accent and legible as a chart series. Chroma varies per hue because hues
+   peak at different saturations; lightness never does.
+
+   ── WHY light-dark() ──────────────────────────────────────────────────────
+   Every tier-2 token is declared ONCE with both themes on the same line. The
+   previous system hand-maintained a [data-theme='dark'] block and a
+   near-identical prefers-color-scheme copy, and the copy had already drifted —
+   missing --craft, the status tokens and --pattern-ink. Two places to edit
+   means one is always out of date. There is now one place.
+
+   Layer: tokens. Paints nothing; defines what exists.
    ========================================================================== */
 
-:root {
-	/* ── Tier 1 · INK ──────────────────────────────────────────────────────────
-	   A near-neutral grey with a whisper of blue in the shadows, so dark
-	   surfaces read as "unlit" rather than "muddy". 14 steps: the extra steps
-	   at each end exist for hairlines and for near-black video surfaces. */
-	--ink-0:    #fff;
-	--ink-25:   #fcfcfd;
-	--ink-50:   #f8f8fa;
-	--ink-100:  #f1f1f4;
-	--ink-200:  #e5e5ea;
-	--ink-300:  #d3d3db;
-	--ink-400:  #a5a5b2;
-	--ink-500:  #76768a;
-	--ink-600:  #55556a;
-	--ink-700:  #3c3c4e;
-	--ink-800:  #272734;
-	--ink-900:  #191922;
-	--ink-950:  #101017;
-	--ink-1000: #08080c;
+@layer tokens {
 
-	/* ── Tier 1 · SIGNAL ───────────────────────────────────────────────────────
-	   Vermilion, not fire-engine red — it holds up against black at full
-	   saturation and stays legible as small text on white at 600+. This is the
-	   record light. It is the only chromatic voice with authority. */
-	--signal-50:  #fff2ef;
-	--signal-100: #ffe1db;
-	--signal-200: #ffc4b8;
-	--signal-300: #ff9d89;
-	--signal-400: #fb7358;
-	--signal-500: #f04e2e;
-	--signal-600: #dc3514;
-	--signal-700: #b52810;
-	--signal-800: #8f2211;
-	--signal-900: #6f1f12;
-	--signal-950: #3d0d07;
+	/* ═══ TIER 1 · PRIMITIVES ═══════════════════════════════════════════════
+	   Positions on a ladder. They carry no meaning and NO COMPONENT MAY NAME
+	   ONE. Eleven steps per hue, on the shared lightness ladder:
 
-	/* ── Tier 1 · AMBER ────────────────────────────────────────────────────────
-	   The rationed one. Craft, warmth, "hand-made" — construction lines,
-	   viewfinder brackets, a single highlighted word. One per page, maximum. */
-	--amber-50:  #fdf8ed;
-	--amber-100: #f9ecce;
-	--amber-200: #f2d795;
-	--amber-300: #e8bd5c;
-	--amber-400: #d9a33a;
-	--amber-500: #c1872a;
-	--amber-600: #9d6a22;
-	--amber-700: #78501f;
-	--amber-800: #55391b;
-	--amber-900: #382512;
+	     50   97%   a wash — the faintest tint that still reads as coloured
+	     100  94%   a tint — status backgrounds in light mode
+	     200  89%   a soft fill
+	     300  82%   a border, or foreground text in dark mode
+	     400  74%   the light-mode hover step
+	     500  ~63%  THE STEP — the hue at full voice; fills and marks
+	     600  56%   the pressed step, and accent TEXT in light mode
+	     700  47%   readable text on a light background
+	     800  38%   deep fill
+	     900  29%   near-black tint of the hue
+	     950  22%   the floor
+	   ═══════════════════════════════════════════════════════════════════════ */
 
-	/* ── Tier 1 · STATUS HUES ──────────────────────────────────────────────────
-	   Deliberately distinct from signal: signal means "live", danger means
-	   "destructive". They must never be confusable at a glance. */
-	--mint-50:   #eafaf1;   /* success */
-	--mint-100:  #cbf2de;
-	--mint-500:  #16a06a;
-	--mint-600:  #0f8156;
-	--mint-700:  #0b6444;
+	:root {
+		/* ── Ink — the neutral the whole system is built on ─────────────────
+		   Fourteen steps, not eleven: neutrals need finer resolution than hues
+		   because almost every surface, border and text colour comes from here,
+		   and the difference between a hairline and a background is one step.
 
-	--azure-50:  #eaf3ff;   /* info */
-	--azure-100: #d3e6ff;
-	--azure-500: #2b7bef;
-	--azure-600: #1a61cc;
-	--azure-700: #164ea3;
+		   A little blue is held in the shadows (hue 275, chroma ≤ 0.02) so dark
+		   reads as UNLIT rather than muddy. A truly neutral grey looks dead. */
+		--ink-0:    oklch(99.2% 0.002 275);
+		--ink-25:   oklch(98.2% 0.003 275);
+		--ink-50:   oklch(96.6% 0.004 275);
+		--ink-100:  oklch(94.0% 0.005 275);
+		--ink-200:  oklch(89.0% 0.007 275);
+		--ink-300:  oklch(82.0% 0.009 275);
+		--ink-400:  oklch(71.0% 0.013 275);
+		--ink-500:  oklch(58.0% 0.018 275);
+		--ink-600:  oklch(48.0% 0.020 275);
+		--ink-700:  oklch(39.0% 0.020 275);
+		--ink-800:  oklch(30.5% 0.018 275);
+		--ink-900:  oklch(23.0% 0.016 275);
+		--ink-950:  oklch(17.5% 0.014 275);
+		--ink-1000: oklch(12.5% 0.012 275);
 
-	--rose-50:   #fdeef1;   /* danger */
-	--rose-100:  #fbd7de;
-	--rose-500:  #d92d4e;
-	--rose-600:  #b81f3d;
-	--rose-700:  #931832;
+		/* ── Signal · vermilion, hue 34 ────────────────────────────────────
+		   The record light. The only chromatic voice with authority in this
+		   system, which is exactly why it is rationed. */
+		--signal-50:  oklch(96.5% 0.020 34);
+		--signal-100: oklch(92.5% 0.042 34);
+		--signal-200: oklch(86.0% 0.078 34);
+		--signal-300: oklch(79.0% 0.118 34);
+		--signal-400: oklch(71.0% 0.158 34);
+		--signal-500: oklch(63.0% 0.190 34);
+		--signal-600: oklch(56.0% 0.180 34);
+		--signal-700: oklch(47.0% 0.155 34);
+		--signal-800: oklch(38.0% 0.125 34);
+		--signal-900: oklch(29.0% 0.095 34);
+		--signal-950: oklch(22.0% 0.070 34);
 
-	/* Fixed, theme-independent. Used for scrims and video letterboxing. */
-	--pure-black: #000;
-	--pure-white: #fff;
-}
+		/* ── Craft · amber, hue 78 ─────────────────────────────────────────
+		   Construction lines, brackets, one highlighted word. It means "in
+		   progress", never "live" — that distinction is the whole reason the
+		   system has a second chromatic voice at all. */
+		--craft-50:  oklch(97.0% 0.025 78);
+		--craft-100: oklch(94.0% 0.050 78);
+		--craft-200: oklch(89.0% 0.085 78);
+		--craft-300: oklch(82.0% 0.110 78);
+		--craft-400: oklch(74.0% 0.118 78);
+		--craft-500: oklch(66.0% 0.110 78);
+		--craft-600: oklch(58.0% 0.100 78);
+		--craft-700: oklch(48.0% 0.085 78);
+		--craft-800: oklch(38.0% 0.068 78);
+		--craft-900: oklch(29.0% 0.050 78);
+		--craft-950: oklch(22.0% 0.038 78);
 
-/* =============================================================================
-   Tier 2 · SEMANTIC ALIASES — LIGHT (the default)
-   ========================================================================== */
+		/* ── Mint · green, hue 155 · success ───────────────────────────────── */
+		--mint-50:  oklch(96.5% 0.022 155);
+		--mint-100: oklch(94.0% 0.045 155);
+		--mint-200: oklch(89.0% 0.075 155);
+		--mint-300: oklch(82.0% 0.105 155);
+		--mint-400: oklch(74.0% 0.125 155);
+		--mint-500: oklch(64.0% 0.130 155);
+		--mint-600: oklch(56.0% 0.118 155);
+		--mint-700: oklch(46.0% 0.100 155);
+		--mint-800: oklch(37.0% 0.080 155);
+		--mint-900: oklch(28.0% 0.062 155);
+		--mint-950: oklch(22.0% 0.046 155);
 
-:root,
-:root[data-theme='light'] {
-	color-scheme: light;
+		/* ── Azure · blue, hue 240 · info ──────────────────────────────────── */
+		--azure-50:  oklch(96.5% 0.018 240);
+		--azure-100: oklch(94.0% 0.035 240);
+		--azure-200: oklch(89.0% 0.060 240);
+		--azure-300: oklch(82.0% 0.090 240);
+		--azure-400: oklch(73.0% 0.125 240);
+		--azure-500: oklch(62.0% 0.145 240);
+		--azure-600: oklch(54.0% 0.150 240);
+		--azure-700: oklch(46.0% 0.130 240);
+		--azure-800: oklch(37.0% 0.105 240);
+		--azure-900: oklch(28.0% 0.080 240);
+		--azure-950: oklch(22.0% 0.060 240);
 
-	/* Surfaces — canvas is the page, surface is a card, raised is a popover.
-	   sunken is for wells (code blocks, inputs, table headers). */
-	--bg-canvas:      var(--ink-0);
-	--bg-surface:     var(--ink-0);
-	--bg-raised:      var(--ink-0);
-	--bg-sunken:      var(--ink-50);
-	--bg-muted:       var(--ink-100);
-	--bg-inverse:     var(--ink-950);
-	--bg-scrim:       rgb(8 8 12 / 0.55);
-	--bg-media:       var(--ink-900);   /* letterbox behind video/images */
+		/* ── Rose · red, hue 15 · danger ───────────────────────────────────
+		   Deliberately 19 degrees from signal. That is enough separation to
+		   read as a different colour side by side, and it is why a danger
+		   badge can never be mistaken for a live one. */
+		--rose-50:  oklch(96.5% 0.018 15);
+		--rose-100: oklch(94.0% 0.035 15);
+		--rose-200: oklch(89.0% 0.062 15);
+		--rose-300: oklch(82.0% 0.090 15);
+		--rose-400: oklch(72.0% 0.140 15);
+		--rose-500: oklch(60.0% 0.185 15);
+		--rose-600: oklch(53.0% 0.180 15);
+		--rose-700: oklch(45.0% 0.160 15);
+		--rose-800: oklch(36.0% 0.130 15);
+		--rose-900: oklch(28.0% 0.100 15);
+		--rose-950: oklch(22.0% 0.075 15);
 
-	/* Foreground */
-	--fg-default:     var(--ink-900);
-	--fg-muted:       var(--ink-600);
-	--fg-subtle:      var(--ink-500);
-	--fg-faint:       var(--ink-400);
-	--fg-on-inverse:  var(--ink-50);
-	--fg-on-accent:   var(--pure-white);
-	--fg-accent:      var(--signal-700);   /* accent text on light: 4.5:1+ */
-	--fg-link:        var(--fg-default);
-	--fg-link-hover:  var(--signal-700);
+		/* ── Iris · violet, hue 285 ────────────────────────────────────────
+		   No semantic job. Present for charts, category coding, and as an
+		   accent preset. */
+		--iris-50:  oklch(96.5% 0.020 285);
+		--iris-100: oklch(94.0% 0.038 285);
+		--iris-200: oklch(89.0% 0.068 285);
+		--iris-300: oklch(82.0% 0.100 285);
+		--iris-400: oklch(73.0% 0.140 285);
+		--iris-500: oklch(62.0% 0.170 285);
+		--iris-600: oklch(54.0% 0.175 285);
+		--iris-700: oklch(46.0% 0.155 285);
+		--iris-800: oklch(37.0% 0.125 285);
+		--iris-900: oklch(28.0% 0.095 285);
+		--iris-950: oklch(22.0% 0.072 285);
 
-	/* Lines — subtle for internal dividers, default for card edges,
-	   strong for anything that must survive a screenshot. */
-	--line-subtle:    var(--ink-100);
-	--line-default:   var(--ink-200);
-	--line-strong:    var(--ink-300);
-	--line-inverse:   rgb(255 255 255 / 0.14);
-	--line-accent:    var(--signal-500);
-
-	/* Accent — the record light */
-	--accent:         var(--signal-500);
-	--accent-hover:   var(--signal-600);
-	--accent-press:   var(--signal-700);
-	--accent-soft:    var(--signal-50);
-	--accent-soft-fg: var(--signal-700);
-	--accent-ring:    rgb(240 78 46 / 0.28);
-
-	/* Amber — rationed craft accent */
-	--craft:          var(--amber-400);
-	--craft-soft:     var(--amber-50);
-	--craft-fg:       var(--amber-700);
-
-	/* Status: -bg is the tint, -fg is text on that tint, -line is the edge. */
-	--success-bg:   var(--mint-50);
-	--success-fg:   var(--mint-700);
-	--success-line: var(--mint-500);
-	--warning-bg:   var(--amber-50);
-	--warning-fg:   var(--amber-700);
-	--warning-line: var(--amber-400);
-	--danger-bg:    var(--rose-50);
-	--danger-fg:    var(--rose-700);
-	--danger-line:  var(--rose-500);
-	--info-bg:      var(--azure-50);
-	--info-fg:      var(--azure-700);
-	--info-line:    var(--azure-500);
-
-	/* Interaction */
-	--focus-ring:     var(--accent);
-	--focus-ring-alt: var(--pure-white);   /* second halo, for dark backdrops */
-	--selection-bg:   var(--signal-100);
-	--selection-fg:   var(--ink-900);
-	--hover-wash:     rgb(8 8 12 / 0.035);
-	--press-wash:     rgb(8 8 12 / 0.07);
-
-	/* Pattern ink — background textures derive from this so a pattern never
-	   needs to know which theme it is on. */
-	--pattern-ink:    rgb(8 8 12 / 0.06);
-	--pattern-ink-2:  rgb(8 8 12 / 0.10);
-}
-
-/* =============================================================================
-   Tier 2 · SEMANTIC ALIASES — DARK
-   Not an inversion. Surfaces lift with light rather than drop shadows, the
-   accent steps down one so it doesn't bloom, hairlines become translucent
-   white so they survive over media.
-   ========================================================================== */
-
-:root[data-theme='dark'] {
-	color-scheme: dark;
-
-	--bg-canvas:      var(--ink-1000);
-	--bg-surface:     var(--ink-950);
-	--bg-raised:      var(--ink-900);
-	--bg-sunken:      #0c0c12;
-	--bg-muted:       var(--ink-800);
-	--bg-inverse:     var(--ink-50);
-	--bg-scrim:       rgb(0 0 0 / 0.68);
-	--bg-media:       var(--pure-black);
-
-	--fg-default:     var(--ink-50);
-	--fg-muted:       var(--ink-400);
-	--fg-subtle:      var(--ink-500);
-	--fg-faint:       var(--ink-600);
-	--fg-on-inverse:  var(--ink-900);
-	--fg-on-accent:   var(--pure-white);
-	--fg-accent:      var(--signal-400);
-	--fg-link:        var(--fg-default);
-	--fg-link-hover:  var(--signal-400);
-
-	--line-subtle:    rgb(255 255 255 / 0.07);
-	--line-default:   rgb(255 255 255 / 0.12);
-	--line-strong:    rgb(255 255 255 / 0.22);
-	--line-inverse:   rgb(8 8 12 / 0.14);
-	--line-accent:    var(--signal-500);
-
-	--accent:         var(--signal-500);
-	--accent-hover:   var(--signal-400);
-	--accent-press:   var(--signal-600);
-	--accent-soft:    rgb(240 78 46 / 0.15);
-	--accent-soft-fg: var(--signal-300);
-	--accent-ring:    rgb(240 78 46 / 0.40);
-
-	--craft:          var(--amber-300);
-	--craft-soft:     rgb(217 163 58 / 0.14);
-	--craft-fg:       var(--amber-200);
-
-	--success-bg:   rgb(22 160 106 / 0.16);
-	--success-fg:   #6ee7ad;
-	--success-line: var(--mint-500);
-	--warning-bg:   rgb(217 163 58 / 0.16);
-	--warning-fg:   var(--amber-200);
-	--warning-line: var(--amber-400);
-	--danger-bg:    rgb(217 45 78 / 0.18);
-	--danger-fg:    #ff8fa5;
-	--danger-line:  var(--rose-500);
-	--info-bg:      rgb(43 123 239 / 0.18);
-	--info-fg:      #93c2ff;
-	--info-line:    var(--azure-500);
-
-	--focus-ring:     var(--signal-400);
-	--focus-ring-alt: var(--ink-1000);
-	--selection-bg:   rgb(240 78 46 / 0.35);
-	--selection-fg:   var(--ink-0);
-	--hover-wash:     rgb(255 255 255 / 0.05);
-	--press-wash:     rgb(255 255 255 / 0.09);
-
-	--pattern-ink:    rgb(255 255 255 / 0.07);
-	--pattern-ink-2:  rgb(255 255 255 / 0.12);
-}
-
-/* No explicit choice → follow the OS. Written as a copy of the dark block's
-   selector so `data-theme` always wins over the media query. */
-@media (prefers-color-scheme: dark) {
-	:root:not([data-theme='light']) {
-		color-scheme: dark;
-
-		--bg-canvas:      var(--ink-1000);
-		--bg-surface:     var(--ink-950);
-		--bg-raised:      var(--ink-900);
-		--bg-sunken:      #0c0c12;
-		--bg-muted:       var(--ink-800);
-		--bg-inverse:     var(--ink-50);
-		--bg-scrim:       rgb(0 0 0 / 0.68);
-		--bg-media:       var(--pure-black);
-
-		--fg-default:     var(--ink-50);
-		--fg-muted:       var(--ink-400);
-		--fg-subtle:      var(--ink-500);
-		--fg-faint:       var(--ink-600);
-		--fg-on-inverse:  var(--ink-900);
-		--fg-accent:      var(--signal-400);
-		--fg-link-hover:  var(--signal-400);
-
-		--line-subtle:    rgb(255 255 255 / 0.07);
-		--line-default:   rgb(255 255 255 / 0.12);
-		--line-strong:    rgb(255 255 255 / 0.22);
-		--line-inverse:   rgb(8 8 12 / 0.14);
-
-		--accent-hover:   var(--signal-400);
-		--accent-press:   var(--signal-600);
-		--accent-soft:    rgb(240 78 46 / 0.15);
-		--accent-soft-fg: var(--signal-300);
-		--accent-ring:    rgb(240 78 46 / 0.40);
-
-		--craft:          var(--amber-300);
-		--craft-soft:     rgb(217 163 58 / 0.14);
-		--craft-fg:       var(--amber-200);
-
-		--success-bg:   rgb(22 160 106 / 0.16);
-		--success-fg:   #6ee7ad;
-		--warning-bg:   rgb(217 163 58 / 0.16);
-		--warning-fg:   var(--amber-200);
-		--danger-bg:    rgb(217 45 78 / 0.18);
-		--danger-fg:    #ff8fa5;
-		--info-bg:      rgb(43 123 239 / 0.18);
-		--info-fg:      #93c2ff;
-
-		--focus-ring:     var(--signal-400);
-		--focus-ring-alt: var(--ink-1000);
-		--selection-bg:   rgb(240 78 46 / 0.35);
-		--selection-fg:   var(--ink-0);
-		--hover-wash:     rgb(255 255 255 / 0.05);
-		--press-wash:     rgb(255 255 255 / 0.09);
-
-		--pattern-ink:    rgb(255 255 255 / 0.07);
-		--pattern-ink-2:  rgb(255 255 255 / 0.12);
+		/* ── Teal · hue 195 ────────────────────────────────────────────────── */
+		--teal-50:  oklch(96.5% 0.020 195);
+		--teal-100: oklch(94.0% 0.038 195);
+		--teal-200: oklch(89.0% 0.062 195);
+		--teal-300: oklch(82.0% 0.085 195);
+		--teal-400: oklch(74.0% 0.100 195);
+		--teal-500: oklch(65.0% 0.105 195);
+		--teal-600: oklch(56.0% 0.100 195);
+		--teal-700: oklch(47.0% 0.085 195);
+		--teal-800: oklch(38.0% 0.070 195);
+		--teal-900: oklch(29.0% 0.052 195);
+		--teal-950: oklch(22.0% 0.040 195);
 	}
-}
 
-/* =============================================================================
-   COLOUR · THE MATHS
-   Why the ramps look the way they do, expressed as tokens rather than prose,
-   so the next colour anyone adds is built the same way.
-   ========================================================================== */
 
-:root {
-	/* ── Lightness ladder ────────────────────────────────────────────────────
-	   Every ramp follows the same perceived-lightness curve. The steps are
-	   NOT linear: the eye separates light values much better than dark ones,
-	   so the top of the ramp is finely sliced and the bottom is coarse.
-	   These are the L* targets each step was tuned to. */
-	--L-50: 97%;  --L-100: 94%; --L-200: 89%; --L-300: 81%;
-	--L-400: 68%; --L-500: 56%; --L-600: 46%; --L-700: 37%;
-	--L-800: 28%; --L-900: 19%; --L-950: 11%;
+	/* ═══ TIER 2 · SEMANTICS — THE ONLY PUBLIC NAMES ════════════════════════
+	   Each says what a value is FOR. Both themes on one line, so they cannot
+	   drift apart.
+	   ═══════════════════════════════════════════════════════════════════════ */
 
-	/* ── Contrast targets (WCAG 2.2) ─────────────────────────────────────────
-	   body text        ≥ 4.5:1     AA
-	   large text ≥24px ≥ 3:1       AA
-	   UI & focus rings ≥ 3:1       AA non-text
-	   aiming for       ≥ 7:1       AAA on long-form prose
-	   Verified pairs, both themes:
-	     --fg-default on --bg-canvas   light 15.8:1   dark 16.4:1
-	     --fg-muted   on --bg-canvas   light  7.4:1   dark  7.1:1
-	     --fg-subtle  on --bg-canvas   light  4.9:1   dark  4.6:1
-	     --fg-accent  on --bg-canvas   light  5.6:1   dark  5.1:1
-	     --fg-on-accent on --accent    light  4.6:1   dark  4.6:1
-	   --fg-faint is decorative only: it is BELOW 4.5:1 by design and must
-	   never carry information. */
-	--contrast-body: 4.5;
-	--contrast-large: 3;
-	--contrast-ui: 3;
+	:root {
+		color-scheme: light dark;
 
-	/* ── Hue relationships ───────────────────────────────────────────────────
-	   The palette is a split-complementary built off the signal hue, which is
-	   why it never fights itself:
-	     signal   14°   the accent            (vermilion)
-	     craft    42°   +28°  analogous       (amber)
-	     info    216°   −158° complement-ish  (azure)
-	     success 158°   +144°                 (mint)
-	     danger  348°   −26°  近-signal, so it is deliberately DESATURATED
-	                          and darker, or the two would be confusable.
-	   Ink carries 258° at 4-8% saturation — a cold shadow under a warm accent,
-	   which is what makes the greys look intentional rather than muddy. */
-	--hue-signal: 14;
-	--hue-craft: 42;
-	--hue-info: 216;
-	--hue-success: 158;
-	--hue-danger: 348;
-	--hue-ink: 258;
+		/* ── Surface ───────────────────────────────────────────────────────
+		   Seven depths. In light they descend from paper; in dark they ASCEND
+		   from black, because depth in dark is light rather than shadow. */
+		--bg-canvas:  light-dark(var(--ink-0),   var(--ink-1000));
+		--bg-surface: light-dark(var(--ink-0),   var(--ink-950));
+		--bg-raised:  light-dark(var(--ink-0),   var(--ink-900));
+		--bg-overlay: light-dark(var(--ink-0),   var(--ink-800));
+		--bg-sunken:  light-dark(var(--ink-50),  var(--ink-1000));
+		--bg-muted:   light-dark(var(--ink-100), var(--ink-900));
+		--bg-inverse: light-dark(var(--ink-950), var(--ink-50));
+		--bg-media:   light-dark(var(--ink-100), var(--ink-900));
+		--bg-scrim:   light-dark(oklch(12.5% 0.012 275 / 0.5), oklch(12.5% 0.012 275 / 0.7));
 
-	/* ── Alpha ladder ────────────────────────────────────────────────────────
-	   Overlays, washes, and hairlines all come from these five values. A
-	   one-off alpha in a component is a bug. */
-	--alpha-hairline: 0.07;
-	--alpha-wash: 0.12;
-	--alpha-veil: 0.24;
-	--alpha-scrim: 0.55;
-	--alpha-solid: 0.88;
+		/* ── Foreground ────────────────────────────────────────────────────
+		   A five-step ladder, strongest first. If you need a sixth you are
+		   ranking things the layout should be ranking. */
+		--fg-default:    light-dark(var(--ink-900), var(--ink-50));
+		--fg-muted:      light-dark(var(--ink-700), var(--ink-300));
+		--fg-subtle:     light-dark(var(--ink-600), var(--ink-400));
+		--fg-faint:      light-dark(var(--ink-500), var(--ink-500));
+		--fg-disabled:   light-dark(var(--ink-400), var(--ink-600));
+		--fg-on-inverse: light-dark(var(--ink-50),  var(--ink-900));
+		--fg-on-accent:  var(--ink-0);
 
-	/* ── Elevation-by-light ──────────────────────────────────────────────────
-	   In dark mode a raised surface gets LIGHTER rather than casting a shadow.
-	   These are the exact overlay percentages, matching the surface tokens. */
-	--lift-1: 4%;
-	--lift-2: 7%;
-	--lift-3: 11%;
-	--lift-4: 16%;
-}
+		/* Accent TEXT steps down one in dark. A 500 vermilion on near-black
+		   blooms and smears at text sizes; 400 reads clean. Fills stay at 500,
+		   because a large area does not bloom the same way. */
+		--fg-accent:     light-dark(var(--signal-600), var(--signal-400));
+		--fg-link:       light-dark(var(--signal-700), var(--signal-300));
+		--fg-link-hover: light-dark(var(--signal-800), var(--signal-200));
 
-/* Derived helpers. color-mix keeps the maths in CSS rather than in a build
-   step, so a token change propagates everywhere immediately. */
+		/* ── Line ──────────────────────────────────────────────────────────
+		   Hairlines go TRANSLUCENT in dark rather than becoming a grey step,
+		   so they survive over an image instead of vanishing into it. */
+		--line-subtle:  light-dark(var(--ink-100), oklch(100% 0 0 / 0.07));
+		--line-default: light-dark(var(--ink-200), oklch(100% 0 0 / 0.12));
+		--line-strong:  light-dark(var(--ink-300), oklch(100% 0 0 / 0.22));
+		--line-inverse: light-dark(oklch(100% 0 0 / 0.16), var(--ink-200));
+		--line-accent:  var(--accent);
 
-.tint-accent-8  { background: color-mix(in srgb, var(--accent) 8%, var(--bg-surface)); }
-.tint-accent-16 { background: color-mix(in srgb, var(--accent) 16%, var(--bg-surface)); }
-.tint-craft-12  { background: color-mix(in srgb, var(--craft) 12%, var(--bg-surface)); }
+		/* ── Accent — six tones, one hue ───────────────────────────────────
+		   Everything downstream reads these six names, which is why swapping
+		   the hue below rebrands the entire system. */
+		--accent:         var(--signal-500);
+		--accent-hover:   light-dark(var(--signal-600), var(--signal-400));
+		--accent-press:   light-dark(var(--signal-700), var(--signal-300));
+		--accent-soft:    light-dark(var(--signal-50),  oklch(63% 0.19 34 / 0.16));
+		--accent-soft-fg: light-dark(var(--signal-700), var(--signal-200));
+		--accent-ring:    oklch(63% 0.19 34 / 0.45);
 
-/* A surface that lifts with light instead of shadow — the dark-mode idiom,
-   usable in both themes. */
-.lift-1 { background: color-mix(in srgb, var(--fg-default) var(--lift-1), var(--bg-surface)); }
-.lift-2 { background: color-mix(in srgb, var(--fg-default) var(--lift-2), var(--bg-surface)); }
-.lift-3 { background: color-mix(in srgb, var(--fg-default) var(--lift-3), var(--bg-surface)); }
+		/* ── Craft — the quieter second voice ──────────────────────────────── */
+		--craft:      light-dark(var(--craft-600), var(--craft-400));
+		--craft-soft: light-dark(var(--craft-50),  oklch(66% 0.11 78 / 0.16));
+		--craft-fg:   light-dark(var(--craft-800), var(--craft-200));
 
-/* An inverse island inside a light page (and vice versa): flip the aliases on
-   a subtree without touching the document theme. Used by the CTA block, the
-   series nav and the lower-third. */
-[data-surface='inverse'] {
-	--bg-canvas:    var(--ink-950);
-	--bg-surface:   var(--ink-950);
-	--bg-raised:    var(--ink-900);
-	--bg-sunken:    var(--ink-1000);
-	--bg-muted:     var(--ink-800);
-	--fg-default:   var(--ink-50);
-	--fg-muted:     var(--ink-400);
-	--fg-subtle:    var(--ink-500);
-	--line-subtle:  rgb(255 255 255 / 0.07);
-	--line-default: rgb(255 255 255 / 0.12);
-	--line-strong:  rgb(255 255 255 / 0.22);
-	--fg-accent:    var(--signal-400);
-	--accent-soft:  rgb(240 78 46 / 0.15);
-	--hover-wash:   rgb(255 255 255 / 0.05);
-	--pattern-ink:  rgb(255 255 255 / 0.07);
-	--pattern-ink-2: rgb(255 255 255 / 0.12);
+		/* ── Status — four tones each ──────────────────────────────────────
+		   bg (a wash), fg (readable text), line (a border), solid (a filled
+		   background with --fg-on-accent on top). In dark the wash is an ALPHA
+		   of the hue rather than the 100 step, which would glow. */
+		--success-bg:    light-dark(var(--mint-100),  oklch(64% 0.13 155 / 0.16));
+		--success-fg:    light-dark(var(--mint-700),  var(--mint-300));
+		--success-line:  light-dark(var(--mint-300),  oklch(64% 0.13 155 / 0.35));
+		--success-solid: light-dark(var(--mint-600),  var(--mint-500));
 
-	background: var(--bg-surface);
-	color: var(--fg-default);
-	color-scheme: dark;
+		--info-bg:    light-dark(var(--azure-100), oklch(62% 0.145 240 / 0.16));
+		--info-fg:    light-dark(var(--azure-700), var(--azure-300));
+		--info-line:  light-dark(var(--azure-300), oklch(62% 0.145 240 / 0.35));
+		--info-solid: light-dark(var(--azure-600), var(--azure-500));
+
+		--warning-bg:    light-dark(var(--craft-100), oklch(66% 0.11 78 / 0.16));
+		--warning-fg:    light-dark(var(--craft-800), var(--craft-300));
+		--warning-line:  light-dark(var(--craft-300), oklch(66% 0.11 78 / 0.35));
+		--warning-solid: light-dark(var(--craft-600), var(--craft-500));
+
+		--danger-bg:    light-dark(var(--rose-100), oklch(60% 0.185 15 / 0.16));
+		--danger-fg:    light-dark(var(--rose-700), var(--rose-300));
+		--danger-line:  light-dark(var(--rose-300), oklch(60% 0.185 15 / 0.35));
+		--danger-solid: light-dark(var(--rose-600), var(--rose-500));
+
+		/* ── Interaction ───────────────────────────────────────────────────
+		   Washes rather than named greys, so they TINT whatever surface they
+		   land on instead of flattening it to one colour. */
+		--hover-wash:   light-dark(oklch(12.5% 0.012 275 / 0.04), oklch(100% 0 0 / 0.06));
+		--press-wash:   light-dark(oklch(12.5% 0.012 275 / 0.08), oklch(100% 0 0 / 0.10));
+		--selection-bg: light-dark(var(--signal-100), oklch(63% 0.19 34 / 0.3));
+		--selection-fg: light-dark(var(--signal-900), var(--ink-0));
+
+		/* ── Absolutes ─────────────────────────────────────────────────────
+		   The two colours that do NOT flip with the theme: text over a photo
+		   or a video scrim is white in both, and a scrim is black in both.
+		   Theme-independent by definition, so they are not light-dark(). */
+		--pure-black: #000;
+		--pure-white: #fff;
+
+		/* ── Chart series ──────────────────────────────────────────────────
+		   Six hues at one lightness, so no series looks louder than another
+		   just because of its colour — which is the most common way a chart
+		   lies. Ordered so adjacent pairs stay distinguishable for the most
+		   common colour-vision deficiencies. */
+		--chart-1: var(--signal-500);
+		--chart-2: var(--azure-500);
+		--chart-3: var(--craft-500);
+		--chart-4: var(--iris-500);
+		--chart-5: var(--teal-500);
+		--chart-6: var(--mint-500);
+
+		/* ── Pattern ink ───────────────────────────────────────────────────
+		   Every texture in 07-pattern derives from these, which is how a
+		   pattern never needs to know which theme it is in. */
+		--pattern-ink:   light-dark(oklch(12.5% 0.012 275 / 0.07), oklch(100% 0 0 / 0.07));
+		--pattern-ink-2: light-dark(oklch(12.5% 0.012 275 / 0.14), oklch(100% 0 0 / 0.14));
+
+		/* Photos are lit for white pages. Dim them a touch in dark so they do
+		   not glare out of the surface they sit on. */
+		--img-dim: light-dark(none, brightness(0.88));
+	}
+
+	/* An explicit choice pins color-scheme, so light-dark() resolves to the
+	   chosen theme rather than the OS preference. Two lines, and the whole
+	   token set above follows. */
+	:root[data-theme='light'] { color-scheme: light; }
+	:root[data-theme='dark']  { color-scheme: dark; }
+
+
+	/* ═══ ACCENT PRESETS ════════════════════════════════════════════════════
+	   The rebrand, as one attribute:
+
+	       <html data-accent="azure">
+
+	   The selector is [data-accent], NOT :root[data-accent], so a preset also
+	   works on any container — one section of a page in a different accent,
+	   a tenant-themed panel, a comparison strip. Custom properties inherit, so
+	   scoping one to a subtree is free; restricting it to :root would have
+	   thrown that away for nothing.
+
+	   Six lines each, because the accent is six tones and every one of them
+	   has to move together — a preset that changed --accent but not
+	   --accent-soft would leave soft badges in the old hue.
+
+	   This is also the proof that tier 2 works. Nothing below knows a
+	   component exists, and no component knows a preset exists.
+	   ═══════════════════════════════════════════════════════════════════════ */
+
+	[data-accent='azure'] {
+		--accent:         var(--azure-500);
+		--accent-hover:   light-dark(var(--azure-600), var(--azure-400));
+		--accent-press:   light-dark(var(--azure-700), var(--azure-300));
+		--accent-soft:    light-dark(var(--azure-50),  oklch(62% 0.145 240 / 0.16));
+		--accent-soft-fg: light-dark(var(--azure-700), var(--azure-200));
+		--accent-ring:    oklch(62% 0.145 240 / 0.45);
+		--fg-accent:      light-dark(var(--azure-600), var(--azure-400));
+		--fg-link:        light-dark(var(--azure-700), var(--azure-300));
+		--fg-link-hover:  light-dark(var(--azure-800), var(--azure-200));
+	}
+
+	[data-accent='iris'] {
+		--accent:         var(--iris-500);
+		--accent-hover:   light-dark(var(--iris-600), var(--iris-400));
+		--accent-press:   light-dark(var(--iris-700), var(--iris-300));
+		--accent-soft:    light-dark(var(--iris-50),  oklch(62% 0.17 285 / 0.16));
+		--accent-soft-fg: light-dark(var(--iris-700), var(--iris-200));
+		--accent-ring:    oklch(62% 0.17 285 / 0.45);
+		--fg-accent:      light-dark(var(--iris-600), var(--iris-400));
+		--fg-link:        light-dark(var(--iris-700), var(--iris-300));
+		--fg-link-hover:  light-dark(var(--iris-800), var(--iris-200));
+	}
+
+	[data-accent='teal'] {
+		--accent:         var(--teal-500);
+		--accent-hover:   light-dark(var(--teal-600), var(--teal-400));
+		--accent-press:   light-dark(var(--teal-700), var(--teal-300));
+		--accent-soft:    light-dark(var(--teal-50),  oklch(65% 0.105 195 / 0.16));
+		--accent-soft-fg: light-dark(var(--teal-700), var(--teal-200));
+		--accent-ring:    oklch(65% 0.105 195 / 0.45);
+		--fg-accent:      light-dark(var(--teal-600), var(--teal-400));
+		--fg-link:        light-dark(var(--teal-700), var(--teal-300));
+		--fg-link-hover:  light-dark(var(--teal-800), var(--teal-200));
+	}
+
+	[data-accent='mint'] {
+		--accent:         var(--mint-500);
+		--accent-hover:   light-dark(var(--mint-600), var(--mint-400));
+		--accent-press:   light-dark(var(--mint-700), var(--mint-300));
+		--accent-soft:    light-dark(var(--mint-50),  oklch(64% 0.13 155 / 0.16));
+		--accent-soft-fg: light-dark(var(--mint-700), var(--mint-200));
+		--accent-ring:    oklch(64% 0.13 155 / 0.45);
+		--fg-accent:      light-dark(var(--mint-700), var(--mint-400));
+		--fg-link:        light-dark(var(--mint-700), var(--mint-300));
+		--fg-link-hover:  light-dark(var(--mint-800), var(--mint-200));
+	}
+
+	[data-accent='craft'] {
+		--accent:         var(--craft-500);
+		--accent-hover:   light-dark(var(--craft-600), var(--craft-400));
+		--accent-press:   light-dark(var(--craft-700), var(--craft-300));
+		--accent-soft:    light-dark(var(--craft-50),  oklch(66% 0.11 78 / 0.16));
+		--accent-soft-fg: light-dark(var(--craft-800), var(--craft-200));
+		--accent-ring:    oklch(66% 0.11 78 / 0.45);
+		--fg-accent:      light-dark(var(--craft-700), var(--craft-400));
+		--fg-link:        light-dark(var(--craft-800), var(--craft-300));
+		--fg-link-hover:  light-dark(var(--craft-900), var(--craft-200));
+	}
+
+	[data-accent='rose'] {
+		--accent:         var(--rose-500);
+		--accent-hover:   light-dark(var(--rose-600), var(--rose-400));
+		--accent-press:   light-dark(var(--rose-700), var(--rose-300));
+		--accent-soft:    light-dark(var(--rose-50),  oklch(60% 0.185 15 / 0.16));
+		--accent-soft-fg: light-dark(var(--rose-700), var(--rose-200));
+		--accent-ring:    oklch(60% 0.185 15 / 0.45);
+		--fg-accent:      light-dark(var(--rose-600), var(--rose-400));
+		--fg-link:        light-dark(var(--rose-700), var(--rose-300));
+		--fg-link-hover:  light-dark(var(--rose-800), var(--rose-200));
+	}
+
+
+	/* ── Global element colour ──────────────────────────────────────────── */
+
+	::selection {
+		background: var(--selection-bg);
+		color: var(--selection-fg);
+	}
+
+	img,
+	video { filter: var(--img-dim); }
+
+	/* Windows high-contrast mode replaces colour entirely. Opt into the system
+	   keywords rather than fighting it. */
+	@media (forced-colors: active) {
+		:root {
+			--accent: Highlight;
+			--fg-default: CanvasText;
+			--bg-canvas: Canvas;
+			--line-default: CanvasText;
+		}
+	}
 }

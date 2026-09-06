@@ -65,7 +65,7 @@ export default async function SponsorOverviewPage({
       </StatRow>
 
       <section className="mt-10">
-        <h2 className="mb-3 font-mono text-2xs uppercase tracking-slate text-subtle">
+        <h2 className="mb-3 font-label text-2xs uppercase tracking-slate text-subtle">
           Running now
         </h2>
 
@@ -100,7 +100,7 @@ export default async function SponsorOverviewPage({
                     </div>
 
                     <div className="mt-4 rounded-control border border-line-subtle bg-sunken p-4">
-                      <p className="font-mono text-2xs uppercase tracking-slate text-subtle">
+                      <p className="font-label text-2xs uppercase tracking-slate text-subtle">
                         Your creative
                       </p>
                       <p className="mt-1.5 text-sm font-medium">{slot.adHeadline}</p>

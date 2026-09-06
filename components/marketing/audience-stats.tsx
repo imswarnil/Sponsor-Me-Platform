@@ -35,7 +35,7 @@ export async function AudienceStats() {
             >
               {t.value}
             </p>
-            <p className="mt-1 font-mono text-2xs uppercase tracking-slate text-subtle">
+            <p className="mt-1 font-label text-2xs uppercase tracking-slate text-subtle">
               {t.label}
             </p>
           </CardContent>

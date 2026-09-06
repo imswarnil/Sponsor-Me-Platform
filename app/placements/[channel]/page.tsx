@@ -90,7 +90,7 @@ export default async function ChannelPlacementsPage({
         </section>
 
         <section className="mt-16">
-          <h2 className="font-mono text-2xs uppercase tracking-slate text-subtle">Open now</h2>
+          <h2 className="font-label text-2xs uppercase tracking-slate text-subtle">Open now</h2>
           {openHere.length === 0 ? (
             <Card className="mt-4">
               <CardContent className="p-10 text-center text-sm text-muted-foreground">
@@ -114,7 +114,7 @@ export default async function ChannelPlacementsPage({
 
         {sponsoredHere.length > 0 ? (
           <section className="mt-16">
-            <h2 className="font-mono text-2xs uppercase tracking-slate text-subtle">
+            <h2 className="font-label text-2xs uppercase tracking-slate text-subtle">
               Currently sponsored
             </h2>
             <SlotGrid

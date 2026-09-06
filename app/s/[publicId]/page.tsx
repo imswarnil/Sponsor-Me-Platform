@@ -4,7 +4,8 @@ import { CalendarClock, Coins, Eye, MousePointerClick } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { BackToSite } from '@/components/back-to-site';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { SponsorForm } from '@/components/app/sponsor-form';
+import { OfferForm } from '@/components/app/offer-form';
+import { countPendingOffers } from '@/lib/proto/offer-queries';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -44,10 +45,13 @@ export default async function SponsorPage({
   const slot = await getSlotByPublicId(publicId);
   if (!slot || slot.archived) notFound();
 
-  const [owner, stats, me] = await Promise.all([
+  const [owner, stats, me, pendingOffers] = await Promise.all([
     getUserById(slot.ownerId),
     getSlotStats(slot.id),
-    getCurrentUser()
+    getCurrentUser(),
+    // Shown publicly: knowing two people are already bidding is the single most
+    // useful thing a visitor can learn before naming a number.
+    countPendingOffers(slot.id)
   ]);
 
   const isOwner = me?.id === slot.ownerId;
@@ -90,7 +94,7 @@ export default async function SponsorPage({
                   style={{ aspectRatio: `${slot.width}/${slot.height}` }}
                 />
               </div>
-              <div className="flex items-center justify-center gap-4 font-mono text-2xs uppercase tracking-slate text-subtle">
+              <div className="flex items-center justify-center gap-4 font-label text-2xs uppercase tracking-slate text-subtle">
                 <span className="inline-flex items-center gap-1.5">
                   <Eye className="size-3" /> {stats.view.toLocaleString()} views
                 </span>
@@ -107,7 +111,7 @@ export default async function SponsorPage({
                 </span>
                 <p className="mt-4 font-display font-semibold tracking-tight">{channel.label}</p>
                 <p className="mt-1.5 text-sm text-muted-foreground">{channel.placement}</p>
-                <p className="mt-3 font-mono text-2xs uppercase tracking-slate text-subtle">
+                <p className="mt-3 font-label text-2xs uppercase tracking-slate text-subtle">
                   Placed by hand · no automatic counting
                 </p>
               </CardContent>
@@ -146,7 +150,7 @@ export default async function SponsorPage({
             </p>
           ) : null}
           {slot.discountThresholdDays && slot.discountPercent ? (
-            <p className="mt-2 font-mono text-2xs uppercase tracking-slate text-signal">
+            <p className="mt-2 font-label text-2xs uppercase tracking-slate text-signal">
               {slot.discountPercent}% off when you book {slot.discountThresholdDays}+ days
             </p>
           ) : null}
@@ -156,7 +160,7 @@ export default async function SponsorPage({
             <span className="font-display text-lg font-bold tabular-nums">
               {slot.pricePoints} points
             </span>
-            <span className="font-mono text-2xs uppercase tracking-slate text-subtle">/ week</span>
+            <span className="font-label text-2xs uppercase tracking-slate text-subtle">/ week</span>
           </div>
 
           {ok ? (
@@ -194,13 +198,6 @@ export default async function SponsorPage({
                 ) : null}
               </CardContent>
             </Card>
-          ) : !me ? (
-            <Card className="mt-6">
-              <CardContent className="flex flex-col items-start gap-3 p-5">
-                <p className="text-sm text-muted-foreground">Log in to advertise here with points.</p>
-                <Button asChild><Link href={`/login?next=/s/${publicId}`}>Log in to advertise</Link></Button>
-              </CardContent>
-            </Card>
           ) : isOwner ? (
             <Card className="mt-6">
               <CardContent className="flex flex-col items-start gap-3 p-5">
@@ -215,17 +212,19 @@ export default async function SponsorPage({
           ) : (
             <Card className="mt-6">
               <CardContent className="p-5">
-                <p className="mb-4 text-sm font-medium">Advertise here</p>
-                <SponsorForm
+                <div className="mb-4 flex items-baseline justify-between gap-3">
+                  <p className="text-sm font-medium">Make an offer</p>
+                  {pendingOffers > 0 ? (
+                    <span className="font-label text-2xs uppercase tracking-slate text-subtle">
+                      {pendingOffers} {pendingOffers === 1 ? 'offer' : 'offers'} in
+                    </span>
+                  ) : null}
+                </div>
+                <OfferForm
                   publicId={slot.publicId}
-                  channel={channel.key}
                   pricePerWeek={slot.pricePoints}
-                  myPoints={me.points}
-                  ownerName={owner?.name ?? site.creator}
-                  width={slot.width}
-                  height={slot.height}
-                  discountThresholdDays={slot.discountThresholdDays}
-                  discountPercent={slot.discountPercent}
+                  signedIn={Boolean(me)}
+                  myPoints={me?.points}
                 />
               </CardContent>
             </Card>

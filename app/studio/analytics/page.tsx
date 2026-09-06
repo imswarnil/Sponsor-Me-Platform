@@ -79,7 +79,7 @@ export default async function AnalyticsPage() {
           </div>
 
           <section className="mt-10">
-            <h2 className="mb-3 font-mono text-2xs uppercase tracking-slate text-subtle">
+            <h2 className="mb-3 font-label text-2xs uppercase tracking-slate text-subtle">
               By placement
             </h2>
             <Card>
@@ -87,16 +87,16 @@ export default async function AnalyticsPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-line-subtle text-left">
-                      <th className="px-5 py-3 font-mono text-2xs uppercase tracking-slate text-subtle">
+                      <th className="px-5 py-3 font-label text-2xs uppercase tracking-slate text-subtle">
                         Placement
                       </th>
-                      <th className="px-5 py-3 text-right font-mono text-2xs uppercase tracking-slate text-subtle">
+                      <th className="px-5 py-3 text-right font-label text-2xs uppercase tracking-slate text-subtle">
                         Views
                       </th>
-                      <th className="px-5 py-3 text-right font-mono text-2xs uppercase tracking-slate text-subtle">
+                      <th className="px-5 py-3 text-right font-label text-2xs uppercase tracking-slate text-subtle">
                         Clicks
                       </th>
-                      <th className="px-5 py-3 text-right font-mono text-2xs uppercase tracking-slate text-subtle">
+                      <th className="px-5 py-3 text-right font-label text-2xs uppercase tracking-slate text-subtle">
                         CTR
                       </th>
                     </tr>

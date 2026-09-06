@@ -28,7 +28,7 @@ export function PlacementCard({ slot, stats }: { slot: Slot; stats?: Totals }) {
             >
               {slot.name}
             </Link>
-            <p className="mt-1 font-mono text-2xs uppercase tracking-slate text-subtle">
+            <p className="mt-1 font-label text-2xs uppercase tracking-slate text-subtle">
               {slot.publicId}
             </p>
           </div>
@@ -43,7 +43,7 @@ export function PlacementCard({ slot, stats }: { slot: Slot; stats?: Totals }) {
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <ChannelBadge placement={slot.placement} />
-          <span className="font-mono text-2xs uppercase tracking-slate text-subtle">
+          <span className="font-label text-2xs uppercase tracking-slate text-subtle">
             {slot.pricePoints} pts / wk
           </span>
         </div>
@@ -64,7 +64,7 @@ export function PlacementCard({ slot, stats }: { slot: Slot; stats?: Totals }) {
         )}
 
         {slot.status === 'sponsored' && validity ? (
-          <p className="mt-3 font-mono text-2xs uppercase tracking-slate text-signal">{validity}</p>
+          <p className="mt-3 font-label text-2xs uppercase tracking-slate text-signal">{validity}</p>
         ) : null}
       </CardContent>
     </Card>

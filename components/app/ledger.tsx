@@ -42,7 +42,7 @@ export function Ledger({ rows, empty }: { rows: LedgerRow[]; empty: string }) {
                     <p className="truncate text-sm font-medium">
                       {r.subject ?? (r.earned ? 'Payment received' : 'Payment sent')}
                     </p>
-                    <p className="truncate font-mono text-2xs uppercase tracking-slate text-subtle">
+                    <p className="truncate font-label text-2xs uppercase tracking-slate text-subtle">
                       {r.earned ? 'from' : 'to'} {r.counterparty} ·{' '}
                       {new Date(r.at).toLocaleDateString(undefined, {
                         day: 'numeric',

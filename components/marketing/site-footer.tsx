@@ -15,13 +15,13 @@ export function SiteFooter() {
         <div className="space-y-4">
           <Logo />
           <p className="max-w-ui text-sm text-muted-foreground">{site.description}</p>
-          <p className="flex items-center gap-2 font-mono text-2xs uppercase tracking-slate text-subtle">
+          <p className="flex items-center gap-2 font-label text-2xs uppercase tracking-slate text-subtle">
             The work of <SwarnilWordmark size="xs" />
           </p>
         </div>
 
         <div className="space-y-3">
-          <p className="font-mono text-2xs uppercase tracking-slate text-subtle">Advertise</p>
+          <p className="font-label text-2xs uppercase tracking-slate text-subtle">Advertise</p>
           <ul className="space-y-2 text-sm">
             <li>
               <Link
@@ -51,7 +51,7 @@ export function SiteFooter() {
         </div>
 
         <div className="space-y-3">
-          <p className="font-mono text-2xs uppercase tracking-slate text-subtle">Elsewhere</p>
+          <p className="font-label text-2xs uppercase tracking-slate text-subtle">Elsewhere</p>
           <ul className="space-y-2 text-sm">
             <li>
               <a
@@ -78,7 +78,7 @@ export function SiteFooter() {
       </div>
 
       <div className="border-t border-line-subtle">
-        <div className="mx-auto flex max-w-site flex-wrap items-center justify-between gap-3 px-gutter py-5 font-mono text-2xs uppercase tracking-slate text-subtle">
+        <div className="mx-auto flex max-w-site flex-wrap items-center justify-between gap-3 px-gutter py-5 font-label text-2xs uppercase tracking-slate text-subtle">
           <span>
             © {new Date().getFullYear()} {site.creatorFull} · Built for the web, not for ad
             networks.

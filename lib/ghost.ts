@@ -4,8 +4,8 @@ import { SignJWT } from 'jose';
 /**
  * Ghost Admin API auth: a 5-minute HS256 JWT signed with the key's secret half,
  * `kid` set to the key's id half. Ghost's own SDK (`@tryghost/admin-api`) does the same
- * thing under the hood — this avoids adding a dependency since `jose` (already installed
- * for the dormant session helper) covers HS256 signing on its own.
+ * thing under the hood — this avoids adding a dependency, since `jose` covers HS256
+ * signing on its own. (`jose` is here for this and nothing else.)
  */
 async function ghostAdminToken(): Promise<string | null> {
   const key = process.env.GHOST_ADMIN_API_KEY;

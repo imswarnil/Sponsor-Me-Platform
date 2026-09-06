@@ -47,7 +47,7 @@ function BlogMock() {
             styles.pulse
           )}
         >
-          <p className="font-mono text-2xs uppercase tracking-slate text-subtle">Sponsored</p>
+          <p className="font-label text-2xs uppercase tracking-slate text-subtle">Sponsored</p>
           <p className="mt-1 text-2xs font-semibold">Your ad here</p>
         </div>
       </div>
@@ -103,7 +103,7 @@ function NewsletterMock() {
             styles.sweepIn
           )}
         >
-          <p className="font-mono text-2xs uppercase tracking-slate text-subtle">
+          <p className="font-label text-2xs uppercase tracking-slate text-subtle">
             Today&rsquo;s issue is brought to you by
           </p>
           <p className="mt-1 text-sm font-semibold">Your name here</p>
@@ -120,7 +120,7 @@ function InstagramMock() {
         <div className="flex-1 bg-sunken" />
         <div
           className={cn(
-            'absolute left-3 top-3 rounded-pill bg-inverse/80 px-2 py-1 font-mono text-2xs uppercase tracking-slate text-on-inverse',
+            'absolute left-3 top-3 rounded-pill bg-inverse/80 px-2 py-1 font-label text-2xs uppercase tracking-slate text-on-inverse',
             styles.fadeInUp
           )}
         >
@@ -180,7 +180,7 @@ function AmbassadorMock() {
         <p className="text-sm">
           &ldquo;This creator&rsquo;s work has genuinely helped me — happy to back it.&rdquo;
         </p>
-        <p className={cn('font-mono text-2xs uppercase tracking-slate text-subtle', styles.fadeInUp)}>
+        <p className={cn('font-label text-2xs uppercase tracking-slate text-subtle', styles.fadeInUp)}>
           One of my subscribers/readers sponsored me for my work — you can do it too.
         </p>
       </div>

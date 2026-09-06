@@ -40,7 +40,7 @@ export function ThreadList({
               <div className="flex items-center gap-2">
                 {t.status === 'archived' ? <Badge variant="outline">Archived</Badge> : null}
                 {t.type === 'request' ? <Badge variant="craft">Request</Badge> : null}
-                <span className="font-mono text-2xs uppercase tracking-slate text-subtle">
+                <span className="font-label text-2xs uppercase tracking-slate text-subtle">
                   {fmtDate(t.lastMessageAt)}
                 </span>
               </div>

@@ -1,11 +1,13 @@
 export const site = {
-  name: 'Advertise With Me',
+  name: 'Sponsor Swarnil',
+  /** This platform's own home. Not imswarnil.com — that is `owner` below. */
+  self: 'https://sponsor.imswarnil.com',
   /** Whose work this platform exists to fund. */
   creator: 'Swarnil',
   creatorFull: 'Swarnil Singhai',
   tagline: 'Back the work, not the ad network.',
   description:
-    'Advertise with me directly — a video, a newsletter issue, a post, or a month across everything. No ad network, no middleman, no tracking cookies.',
+    'Sponsor my work directly — a placement on any of my sites, or a membership that puts you on the sponsor wall. No ad network, no middleman, no tracking cookies.',
   url: 'https://imswarnil.com',
   /** The main site this platform belongs to — the navbar's way back. */
   owner: 'https://imswarnil.com',
@@ -82,6 +84,7 @@ export const channels: Channel[] = [
 export const marketingNav = [
   { label: 'The work', href: '/#channels' },
   { label: 'Placements', href: '/placements' },
+  { label: 'Members', href: '/members' },
   { label: 'How it works', href: '/how-it-works' }
 ] as const;
 

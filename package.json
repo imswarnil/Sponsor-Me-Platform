@@ -1,16 +1,25 @@
 {
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "bash scripts/dev.sh fg",
     "build": "next build",
-    "start": "next start",
+    "start": "next start --port \"$(bash scripts/dev.sh port)\"",
+    "serve": "bash scripts/dev.sh start",
+    "stop": "bash scripts/dev.sh stop",
+    "restart": "bash scripts/dev.sh restart",
+    "status": "bash scripts/dev.sh status",
+    "logs": "bash scripts/dev.sh logs",
     "typecheck": "tsc --noEmit",
     "db:push": "drizzle-kit push --config drizzle.proto.config.ts",
-    "db:studio": "drizzle-kit studio --config drizzle.proto.config.ts"
+    "db:studio": "drizzle-kit studio --config drizzle.proto.config.ts",
+    "check:hosts": "bash scripts/check-hosts.sh",
+    "db:fk": "node scripts/apply-sql.mjs drizzle/manual/*.sql",
+    "db:seed": "node scripts/seed.mjs",
+    "db:setup": "npm run db:push && npm run db:fk && npm run db:seed"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.12.3",
-    "@supabase/supabase-js": "^2.110.8",
+    "@neondatabase/auth": "0.5.0-beta",
+    "@neondatabase/serverless": "^1.1.0",
     "@tailwindcss/postcss": "4.1.7",
     "@types/node": "^22.15.18",
     "@types/react": "19.1.4",
@@ -37,7 +46,5 @@
     "typescript": "^5.8.3",
     "zod": "^3.24.4"
   },
-  "devDependencies": {
-    "supabase": "^2.109.1"
-  }
+  "name": "sponsor-imswarnil-com"
 }

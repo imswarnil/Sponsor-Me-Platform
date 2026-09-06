@@ -2,7 +2,7 @@
 
 > **2026-09-04 — repo moved & re-scoped.** This project moved from
 > `~/Be My Sponsor/be-my-sponsor` to `~/Swarnil/sponsor.imswarnil.com` with a fresh git
-> history. It is being re-platformed: Supabase → **Neon + Neon Auth**, points → **Dodo
+> history. Re-platforming: Supabase → **Neon + Neon Auth** (done, §3), points → **Dodo
 > Payments** (real money), files → **Cloudflare R2** (`r2/`), Vercel → **GitHub Pages**
 > (static export) + a small Cloudflare Worker API. See `REBUILD.md` for the plan and
 > `docs/IDEA-full-scale.md` for the parked wider-audience idea. This platform is for
@@ -50,7 +50,15 @@ lib/proto/      the real backend — schema.ts (Drizzle), db.ts, queries.ts, act
                 roles.ts. Despite the "proto" name (a holdover from when this coexisted with
                 the deleted spec-track packages), this is not a prototype — it's the live
                 backend. Do not read "proto" as "temporary."
-lib/supabase/   client/server/admin Supabase clients
+lib/auth/       Neon Auth — server.ts (the client) + actions.ts (every mutation)
+lib/proto/neon-auth.ts  read-only Drizzle mapping of Neon's `neon_auth` tables
+drizzle/manual/ SQL drizzle-kit cannot generate (the neon_auth FK)
+scripts/seed.mjs  creates the admin + demo accounts and some placements
+lib/properties.ts     the sites a placement can run on — see §2
+lib/github-sponsors.ts  read-only GitHub Sponsors listing — see §10
+app/creator/    vendored design-system token layers (never hand-edit — §4)
+app/design-local/  app-owned CSS with no upstream: the wordmark and window frames (§4)
+scripts/dev.sh  the dev server: port, start/stop/restart/status/logs (§7)
 public/widget.js  the embeddable ad script — vanilla JS, zero deps
 ```
 
@@ -59,7 +67,7 @@ public/widget.js  the embeddable ad script — vanilla JS, zero deps
 ## §2 — Data model
 
 Owned by Drizzle (`lib/proto/schema.ts`). No versioned migrations — `npm run db:push`
-(`drizzle-kit push`) diffs the schema file against the live Supabase DB directly. Points are
+(`drizzle-kit push`) diffs the schema file against the live Neon DB directly. Points are
 plain integers (no real money yet; if that changes, switch to integer minor units + a
 currency column, never floats).
 
@@ -80,6 +88,17 @@ currency column, never floats).
 instead of ad creative, and the rendered ad always appends a fixed, non-editable line
 ("One of my subscribers/readers sponsored me for my work — you can do it too.").
 
+### Properties (`lib/properties.ts`)
+A *channel* is the kind of surface; a **property** is which of Swarnil's sites it runs on
+(`imswarnil.com`, `design.`, `theme.`, `crmanalytics.`, `jobseekers.`, `salesforce.`,
+`trailblazer.`, `nac.`, `icons.`, `dev.`, `links.`, and the GitHub profile). The two are
+orthogonal and both are stored on the slot: `bms_slot.property`, nullable, where NULL means
+"across everything" — a real answer for a newsletter issue or a video, not a missing one.
+
+Each entry carries `live`, meaning "this host has a DNS record". A property that isn't live
+is still listed but never rendered as a link. `npm run check:hosts` re-checks every host
+against 1.1.1.1 and fails if the file disagrees with reality — run it after any DNS change.
+
 ### Sponsorship flow
 An advertiser picks any custom date range (3–90 days) on `/s/[publicId]`; price is
 `ceil(pricePoints/week × days / 7)`. `sponsorSlot` (`lib/proto/actions.ts`) transfers points,
@@ -91,36 +110,43 @@ past `sponsoredUntil`, clearing the live fields (the history row is untouched).
 
 ## §3 — Auth
 
-**Supabase Auth** — email/password and Google OAuth, both via `@supabase/ssr`.
+**Neon Auth** — Better Auth, hosted by Neon, writing users and sessions into the `neon_auth`
+schema of *our own* database. Email + password only.
 
-- Clients: `lib/supabase/{server,client,admin}.ts`. Edge middleware (`middleware.ts`)
-  refreshes the session cookie on every navigation.
-- Identity is `auth.users`; the `handle_new_user()` Postgres trigger on `auth.users` insert
-  auto-creates the matching `bms_profile` row (1000 starting points) **and** — for anyone who
-  isn't the creator — inserts a `bms_notification` for the creator ("New advertiser: …"). This
-  fires for both signup paths (email/password via `signUpAction`, and Google) since it lives
-  at the DB level rather than in app code.
-- Email/password signup: `signUpAction` (server action, admin `email_confirm: true`) then
-  client-side `signInWithPassword`. Google: `signInWithOAuth` in `components/auth/auth-form.tsx`
-  → `app/auth/callback/route.ts` (PKCE code exchange) → `next` param (sanitized by
-  `lib/safe-next.ts`).
-- Password reset: `/forgot-password` (`resetPasswordForEmail`) → email link →
-  `/auth/callback?next=/reset-password` → `/reset-password` (`updateUser({ password })`). The
-  same callback route handles OAuth and recovery links.
-- `getCreatorId()`/`getViewer()` (`lib/proto/roles.ts`): the creator is whoever's email matches
-  the `CREATOR_EMAIL` env var (falls back to the oldest account if unset — keep `CREATOR_EMAIL`
-  set in every Vercel environment, or the site picks the wrong "admin").
-- Supabase dashboard Auth config (Site URL, redirect allow-list, enabling the Google provider)
-  is documented in the `supabase` skill (`.claude/skills/supabase/`) — not manageable from this
-  repo's code, and not via `supabase config push` (see that skill for why).
-
----
+- `lib/auth/server.ts` — `getAuth()`, constructed lazily. Never at module scope: `next build`
+  imports every route to collect page data, so a top-level construction makes the build
+  require credentials. Building needs none; serving does.
+- `lib/auth/actions.ts` — the **only** way a client component touches auth. Sign in, sign up,
+  sign out, demo sign-in, password reset. Credentials never reach the browser bundle.
+- `app/api/auth/[...path]/route.ts` — proxies auth calls so the session cookie is set on
+  *this* origin. Cross-site cookies would not stick.
+- Identity is `neon_auth.user.id`, a **uuid** — the same type `bms_profile.id` already was, so
+  the swap needed no schema change. The real FK lives in `drizzle/manual/001_profile_auth_fk.sql`,
+  applied by `npm run db:fk`, because drizzle-kit must never reach `neon_auth` (Neon provisions
+  and migrates it).
+- **Profiles are created in app code, not by a trigger.** Supabase let us hang
+  `handle_new_user()` off `auth.users`; Neon owns `neon_auth`, so `ensureProfile()` in
+  `lib/proto/queries.ts` does it on an account's first authenticated request — including the
+  "new sponsor" notification the trigger used to raise.
+- `getCurrentUserId()`/`getCurrentUser()` are memoised per request with React `cache()`. Every
+  gate in `roles.ts` calls through them, and without it one render made five or six identical
+  HTTP round-trips to the auth server.
+- **Every route that reads the session must be dynamic.** `app/studio/layout.tsx` and
+  `app/sponsor/layout.tsx` declare `export const dynamic = 'force-dynamic'` and it cascades to
+  their children. Under Supabase, `middleware.ts` touched cookies on every navigation and made
+  the tree dynamic *by accident*; that middleware is gone, so the requirement is now stated.
+  Get this wrong and Next prerenders a signed-out page and serves it to everyone.
+- `getCreatorId()`/`getViewer()` (`lib/proto/roles.ts`) are unchanged: the creator is whoever
+  matches `CREATOR_EMAIL`, so admin cannot be granted by a database row.
+- **There is no Google sign-in.** The button existed but the provider was never enabled, so it
+  had only ever produced an error. Re-add via `getAuth().signIn.social` once a provider is
+  configured in the Neon console.
 
 ## §4 — Design system ("Frame & Signal")
 
 The platform wears the same identity as **imswarnil.com**. Token layers are **vendored
-verbatim** from the sibling repo `../design-system/src/1-foundation` + `2-elements` into
-`app/creator/*.css`; `app/globals.css` maps them onto the Tailwind v4 `@theme`.
+verbatim** from the sibling repo `../design.imswarnil.com/src` (1-foundation + 2-elements)
+into `app/creator/*.css`; `app/globals.css` maps them onto the Tailwind v4 `@theme`.
 
 | Rule | Why |
 |---|---|
@@ -131,25 +157,34 @@ verbatim** from the sibling repo `../design-system/src/1-foundation` + `2-elemen
 | **Adding a `--color-*` alias to `@theme`? Add it to the `[data-surface='inverse']` block too** | A custom property resolves where it is *declared*. `--color-foreground: var(--fg-default)` is computed once at `:root`, so re-pointing `--fg-default` inside an inverse island does nothing to it — the alias has to be re-declared there. (Dark mode escapes this only because `[data-theme='dark']` matches `:root` itself.) Symptom: dark-on-dark text inside a `data-surface="inverse"` block. |
 | **One accent, rationed** | Adding a second hue changes the argument of the system, not just a colour. |
 
-- **Faces:** Space Grotesk (display/headings/stats) · Inter (body) · IBM Plex Mono (the "slate"
-  voice: labels, badges, counts, breadcrumbs, code). Wired via `next/font` in `app/layout.tsx`.
+- **Faces: one, not three.** Inter sets the headline and the sentence alike — a heading is
+  Inter worn large with the tracking closed (`font-display`, which now *aliases* the body
+  face), a label is Inter worn small, uppercase and tracked open (`font-label`), and a count
+  is Inter small, light and tabular. **IBM Plex Mono is for code only** (`font-mono`): a mono
+  badge, label or count is a bug. Space Grotesk was removed with the design-system refresh —
+  a display family only earns its keep if it says something the body family cannot, and size
+  plus tracking were already doing that work. Wired via `next/font` in `app/layout.tsx`.
+- `tracking-slate` survives as an alias of `tracking-label`, so existing markup keeps working.
 - **Theme:** dark mode is `:root[data-theme='dark']` (**not** a `.dark` class) plus a
   `prefers-color-scheme` fallback; `ThemeToggle` writes the attribute.
-- **Reused DS components:** `.logo`/`.logo__tittle` (`SwarnilWordmark` in `components/logo.tsx`),
-  `.win`/`.win-mac`/`.win-code`/`.win-term`/`.win-browser`/`.win-phone` frames (used by the
-  animated ad-preview showcase on `/placements`), `.codebox` + `.tok-*` syntax palette.
+- **Reused DS components:** the `.tok-*` syntax palette (`creator/22-code.css`, upstream).
+  `.logo`/`.logo__tittle` (`SwarnilWordmark` in `components/logo.tsx`) and the
+  `.win`/`.win-mac`/`.win-code`/`.win-term`/`.win-browser`/`.win-phone` frames used by the
+  animated ad-preview showcase now live in `app/design-local/` — app-owned, no upstream.
 - **`BackToSite`** (`components/back-to-site.tsx`) puts the personal wordmark in every navbar.
 - **No audience figures anywhere.** Deliberate: inventing reach/subscriber numbers on an
   advertiser-facing page would be fabricating a record. Add a stats block only with real values.
-- **Re-sync the vendored tokens** after any change in the design-system repo:
+- **Re-sync the vendored tokens** after any change in the design system:
   ```bash
-  cd advertise-with-me-platform   # this repo
-  cp ../design-system/src/1-foundation/0{1,2,3,4,5}-*.css \
-     ../design-system/src/1-foundation/09-logo.css \
-     ../design-system/src/1-foundation/12-frame.css \
-     ../design-system/src/2-elements/15-syntax.css \
-     app/creator/
+  cd ~/Swarnil/sponsor.imswarnil.com
+  DS=../design.imswarnil.com/src
+  cp $DS/1-foundation/0{1,2,3,4,5}-*.css $DS/1-foundation/09-shape.css \
+     $DS/2-elements/22-code.css app/creator/
   ```
+  Only those seven. `app/design-local/{frame,logo}.css` are **app-owned**: the
+  system dropped the window variants this app's ad preview uses (`.win-mac`,
+  `.win-code`, `.win-phone`) and never shipped the wordmark, so they have no
+  upstream to copy from. Do not move them back into `creator/`.
 
 ---
 
@@ -158,10 +193,12 @@ verbatim** from the sibling repo `../design-system/src/1-foundation` + `2-elemen
 Don't add a dependency without checking it's actually needed — this app is deliberately light
 (no charting library, no PWA library, no ORM beyond Drizzle, no email service). Current stack:
 `next`, `react`, `react-dom`, `drizzle-orm`, `drizzle-kit`, `postgres`, `zod`,
-`@supabase/ssr`, `@supabase/supabase-js`, `tailwindcss` v4, `radix-ui`, `class-variance-authority`,
-`clsx`, `tailwind-merge`, `lucide-react`, `tw-animate-css`, `swr`, `server-only`, `jose`
-(dormant — see `lib/proto/session.ts`, an unused legacy session helper kept around but never
-called; safe to delete if it keeps coming up as dead code).
+`@neondatabase/auth`, `@neondatabase/serverless`, `tailwindcss` v4, `radix-ui`, `class-variance-authority`,
+`clsx`, `tailwind-merge`, `lucide-react`, `tw-animate-css`, `swr`, `server-only`, `jose`.
+
+`jose` is **not** dormant — `lib/ghost.ts` signs the Ghost Admin API's HS256 JWT with it,
+which is why the Ghost SDK isn't a dependency. (`lib/proto/session.ts`, the unused legacy
+session helper this file used to point at, has been deleted.)
 
 ---
 
@@ -175,7 +212,64 @@ before that happens.
 
 ---
 
-## §7 — Deployment
+## §7 — Running it locally
+
+### Database + accounts (first time, and after any schema change)
+
+```bash
+npm run db:setup     # push schema → apply the neon_auth FK → seed the accounts
+```
+
+Or the three steps on their own: `db:push`, `db:fk`, `db:seed`. They are all idempotent.
+
+`db:seed` (`scripts/seed.mjs`) creates two accounts **through the Neon Auth HTTP API**, never
+by writing to `neon_auth` directly — Better Auth owns the password hashing, and a row we
+inserted would carry a hash it does not accept:
+
+| Account | From | Lands on |
+|---|---|---|
+| creator / admin | `CREATOR_EMAIL` + `ADMIN_PASSWORD` | `/studio` |
+| demo sponsor | `DEMO_EMAIL` + `DEMO_PASSWORD` | `/sponsor` |
+
+It also seeds five open placements so `/studio` and `/placements` are not empty. The demo
+account is what the "Explore the demo account" button on `/login` signs into — through a
+server action, so the password stays in the server environment and never enters the bundle.
+Leave `DEMO_EMAIL` unset and that button is simply not rendered.
+
+Seeding needs the deployment's origin to be trusted by Neon Auth; the script sends
+`BASE_URL` (or `APP_ORIGIN`) as the Origin header and says so if it is rejected.
+
+### The dev server
+
+
+```bash
+npm run dev        # foreground, Ctrl-C to quit — the normal way
+npm run serve      # background; waits until it actually answers
+npm run stop       # stops it, whichever way it was started
+npm run restart
+npm run status
+npm run logs       # tail .dev/server.log
+```
+
+**The port is defined in exactly one place: `PORT` in `scripts/dev.sh` (3500).** `package.json`
+calls the script (`dev` → `dev.sh fg`, `start` → `dev.sh port`) instead of repeating the
+number — when it was written in both files the two drifted apart twice in one afternoon and
+the background server ended up on a different port from `npm run dev`. Changing the port means
+editing that one line, plus `BASE_URL` in `.env`.
+
+3500 is clear of every sibling under `~/Swarnil`: 3000 (`salesforce.` on Nuxt, `nac.` on Next),
+3100 (`job.`), 3111, 3400 (`imswarnil.github.io`), 4001, 8080-8099. `dev.sh` refuses to start
+when something else holds the port rather than letting Next hop to the next free one — a moved
+port is how an embed snippet or an OAuth redirect quietly breaks.
+
+**Only one `next dev` can run per directory.** Next takes an exclusive lock on
+`.next/dev/lock`, so a forgotten background server makes `npm run dev` fail with "Unable to
+acquire lock", which does not say who is holding it. Every entry point in `dev.sh` checks
+first and names the offending pid; `npm run stop` clears both the processes and the lock.
+
+`.dev/` (PID + log) is gitignored.
+
+## §8 — Deployment
 
 - **GitHub:** `github.com/imswarnil/advertise-with-me-platform` (renamed from `be-my-sponsor`
   2026-07-28; GitHub redirects the old URL).
@@ -183,19 +277,19 @@ before that happens.
   `main` auto-deploy directly to **production** (no preview-branch workflow — push straight to
   `main`). Requires `vercel.json` (`framework: nextjs`) or Vercel serves `public/` statically
   and 404s every route; middleware matcher must be non-empty or deploy finalization fails.
-- **Domains:** live at both `sponsor.imswarnil.com` (original) and `advertise.imswarnil.com`
-  (added 2026-07-28, already verified via the existing wildcard DNS on `imswarnil.com` — no
-  DNS action was needed). Both currently resolve to the same deployment; `sponsor.` stays live
-  until an explicit decision to retire it.
-- **Env vars** (DB/Supabase/`CREATOR_EMAIL`) must be set in **all three** Vercel environments
+- **Domains:** neither `sponsor.imswarnil.com` nor `advertise.imswarnil.com` resolves today
+  (checked against 1.1.1.1, 2026-09-06) — the wildcard DNS this file previously assumed is
+  not in place, so the platform has no live hostname. Both need an actual DNS record before
+  any deploy is reachable.
+- **Env vars** (`DATABASE_URL`, `NEON_AUTH_*`, `CREATOR_EMAIL`) must be set in **all three** Vercel environments
   (Production, Preview, Development) — a var missing from one silently breaks only that
   environment, which is exactly how the `CREATOR_EMAIL`-unset-in-prod bug happened once before.
-- **Supabase project** is still named `be-my-sponsor` — deliberately not renamed alongside the
-  repo/Vercel project (see the `supabase` skill for why).
+- **Supabase is gone entirely** — project deleted, packages removed, `supabase/` config and
+  the `.claude/skills/supabase` steps no longer describe anything this repo uses. See §3.
 
 ---
 
-## §8 — Security
+## §9 — Security
 
 - `points` is `input:false` on the profile row (can't be self-granted); zod validation on all
   server actions; only http(s) URLs are ever stored (blocks `javascript:`/`data:`); security
@@ -209,15 +303,46 @@ before that happens.
 
 ---
 
-## §9 — Current state / open items
+## §10 — GitHub Sponsors (read-only)
 
-- Google sign-in is wired end-to-end in code (`components/auth/auth-form.tsx`,
-  `app/auth/callback/route.ts`) but the Google provider isn't enabled in Supabase yet — needs
-  a Google Cloud OAuth Client ID/Secret (requires the creator's own Google account to create;
-  see the `supabase` skill for the exact dashboard steps once that credential exists).
+The second way someone can sponsor this work. `lib/github-sponsors.ts` reads the listing off
+GitHub's GraphQL API and nothing more — **it never writes to the database**, and a GitHub
+sponsor is not a `bms_*` row. The two lists sit side by side on the page and stay separate
+underneath. Surfaced by `components/marketing/github-sponsors.tsx` (public: `/` and
+`/placements`) and `components/app/github-sponsors-panel.tsx` (`/studio`).
+
+Needs `GITHUB_TOKEN` (classic or fine-grained PAT, scope `read:user`) and `GITHUB_LOGIN`.
+**Everything degrades to `null`** — no token, revoked token, rate limit, GitHub down, listing
+private — and a `null` renders *nothing at all* rather than a zero or a placeholder. That is
+the same rule as §4's "no audience figures anywhere": a number here is either real or absent.
+
+`.github/FUNDING.yml` points the repo's own Sponsor button at the same listing.
+
+State as of 2026-09-06: the listing `sponsors-imswarnil` is public, but it has **no tiers**
+and no sponsors — so nobody can actually sponsor until at least one tier is created on
+github.com/sponsors/imswarnil. The studio panel says so in as many words.
+
+There is no webhook receiver. Adding one is the next step if GitHub sponsors should appear in
+`bms_sponsorship_history`; it needs a public URL, which §8 says the platform does not have yet.
+
+## §11 — Current state / open items
+
+- **Live on Neon.** Project `sponsor-imswarnil` (`ancient-recipe-82156884`, aws-us-east-2, org
+  `Imswarnil`), Neon Auth enabled, localhost origins allowed. Schema pushed, the `neon_auth`
+  FK applied, and both accounts seeded. Sign-in, role separation (`/studio` vs `/sponsor`) and
+  the demo button are all verified end to end against this database.
+- The old Supabase project was Vercel-managed and was deleted along with the integration —
+  which is why it vanished rather than merely pausing. Nothing references it any more.
+- Passwords for the two seeded accounts are in `.env` (`ADMIN_PASSWORD`, `DEMO_PASSWORD`),
+  which is gitignored. They exist nowhere else — rotate by editing `.env` and re-running
+  `db:seed` against a fresh account, or through the app's own password reset.
+- Neon Auth must be told to trust each origin that signs in — `http://localhost:3500` for dev,
+  and the real hostname once DNS exists (§8). Sign-in works locally and fails in production if
+  this is missed.
+- No transactional email is configured, so **password reset emails will not arrive** until
+  Neon Auth has an email sender. The in-app notification bell (§3) still covers the "new
+  sponsor" signal.
 - Channel analytics (§6) are a placeholder — real YouTube/Ghost/etc. sync is pending API
   details from the creator.
-- No transactional email is configured — "new advertiser" signals go through the in-app
-  notification bell (§3), not email, by deliberate choice.
-- `sponsor.imswarnil.com` → `advertise.imswarnil.com` is a planned domain migration; both work
-  today, no cutover date set.
+- `sponsor.imswarnil.com` → `advertise.imswarnil.com` was a planned domain migration. Neither
+  resolves today (§8), so it is a decision about which name to create, not which to retire.

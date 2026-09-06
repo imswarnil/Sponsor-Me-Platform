@@ -3,6 +3,7 @@ import { ChannelIcon } from '@/components/marketing/channel-icon';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { CHANNEL_LIST, toChannel } from '@/lib/channels';
+import { PropertyBadge } from '@/components/app/property-badge';
 import type { Slot } from '@/lib/proto/schema';
 
 /** Placement cards grouped by channel — shared by /placements (all channels) and
@@ -55,6 +56,11 @@ export function SlotGrid({
                         <Badge variant="pop">{slot.pricePoints} / wk</Badge>
                       </div>
 
+                      {/* Which site it runs on — the channel is already the section heading. */}
+                      <div className="mt-2">
+                        <PropertyBadge property={slot.property} />
+                      </div>
+
                       <p className="mt-2 flex-1 text-sm text-muted-foreground">
                         {slot.brief || channel.unit}
                       </p>
@@ -66,13 +72,13 @@ export function SlotGrid({
                       ) : null}
 
                       {slot.discountThresholdDays && slot.discountPercent ? (
-                        <p className="mt-2 font-mono text-2xs uppercase tracking-slate text-signal">
+                        <p className="mt-2 font-label text-2xs uppercase tracking-slate text-signal">
                           {slot.discountPercent}% off for {slot.discountThresholdDays}+ days
                         </p>
                       ) : null}
 
                       {channel.embeddable && t && t.view > 0 ? (
-                        <div className="mt-4 flex items-center gap-4 font-mono text-2xs uppercase tracking-slate text-subtle">
+                        <div className="mt-4 flex items-center gap-4 font-label text-2xs uppercase tracking-slate text-subtle">
                           <span className="inline-flex items-center gap-1.5">
                             <Eye className="size-3" /> {t.view.toLocaleString()}
                           </span>

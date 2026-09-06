@@ -2,31 +2,17 @@
 
 import * as React from 'react';
 import { Loader2 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { requestPasswordResetAction, type AuthActionState } from '@/lib/auth/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 
 export function ForgotPasswordForm() {
-  const [loading, setLoading] = React.useState(false);
-  const [sent, setSent] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    const email = String(new FormData(e.currentTarget).get('email') || '').trim();
-    const supabase = createClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent('/reset-password')}`
-    });
-    // Never reveal whether the address has an account — same message either way.
-    if (error) setError('Something went wrong. Try again in a moment.');
-    else setSent(true);
-    setLoading(false);
-  }
+  const [state, formAction, pending] = React.useActionState<AuthActionState, FormData>(
+    requestPasswordResetAction,
+    {}
+  );
 
   return (
     <div className="w-full max-w-sm">
@@ -39,15 +25,13 @@ export function ForgotPasswordForm() {
 
       <Card className="shadow-sm">
         <CardContent className="p-6">
-          {sent ? (
-            <p className="text-sm text-muted-foreground">
-              If that address has an account, a reset link is on its way — check your inbox.
-            </p>
+          {state.ok ? (
+            <p className="text-sm text-muted-foreground">{state.ok} Check your inbox.</p>
           ) : (
-            <form onSubmit={onSubmit} className="space-y-4">
-              {error ? (
-                <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                  {error}
+            <form action={formAction} className="space-y-4">
+              {state.error ? (
+                <p className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive">
+                  {state.error}
                 </p>
               ) : null}
               <div className="space-y-1.5">
@@ -61,8 +45,8 @@ export function ForgotPasswordForm() {
                   autoComplete="email"
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? <Loader2 className="size-4 animate-spin" /> : 'Send reset link'}
+              <Button type="submit" className="w-full" disabled={pending}>
+                {pending ? <Loader2 className="size-4 animate-spin" /> : 'Send reset link'}
               </Button>
             </form>
           )}

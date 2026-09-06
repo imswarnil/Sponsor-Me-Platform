@@ -1,33 +1,26 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { resetPasswordAction, type AuthActionState } from '@/lib/auth/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 
+/**
+ * Neon Auth puts the reset token in the URL rather than establishing a session
+ * first, which is why this carries it in a hidden field. Under Supabase the
+ * emailed link created a recovery session and `updateUser` worked off that —
+ * hence the deleted /auth/callback route.
+ */
 export function ResetPasswordForm() {
-  const router = useRouter();
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    const password = String(new FormData(e.currentTarget).get('password') || '');
-    const supabase = createClient();
-    const { error } = await supabase.auth.updateUser({ password });
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-      return;
-    }
-    router.push('/login');
-  }
+  const token = useSearchParams().get('token') ?? '';
+  const [state, formAction, pending] = React.useActionState<AuthActionState, FormData>(
+    resetPasswordAction,
+    {}
+  );
 
   return (
     <div className="w-full max-w-sm">
@@ -37,10 +30,11 @@ export function ResetPasswordForm() {
 
       <Card className="shadow-sm">
         <CardContent className="p-6">
-          <form onSubmit={onSubmit} className="space-y-4">
-            {error ? (
-              <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {error}
+          <form action={formAction} className="space-y-4">
+            <input type="hidden" name="token" value={token} />
+            {state.error ? (
+              <p className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive">
+                {state.error}
               </p>
             ) : null}
             <div className="space-y-1.5">
@@ -56,8 +50,8 @@ export function ResetPasswordForm() {
               />
               <p className="text-xs text-muted-foreground">At least 8 characters.</p>
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? <Loader2 className="size-4 animate-spin" /> : 'Update password'}
+            <Button type="submit" className="w-full" disabled={pending}>
+              {pending ? <Loader2 className="size-4 animate-spin" /> : 'Update password'}
             </Button>
           </form>
         </CardContent>

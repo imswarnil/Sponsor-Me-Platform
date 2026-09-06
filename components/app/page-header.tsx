@@ -15,7 +15,7 @@ export function PageHeader({
   return (
     <div className="mb-8">
       {breadcrumb ? (
-        <nav className="mb-3 flex items-center gap-1.5 font-mono text-2xs uppercase tracking-slate text-subtle">
+        <nav className="mb-3 flex items-center gap-1.5 font-label text-2xs uppercase tracking-slate text-subtle">
           {breadcrumb.map((c, i) => (
             <span key={i} className="flex items-center gap-1.5">
               {i > 0 ? <ChevronRight className="size-3 text-faint" /> : null}

@@ -5,17 +5,21 @@ import { usePathname } from 'next/navigation';
 import {
   BarChart3,
   Coins,
+  Gavel,
   Handshake,
   LayoutDashboard,
   LayoutTemplate,
   MessageSquare,
   Radio,
   Receipt,
+  Users,
   type LucideIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const icons: Record<string, LucideIcon> = {
+  Gavel,
+  Users,
   LayoutDashboard,
   LayoutTemplate,
   BarChart3,

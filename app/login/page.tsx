@@ -7,6 +7,10 @@ import { AuthForm } from '@/components/auth/auth-form';
 
 export const metadata = { title: 'Log in' };
 
+// Reads DEMO_EMAIL at request time, so the demo button reflects the deployment
+// rather than whatever was set when the page was built.
+export const dynamic = 'force-dynamic';
+
 export default function LoginPage() {
   return (
     <div className="relative flex min-h-[100dvh] flex-col bg-grid">
@@ -18,7 +22,7 @@ export default function LoginPage() {
 
       <div className="flex flex-1 items-center justify-center px-4 py-10">
         <Suspense>
-          <AuthForm />
+          <AuthForm demoEmail={process.env.DEMO_EMAIL} />
         </Suspense>
       </div>
 
