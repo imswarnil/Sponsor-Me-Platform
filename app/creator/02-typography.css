@@ -1,0 +1,322 @@
+/* =============================================================================
+   02 · TYPOGRAPHY
+   Three faces, three jobs. A fluid scale so no component ever needs a
+   breakpoint-specific font size.
+     display → Space Grotesk   headlines, numbers, anything ≥ 20px
+     body    → Inter           everything you actually read
+     slate   → IBM Plex Mono   metadata voice: labels, timecodes, code
+   ========================================================================== */
+
+:root {
+	--font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
+	--font-body: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--font-slate: 'IBM Plex Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', monospace;
+
+	/* Ghost Admin → Brand → fonts wins if the publisher sets one. */
+	--font-heading-effective: var(--gh-font-heading, var(--font-display));
+	--font-body-effective: var(--gh-font-body, var(--font-body));
+
+	/* ── Fluid scale ───────────────────────────────────────────────────────────
+	   clamp(min, preferred, max) — fluid between a 360px and a 1440px viewport.
+	   Ratio ≈ 1.22 at the small end, opening to ≈ 1.30 at display sizes so
+	   headlines get dramatic without the body text drifting. */
+	--text-2xs:     0.6875rem;                              /* 11px · slate only */
+	--text-xs:      0.75rem;                                /* 12px */
+	--text-sm:      0.8125rem;                              /* 13px */
+	--text-base:    1rem;                                   /* 16px */
+	--text-md:      1.0625rem;                              /* 17px · long-form body */
+	--text-lg:      clamp(1.125rem, 1.05rem + 0.32vw, 1.3125rem);
+	--text-xl:      clamp(1.3125rem, 1.19rem + 0.55vw, 1.625rem);
+	--text-2xl:     clamp(1.5rem,  1.31rem + 0.83vw,  2rem);
+	--text-3xl:     clamp(1.875rem, 1.55rem + 1.42vw, 2.75rem);
+	--text-4xl:     clamp(2.25rem,  1.72rem + 2.36vw, 3.75rem);
+	--text-5xl:     clamp(2.75rem,  1.86rem + 3.94vw, 5.25rem);
+	--text-6xl:     clamp(3.25rem,  1.82rem + 6.30vw, 7rem);
+
+	/* ── Line height ───────────────────────────────────────────────────────────
+	   Display sits tight, body sits open. Nothing in between exists. */
+	--leading-flat:    1;
+	--leading-tight:   1.1;
+	--leading-snug:    1.25;
+	--leading-normal:  1.5;
+	--leading-relaxed: 1.65;   /* the reading default */
+	--leading-loose:   1.85;
+
+	/* ── Tracking ──────────────────────────────────────────────────────────────
+	   Display tightens as it grows; the slate voice opens wide. */
+	--tracking-tighter: -0.035em;
+	--tracking-tight:   -0.02em;
+	--tracking-normal:  0;
+	--tracking-wide:    0.04em;
+	--tracking-slate:   0.14em;   /* mono uppercase labels */
+
+	/* ── Weight ────────────────────────────────────────────────────────────────
+	   Four only. 500 does not exist in this system — it muddies 400 vs 600. */
+	--weight-regular:  400;
+	--weight-medium:   500;
+	--weight-semibold: 600;
+	--weight-bold:     700;
+
+	/* ── Measure ───────────────────────────────────────────────────────────────
+	   Long-form prose caps at 68ch; UI copy at 46ch so cards break predictably. */
+	--measure-prose: 68ch;
+	--measure-ui:    46ch;
+	--measure-lead:  56ch;
+}
+
+/* Base element defaults ---------------------------------------------------- */
+
+html {
+	font-size: 100%;
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+	font-family: var(--font-body-effective);
+	font-size: var(--text-base);
+	line-height: var(--leading-relaxed);
+	font-weight: var(--weight-regular);
+	font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	font-family: var(--font-heading-effective);
+	font-weight: var(--weight-bold);
+	line-height: var(--leading-tight);
+	letter-spacing: var(--tracking-tight);
+	text-wrap: balance;
+}
+
+/* ── Text roles ────────────────────────────────────────────────────────────
+   Semantic classes, not size utilities. Use the role that describes the job;
+   the size follows. This is what keeps a heading a heading when the scale
+   later changes. */
+
+.t-display-1 {
+	font-family: var(--font-display);
+	font-size: var(--text-6xl);
+	font-weight: var(--weight-bold);
+	line-height: var(--leading-flat);
+	letter-spacing: var(--tracking-tighter);
+	text-wrap: balance;
+}
+
+.t-display-2 {
+	font-family: var(--font-display);
+	font-size: var(--text-5xl);
+	font-weight: var(--weight-bold);
+	line-height: 1.04;
+	letter-spacing: var(--tracking-tighter);
+	text-wrap: balance;
+}
+
+.t-h1 {
+	font-family: var(--font-heading-effective);
+	font-size: var(--text-4xl);
+	font-weight: var(--weight-bold);
+	line-height: var(--leading-tight);
+	letter-spacing: var(--tracking-tight);
+	text-wrap: balance;
+}
+
+.t-h2 {
+	font-family: var(--font-heading-effective);
+	font-size: var(--text-3xl);
+	font-weight: var(--weight-bold);
+	line-height: var(--leading-tight);
+	letter-spacing: var(--tracking-tight);
+	text-wrap: balance;
+}
+
+.t-h3 {
+	font-family: var(--font-heading-effective);
+	font-size: var(--text-2xl);
+	font-weight: var(--weight-semibold);
+	line-height: var(--leading-snug);
+	letter-spacing: var(--tracking-tight);
+}
+
+.t-h4 {
+	font-family: var(--font-heading-effective);
+	font-size: var(--text-xl);
+	font-weight: var(--weight-semibold);
+	line-height: var(--leading-snug);
+}
+
+.t-lead {
+	font-size: var(--text-lg);
+	line-height: var(--leading-relaxed);
+	color: var(--fg-muted);
+	max-width: var(--measure-lead);
+	text-wrap: pretty;
+}
+
+.t-body {
+	font-size: var(--text-md);
+	line-height: var(--leading-relaxed);
+	max-width: var(--measure-prose);
+	text-wrap: pretty;
+}
+
+.t-small {
+	font-size: var(--text-sm);
+	line-height: var(--leading-normal);
+	color: var(--fg-muted);
+}
+
+/* The slate voice — every piece of metadata on the site speaks like this. */
+.t-slate {
+	font-family: var(--font-slate);
+	font-size: var(--text-xs);
+	font-weight: var(--weight-medium);
+	line-height: var(--leading-normal);
+	letter-spacing: var(--tracking-slate);
+	text-transform: uppercase;
+	color: var(--fg-subtle);
+}
+
+.t-slate-sm {
+	font-family: var(--font-slate);
+	font-size: var(--text-2xs);
+	letter-spacing: var(--tracking-slate);
+	text-transform: uppercase;
+	color: var(--fg-subtle);
+}
+
+/* Timecodes, runtimes, counts — tabular so columns of numbers line up. */
+.t-numeric {
+	font-family: var(--font-slate);
+	font-variant-numeric: tabular-nums;
+	letter-spacing: var(--tracking-wide);
+}
+
+/* Big display numbers (stat grids). Lining + tabular, tight as possible. */
+.t-stat {
+	font-family: var(--font-display);
+	font-size: var(--text-4xl);
+	font-weight: var(--weight-bold);
+	/* 1.06, not 1 — display digits have enough overshoot to clip at flat leading. */
+	line-height: 1.06;
+	letter-spacing: var(--tracking-tighter);
+	font-variant-numeric: tabular-nums lining-nums;
+}
+
+.t-quote {
+	font-family: var(--font-display);
+	font-size: var(--text-xl);
+	font-weight: var(--weight-medium);
+	line-height: var(--leading-snug);
+	letter-spacing: var(--tracking-tight);
+	border-left: var(--border-2, 2px) solid var(--accent);
+	padding-left: var(--space-4, 1rem);
+	text-wrap: balance;
+}
+
+.t-code {
+	font-family: var(--font-slate);
+	font-size: 0.875em;
+	background: var(--bg-sunken);
+	border: 1px solid var(--line-subtle);
+	border-radius: var(--radius-sm, 4px);
+	padding: 0.15em 0.4em;
+	white-space: nowrap;
+}
+
+/* Colour + emphasis helpers (aliases only) */
+.t-muted  { color: var(--fg-muted); }
+.t-subtle { color: var(--fg-subtle); }
+.t-accent { color: var(--fg-accent); }
+
+/* The house link: underline grows from the left on hover, never a colour
+   flash. Colour change is the fallback under reduced-motion. */
+.t-link {
+	color: var(--fg-link);
+	text-decoration: none;
+	background-image: linear-gradient(var(--accent), var(--accent));
+	background-repeat: no-repeat;
+	background-position: 0 100%;
+	background-size: 0% var(--border-2, 2px);
+	padding-bottom: 0.08em;
+	transition: background-size var(--dur-2, 200ms) var(--ease-out, ease),
+	            color var(--dur-2, 200ms) var(--ease-out, ease);
+}
+
+.t-link:hover,
+.t-link:focus-visible {
+	color: var(--fg-link-hover);
+	background-size: 100% var(--border-2, 2px);
+}
+
+/* Constrain any block to a comfortable measure */
+.measure       { max-width: var(--measure-prose); }
+.measure-ui    { max-width: var(--measure-ui); }
+.measure-lead  { max-width: var(--measure-lead); }
+
+/* ── The typefaces ───────────────────────────────────────────────────────
+   Three faces, three jobs, and the reasons — so the next person doesn't
+   "improve" the stack.
+
+   DISPLAY · Space Grotesk 400/500/600/700
+     A grotesk with drawing quirks that only show at size: the flat-sided g,
+     the angled terminals, the tight apertures. Engineered rather than
+     friendly, which is the channel's tone. Numerals are lining and tabular,
+     so a stat grid never shifts. Never used below 20px — at small sizes the
+     quirks read as noise.
+
+   BODY · Inter 400/500/600/700
+     Designed for screens at small sizes: tall x-height, open apertures,
+     unambiguous Il1 / O0. It is meant to be invisible. Ships with the
+     `calt`/`liga`/`kern` features on and `ss01`-style alternates OFF — the
+     alternates make it look like a different typeface at scale.
+
+   SLATE · IBM Plex Mono 400/500/600
+     The metadata voice: timecodes, labels, code, coordinates. Mono is the
+     signal that a value is machine-produced. Never body copy, never a
+     paragraph — a monospaced paragraph is a wall.
+
+   FALLBACKS are ordered so the layout barely shifts if a webfont fails:
+   system-ui / SF for the sans faces, SF Mono / Cascadia for the mono. If
+   metric-compatible local fallbacks are ever added, do it with
+   @font-face size-adjust, not by changing the stacks. */
+
+.face-display { font-family: var(--font-display); }
+.face-body    { font-family: var(--font-body); }
+.face-slate   { font-family: var(--font-slate); }
+
+/* Numeric styles — pick deliberately, they are not interchangeable. */
+.num-tabular    { font-variant-numeric: tabular-nums; }     /* columns, timecodes */
+.num-proportional { font-variant-numeric: proportional-nums; } /* inline in prose */
+.num-lining     { font-variant-numeric: lining-nums; }      /* with caps */
+.num-slashed    { font-variant-numeric: slashed-zero; }     /* IDs, codes */
+
+/* Weight helpers. 500 exists for the slate voice only — in the sans faces it
+   sits too close to 400 to read as a real change. */
+.w-regular  { font-weight: var(--weight-regular); }
+.w-medium   { font-weight: var(--weight-medium); }
+.w-semibold { font-weight: var(--weight-semibold); }
+.w-bold     { font-weight: var(--weight-bold); }
+
+/* Optical corrections. Big display type needs negative tracking; small
+   letterspaced caps need positive. These are the only two allowed. */
+.optical-display { letter-spacing: var(--tracking-tighter); }
+.optical-caps    { letter-spacing: var(--tracking-slate); text-transform: uppercase; }
+
+/* Truncation — one job each, never invented ad hoc in components. */
+.truncate {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.clamp-2,
+.clamp-3 {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.clamp-2 { -webkit-line-clamp: 2; line-clamp: 2; }
+.clamp-3 { -webkit-line-clamp: 3; line-clamp: 3; }

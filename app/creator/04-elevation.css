@@ -1,0 +1,122 @@
+/* =============================================================================
+   04 · ELEVATION
+   Depth comes from lines first, shadow second. Five levels, and a rule for
+   which one a thing gets: if it doesn't leave the page, it doesn't get shadow.
+   ========================================================================== */
+
+:root {
+	/* Shadows are tinted with the ink hue, never neutral black — a pure-black
+	   shadow on a warm-neutral surface reads as dirt. */
+	--shadow-color: 232 20% 8%;
+
+	--shadow-0: none;
+
+	/* 1 · resting card — a hairline plus the faintest lift */
+	--shadow-1:
+		0 1px 2px  hsl(var(--shadow-color) / 0.05),
+		0 1px 1px  hsl(var(--shadow-color) / 0.03);
+
+	/* 2 · hovered card */
+	--shadow-2:
+		0 2px 4px  hsl(var(--shadow-color) / 0.06),
+		0 6px 12px hsl(var(--shadow-color) / 0.05);
+
+	/* 3 · dropdown, popover */
+	--shadow-3:
+		0 4px 8px   hsl(var(--shadow-color) / 0.07),
+		0 12px 24px hsl(var(--shadow-color) / 0.07);
+
+	/* 4 · modal, command palette */
+	--shadow-4:
+		0 8px 16px  hsl(var(--shadow-color) / 0.08),
+		0 24px 48px hsl(var(--shadow-color) / 0.10);
+
+	/* 5 · the thing that has left the page entirely (drag, lightbox) */
+	--shadow-5:
+		0 16px 32px hsl(var(--shadow-color) / 0.10),
+		0 40px 80px hsl(var(--shadow-color) / 0.14);
+
+	/* Inset well — code blocks, inputs, table headers */
+	--shadow-inset: inset 0 1px 2px hsl(var(--shadow-color) / 0.06);
+
+	/* The accent glow. Reserved for the live/recording state. Never decorative. */
+	--shadow-signal: 0 0 0 4px var(--accent-ring);
+
+	/* Focus ring — two-tone so it survives on both light and dark backdrops. */
+	--ring-focus:
+		0 0 0 var(--border-2) var(--focus-ring-alt),
+		0 0 0 4px var(--focus-ring);
+}
+
+/* Dark mode: shadows barely read on a near-black canvas, so depth switches to
+   a lit top edge plus a deeper, larger shadow. */
+:root[data-theme='dark'] {
+	--shadow-color: 0 0% 0%;
+	--shadow-1: 0 1px 0 rgb(255 255 255 / 0.04) inset,
+	            0 1px 3px rgb(0 0 0 / 0.5);
+	--shadow-2: 0 1px 0 rgb(255 255 255 / 0.05) inset,
+	            0 6px 16px rgb(0 0 0 / 0.55);
+	--shadow-3: 0 1px 0 rgb(255 255 255 / 0.06) inset,
+	            0 12px 28px rgb(0 0 0 / 0.6);
+	--shadow-4: 0 1px 0 rgb(255 255 255 / 0.07) inset,
+	            0 24px 56px rgb(0 0 0 / 0.65);
+	--shadow-5: 0 1px 0 rgb(255 255 255 / 0.08) inset,
+	            0 40px 96px rgb(0 0 0 / 0.7);
+	--shadow-inset: inset 0 1px 2px rgb(0 0 0 / 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme='light']) {
+		--shadow-color: 0 0% 0%;
+		--shadow-1: 0 1px 0 rgb(255 255 255 / 0.04) inset,
+		            0 1px 3px rgb(0 0 0 / 0.5);
+		--shadow-2: 0 1px 0 rgb(255 255 255 / 0.05) inset,
+		            0 6px 16px rgb(0 0 0 / 0.55);
+		--shadow-3: 0 1px 0 rgb(255 255 255 / 0.06) inset,
+		            0 12px 28px rgb(0 0 0 / 0.6);
+		--shadow-4: 0 1px 0 rgb(255 255 255 / 0.07) inset,
+		            0 24px 56px rgb(0 0 0 / 0.65);
+		--shadow-5: 0 1px 0 rgb(255 255 255 / 0.08) inset,
+		            0 40px 96px rgb(0 0 0 / 0.7);
+		--shadow-inset: inset 0 1px 2px rgb(0 0 0 / 0.5);
+	}
+}
+
+/* ── Surface recipes ───────────────────────────────────────────────────────
+   The three ways a rectangle can exist in this system. Everything else is a
+   variation of one of them. */
+
+.surface {
+	background: var(--bg-surface);
+	border: var(--border-hair) solid var(--line-default);
+	border-radius: var(--radius-card);
+	box-shadow: var(--shadow-0);
+}
+
+.surface-raised {
+	background: var(--bg-raised);
+	border: var(--border-hair) solid var(--line-default);
+	border-radius: var(--radius-card);
+	box-shadow: var(--shadow-3);
+}
+
+.surface-sunken {
+	background: var(--bg-sunken);
+	border: var(--border-hair) solid var(--line-subtle);
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-inset);
+}
+
+/* The signal edge: a 2px accent rule welded to one side. This is how "live",
+   "featured" and "current" are marked — never a fill, never a glow. */
+.edge-signal { box-shadow: inset var(--border-3) 0 0 0 var(--accent); }
+.edge-signal-top { box-shadow: inset 0 var(--border-3) 0 0 var(--accent); }
+.edge-signal-bottom { box-shadow: inset 0 calc(var(--border-3) * -1) 0 0 var(--accent); }
+
+/* Elevation utilities */
+.elev-0 { box-shadow: var(--shadow-0); }
+.elev-1 { box-shadow: var(--shadow-1); }
+.elev-2 { box-shadow: var(--shadow-2); }
+.elev-3 { box-shadow: var(--shadow-3); }
+.elev-4 { box-shadow: var(--shadow-4); }
+.elev-5 { box-shadow: var(--shadow-5); }

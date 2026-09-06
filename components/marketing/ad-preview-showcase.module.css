@@ -1,0 +1,55 @@
+@keyframes pulseRing {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+}
+
+@keyframes fadeInUp {
+  0%,
+  15% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  40%,
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sweepIn {
+  0%,
+  10% {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  35%,
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.pulse {
+  animation: pulseRing 2.4s ease-out infinite;
+}
+
+.fadeInUp {
+  animation: fadeInUp 3s ease-out infinite;
+}
+
+.sweepIn {
+  animation: sweepIn 3s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse,
+  .fadeInUp,
+  .sweepIn {
+    animation: none;
+  }
+}

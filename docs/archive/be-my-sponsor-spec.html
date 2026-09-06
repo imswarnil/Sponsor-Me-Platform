@@ -1,0 +1,356 @@
+<meta charset="utf-8">
+<title>Be My Sponsor — Project Specification</title>
+<style>
+  :root{
+    --ink:#111827; --muted:#5b6472; --line:#e4e7ec; --accent:#4f46e5;
+    --accent-soft:#eef2ff; --code-bg:#f6f7f9; --ok:#0f766e; --warn:#b45309; --stop:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    color:var(--ink); font-size:10.7px; line-height:1.55; margin:0;
+  }
+  .page{padding:0 4mm}
+  h1,h2,h3,h4{line-height:1.2; margin:0 0 .35em}
+  h2{font-size:16px; color:var(--accent); border-bottom:2px solid var(--accent-soft);
+     padding-bottom:4px; margin-top:26px; page-break-after:avoid}
+  h3{font-size:12.5px; margin-top:16px; page-break-after:avoid}
+  h4{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-top:12px}
+  p{margin:0 0 8px}
+  ul,ol{margin:0 0 8px; padding-left:18px}
+  li{margin:2px 0}
+  code{font-family:"SF Mono",Menlo,Consolas,monospace; background:var(--code-bg);
+       padding:1px 4px; border-radius:3px; font-size:9.6px}
+  pre{background:var(--code-bg); border:1px solid var(--line); border-radius:6px;
+      padding:10px 12px; overflow:auto; font-size:9.2px; line-height:1.45;
+      font-family:"SF Mono",Menlo,Consolas,monospace; page-break-inside:avoid}
+  table{border-collapse:collapse; width:100%; margin:6px 0 12px; font-size:9.4px}
+  th,td{border:1px solid var(--line); padding:5px 7px; text-align:left; vertical-align:top}
+  th{background:var(--accent-soft); color:#3730a3; font-weight:600}
+  tr{page-break-inside:avoid}
+  .cover{padding:60mm 4mm 0; page-break-after:always}
+  .cover .kicker{color:var(--accent); font-weight:700; letter-spacing:.14em; text-transform:uppercase; font-size:11px}
+  .cover h1{font-size:44px; margin:.15em 0 .1em; letter-spacing:-.5px}
+  .cover .tag{font-size:15px; color:var(--muted); margin-bottom:36px}
+  .cover .meta{font-size:10.5px; color:var(--muted); border-top:1px solid var(--line); padding-top:12px; width:70%}
+  .cover .meta b{color:var(--ink)}
+  .badge{display:inline-block; font-size:8.5px; font-weight:700; padding:1px 7px; border-radius:20px;
+         text-transform:uppercase; letter-spacing:.04em; vertical-align:middle}
+  .b-p1{background:#dcfce7; color:#166534}
+  .b-later{background:#fef3c7; color:#92400e}
+  .b-out{background:#fee2e2; color:#991b1b}
+  .callout{border-left:3px solid var(--accent); background:var(--accent-soft);
+           padding:8px 12px; border-radius:0 6px 6px 0; margin:10px 0; page-break-inside:avoid}
+  .callout.warn{border-color:var(--warn); background:#fffbeb}
+  .callout.stop{border-color:var(--stop); background:#fef2f2}
+  .callout .lbl{font-weight:700; font-size:9px; text-transform:uppercase; letter-spacing:.05em; display:block; margin-bottom:2px}
+  .callout.warn .lbl{color:var(--warn)} .callout.stop .lbl{color:var(--stop)} .callout .lbl{color:var(--accent)}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .card{border:1px solid var(--line); border-radius:8px; padding:10px 12px; page-break-inside:avoid}
+  .card h4{margin-top:0}
+  .muted{color:var(--muted)}
+  .toc a{color:var(--ink); text-decoration:none}
+  .toc ol{list-style:none; padding-left:0}
+  .toc li{padding:3px 0; border-bottom:1px dotted var(--line); display:flex; justify-content:space-between}
+  .toc .n{color:var(--accent); font-weight:700; margin-right:8px}
+  .flow{font-family:"SF Mono",Menlo,monospace; font-size:9px; background:var(--code-bg);
+        border:1px solid var(--line); border-radius:6px; padding:12px; white-space:pre; overflow:auto; page-break-inside:avoid}
+  .sec{page-break-inside:avoid}
+  footer{margin-top:30px; border-top:1px solid var(--line); padding-top:8px; color:var(--muted); font-size:8.5px}
+</style>
+
+<!-- ============ COVER ============ -->
+<div class="cover">
+  <div class="kicker">Project Specification</div>
+  <h1>Be&nbsp;My&nbsp;Sponsor</h1>
+  <div class="tag">A self-serve marketplace for embeddable sponsorship slots &mdash;<br>publishers list ad spots, sponsors book them, a widget serves them.</div>
+  <div class="meta">
+    <div><b>Document</b> &nbsp; Product &amp; Engineering Specification v1.0</div>
+    <div><b>Status</b> &nbsp;&nbsp;&nbsp;&nbsp; Draft &mdash; for build (Phase 1: Walking Skeleton)</div>
+    <div><b>Owner</b> &nbsp;&nbsp;&nbsp;&nbsp; swarnilsinghaicse@gmail.com</div>
+    <div><b>Date</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 24 July 2026</div>
+    <div><b>Base</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nextjs/saas-starter &rarr; monorepo (pnpm + Turborepo)</div>
+  </div>
+</div>
+
+<div class="page">
+
+<!-- ============ TOC ============ -->
+<h2 style="margin-top:0">Contents</h2>
+<div class="toc">
+<ol>
+  <li><span><span class="n">1</span>Product Overview</span><span class="muted">Vision &amp; problem</span></li>
+  <li><span><span class="n">2</span>Personas &amp; Core Concepts</span><span class="muted">Who &amp; what</span></li>
+  <li><span><span class="n">3</span>System Architecture</span><span class="muted">Monorepo &amp; services</span></li>
+  <li><span><span class="n">4</span>Repository Layout</span><span class="muted">Folder tree</span></li>
+  <li><span><span class="n">5</span>Data Model</span><span class="muted">Drizzle schema</span></li>
+  <li><span><span class="n">6</span>Booking State Machine</span><span class="muted">Pure transition()</span></li>
+  <li><span><span class="n">7</span>Tech Stack &amp; Dependencies</span><span class="muted">Approved list</span></li>
+  <li><span><span class="n">8</span>Engineering Rules (Binding)</span><span class="muted">Non-negotiable</span></li>
+  <li><span><span class="n">9</span>Phased Roadmap</span><span class="muted">Phase 1 &rarr; N</span></li>
+  <li><span><span class="n">10</span>Phase 1 Build Plan</span><span class="muted">Step-by-step</span></li>
+  <li><span><span class="n">11</span>Out of Scope (Phase 1)</span><span class="muted">Do not build</span></li>
+  <li><span><span class="n">12</span>Acceptance Criteria</span><span class="muted">Definition of done</span></li>
+</ol>
+</div>
+
+<!-- ============ 1 ============ -->
+<h2>1 &nbsp; Product Overview</h2>
+<p><b>Be My Sponsor</b> lets any website owner turn unused surface area (a sidebar, a footer, a newsletter block) into a bookable sponsorship slot, and lets sponsors discover and book those slots self-serve &mdash; without ad networks, tracking cookies, or an ad-ops team.</p>
+<div class="grid2">
+  <div class="card">
+    <h4>The problem</h4>
+    <p>Small publishers have valuable audiences but no lightweight way to sell sponsorship directly. Sponsors have budget but no easy way to find and book independent inventory. Existing ad networks are heavy, opaque, and privacy-hostile.</p>
+  </div>
+  <div class="card">
+    <h4>The approach</h4>
+    <p>A publisher defines a <b>Property</b> (their site) and one or more <b>Slots</b> (fixed-size ad spots). They drop a tiny embeddable <b>widget</b> on their page. A sponsor <b>books</b> a slot for a date range; the <b>ad-server</b> serves the booked creative; empty slots show a &ldquo;Sponsor this spot&rdquo; call-to-action.</p>
+  </div>
+</div>
+<p><b>Why it can work:</b> zero layout shift (dimensions reserved), no third-party cookies, a &lt;15&nbsp;KB widget, and a booking model that makes double-booking structurally impossible via a database-level overlap constraint.</p>
+
+<!-- ============ 2 ============ -->
+<h2>2 &nbsp; Personas &amp; Core Concepts</h2>
+<table>
+  <tr><th>Persona</th><th>Goal</th><th>Key actions</th></tr>
+  <tr><td><b>Publisher</b></td><td>Monetise their site with direct sponsorship</td><td>Create Property &rarr; create Slots &rarr; embed widget &rarr; approve/serve bookings</td></tr>
+  <tr><td><b>Sponsor</b></td><td>Reach a specific audience for a date range</td><td>Discover a slot &rarr; book a date range &rarr; upload creative &rarr; pay <span class="badge b-later">later</span></td></tr>
+  <tr><td><b>Both</b></td><td>Publisher on one site, sponsor on another</td><td>Belongs to multiple orgs, switches between them</td></tr>
+</table>
+<h4>Domain vocabulary</h4>
+<table>
+  <tr><th>Term</th><th>Meaning</th></tr>
+  <tr><td><b>Organization</b></td><td>A billing/ownership unit, typed <code>PUBLISHER</code>, <code>SPONSOR</code>, or <code>BOTH</code>. All inventory and bookings belong to an org, never a bare user.</td></tr>
+  <tr><td><b>Membership</b></td><td>A user&rarr;org link carrying a role and a permissions array. A user may hold memberships in many orgs simultaneously.</td></tr>
+  <tr><td><b>Property</b></td><td>A website or surface owned by a publisher org (has a public slug).</td></tr>
+  <tr><td><b>Slot</b></td><td>A fixed-dimension ad spot on a property (Phase 1: sidebar image, <code>300&times;250</code> only). Has a public id used by the widget/ad-server.</td></tr>
+  <tr><td><b>Booking</b></td><td>A sponsor org reserving a slot for a date range. Governed entirely by the booking state machine.</td></tr>
+  <tr><td><b>Creative</b></td><td>The image a sponsor supplies for a booking (hardcoded in Phase 1).</td></tr>
+</table>
+
+<!-- ============ 3 ============ -->
+<h2>3 &nbsp; System Architecture</h2>
+<p>A pnpm-workspace monorepo orchestrated by Turborepo. Domain logic is isolated from frameworks: <code>packages/core</code> is pure TypeScript with zero imports from Next, React, or Drizzle. Anything crossing an HTTP boundary is validated by a Zod schema from <code>packages/contracts</code>.</p>
+<div class="flow">┌──────────────┐        ┌───────────────┐        ┌──────────────┐
+│  apps/web    │        │ apps/ad-server │       │  apps/widget │
+│  Next.js     │        │  read-only     │       │  vanilla TS  │
+│  dashboard   │        │  JSON API      │       │  Shadow DOM  │
+└──────┬───────┘        └──────┬────────┘        └──────┬───────┘
+       │ writes                │ GET /serve/:id         │ fetch()
+       ▼                       ▼ (NO db import)          ▼
+┌──────────────────────────────────────────────────────────────┐
+│  packages/contracts (zod)  ·  packages/core (pure domain)     │
+│  packages/db (Drizzle + Postgres, btree_gist EXCLUDE)         │
+└──────────────────────────────────────────────────────────────┘</div>
+<table>
+  <tr><th>Unit</th><th>Responsibility</th><th>Constraint</th></tr>
+  <tr><td><code>apps/web</code></td><td>Auth, dashboard, publisher/sponsor UI</td><td>Next.js App Router, Better Auth (org plugin)</td></tr>
+  <tr><td><code>apps/ad-server</code></td><td>Serve creative JSON for a slot</td><td>Standalone, read-only, <b>must not import packages/db</b></td></tr>
+  <tr><td><code>apps/widget</code></td><td>Embed &amp; render a slot on publisher pages</td><td>Vanilla TS, esbuild, no deps, &le;15&nbsp;KB gzipped</td></tr>
+  <tr><td><code>packages/db</code></td><td>Schema, migrations, DB access</td><td>Drizzle + Postgres; money = integer minor units</td></tr>
+  <tr><td><code>packages/contracts</code></td><td>Zod schemas for every HTTP boundary</td><td>Single source of wire-format truth</td></tr>
+  <tr><td><code>packages/core</code></td><td>Framework-free domain logic</td><td>Pure; zero next/react/drizzle imports</td></tr>
+</table>
+
+<!-- ============ 4 ============ -->
+<h2>4 &nbsp; Repository Layout</h2>
+<pre>be-my-sponsor/
+├─ apps/
+│  ├─ web/            # Next.js App Router + Tailwind + shadcn/ui
+│  ├─ ad-server/      # read-only JSON API (no db import)
+│  └─ widget/         # vanilla TS, esbuild, Shadow DOM, &le;15KB gz
+├─ packages/
+│  ├─ db/             # Drizzle schema + raw SQL migrations
+│  ├─ contracts/      # zod schemas (HTTP boundary types)
+│  └─ core/           # pure domain: transition() + unit tests
+├─ CLAUDE.md          # binding product spec (rules for all code)
+├─ TODO.md            # phase checklist, updated after each step
+├─ turbo.json         # Turborepo pipeline
+├─ pnpm-workspace.yaml
+├─ tsconfig.base.json # shared strict TS config
+├─ .env.example
+└─ package.json       # workspace root</pre>
+<div class="callout"><span class="lbl">Note</span>The build starts from <code>nextjs/saas-starter</code> (a single Next app), which is progressively restructured into the monorepo above. The starter&rsquo;s Stripe wiring is removed for Phase 1.</div>
+
+<!-- ============ 5 ============ -->
+<h2>5 &nbsp; Data Model <span class="badge b-p1">Phase 1</span></h2>
+<p>Drizzle schema in <code>packages/db</code>. All monetary values are stored as <b>integer minor units</b> (e.g. cents) with a companion <code>currency</code> column &mdash; <b>no floating-point money anywhere</b>. Every migration is reversible and additive.</p>
+
+<h3>5.1 &nbsp; Tables</h3>
+<table>
+  <tr><th>Table</th><th>Key columns</th><th>Notes</th></tr>
+  <tr><td><b>user</b></td><td>id · email · name · createdAt</td><td>Managed largely by Better Auth.</td></tr>
+  <tr><td><b>organization</b></td><td>id · name · slug · <b>type</b> (<code>PUBLISHER</code>|<code>SPONSOR</code>|<code>BOTH</code>)</td><td>Owns all inventory &amp; bookings.</td></tr>
+  <tr><td><b>membership</b></td><td>id · userId&nbsp;&rarr;&nbsp;user · orgId&nbsp;&rarr;&nbsp;organization · role · <b>permissions[]</b></td><td>Many-to-many; a user may join multiple orgs.</td></tr>
+  <tr><td><b>property</b></td><td>id · orgId&nbsp;&rarr;&nbsp;organization · name · <b>slug</b> · createdAt</td><td>Belongs to a publisher org.</td></tr>
+  <tr><td><b>slot</b></td><td>id · propertyId&nbsp;&rarr;&nbsp;property · <b>publicId</b> · name · width · height · placement</td><td>Phase 1: width=300, height=250, placement=<code>sidebar</code>.</td></tr>
+  <tr><td><b>booking</b></td><td>id · slotId&nbsp;&rarr;&nbsp;slot · sponsorOrgId&nbsp;&rarr;&nbsp;organization · dateRange · <b>status</b> (enum) · priceMinor · currency</td><td>Minimal in Phase 1: status enum + overlap guard.</td></tr>
+</table>
+
+<h3>5.2 &nbsp; The overlap constraint <span class="badge b-p1">critical</span></h3>
+<p>A slot must never hold two active bookings whose date ranges overlap. This is enforced <b>in the database</b>, not application code, via a raw SQL migration that enables <code>btree_gist</code> and adds an <code>EXCLUDE</code> constraint:</p>
+<pre>CREATE EXTENSION IF NOT EXISTS btree_gist;
+
+ALTER TABLE booking ADD CONSTRAINT booking_no_overlap
+  EXCLUDE USING gist (
+    slot_id      WITH =,
+    date_range   WITH &amp;&amp;
+  )
+  WHERE (status IN ('confirmed', 'active'));   -- only live bookings block</pre>
+<div class="callout"><span class="lbl">Why database-level</span>Application checks race under concurrency. An <code>EXCLUDE</code> constraint makes double-booking a rejected transaction, not a bug you can forget to write.</div>
+
+<!-- ============ 6 ============ -->
+<h2>6 &nbsp; Booking State Machine <span class="badge b-p1">Phase 1</span></h2>
+<p>The booking lifecycle lives in <code>packages/core</code> as a <b>pure</b> function <code>transition(booking, event)</code> with an exhaustive <code>switch</code>. A booking&rsquo;s status is <b>never</b> written directly &mdash; only ever through <code>transition()</code>. Invalid transitions throw.</p>
+<div class="flow">                ┌──────────┐
+   request →     │ PENDING  │
+                 └────┬─────┘
+        approve │     │ reject / expire
+                ▼     ▼
+          ┌───────────┐   ┌───────────┐
+          │ CONFIRMED │   │ REJECTED  │ (terminal)
+          └─────┬─────┘   └───────────┘
+       start    │   cancel
+                ▼   └────────────► ┌───────────┐
+          ┌───────────┐            │ CANCELLED │ (terminal)
+          │  ACTIVE   │            └───────────┘
+          └─────┬─────┘
+       complete │
+                ▼
+          ┌───────────┐
+          │ COMPLETED │ (terminal)
+          └───────────┘</div>
+<table>
+  <tr><th>From</th><th>Event</th><th>To</th></tr>
+  <tr><td>PENDING</td><td>APPROVE</td><td>CONFIRMED</td></tr>
+  <tr><td>PENDING</td><td>REJECT / EXPIRE</td><td>REJECTED</td></tr>
+  <tr><td>CONFIRMED</td><td>START</td><td>ACTIVE</td></tr>
+  <tr><td>CONFIRMED</td><td>CANCEL</td><td>CANCELLED</td></tr>
+  <tr><td>ACTIVE</td><td>COMPLETE</td><td>COMPLETED</td></tr>
+  <tr><td colspan="3" class="muted">REJECTED · CANCELLED · COMPLETED are terminal — any event throws.</td></tr>
+</table>
+<div class="callout"><span class="lbl">Design contract</span><code>transition()</code> takes framework-free plain data, returns the next booking (or throws), and is covered by unit tests. It is the <b>only</b> writer of booking status across the entire system.</div>
+
+<!-- ============ 7 ============ -->
+<h2>7 &nbsp; Tech Stack &amp; Dependencies</h2>
+<div class="grid2">
+  <div class="card">
+    <h4>Foundation</h4>
+    <ul>
+      <li>TypeScript (strict mode, shared base config)</li>
+      <li>pnpm workspaces + Turborepo</li>
+      <li>ESLint + Prettier</li>
+      <li>PostgreSQL + Drizzle ORM</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>Apps</h4>
+    <ul>
+      <li><b>web:</b> Next.js App Router, Tailwind, shadcn/ui</li>
+      <li><b>auth:</b> Better Auth + organization plugin</li>
+      <li><b>widget:</b> vanilla TS, esbuild, no dependencies</li>
+      <li><b>validation:</b> Zod (contracts)</li>
+    </ul>
+  </div>
+</div>
+<div class="callout warn"><span class="lbl">Dependency discipline</span>No dependency may be added unless it is named in <b>CLAUDE.md &sect;8</b>. Anything outside that list requires explicit approval before install.</div>
+
+<!-- ============ 8 ============ -->
+<h2>8 &nbsp; Engineering Rules <span class="badge b-out">Binding</span></h2>
+<p>These are non-negotiable and apply to <b>all</b> code written for the project. They mirror <code>CLAUDE.md</code>, which is the source of truth.</p>
+<table>
+  <tr><th>#</th><th>Rule</th></tr>
+  <tr><td>R1</td><td>A user must be able to belong to <b>multiple organizations</b> and switch between them (CLAUDE.md &sect;2). Non-negotiable.</td></tr>
+  <tr><td>R2</td><td>Never write a booking status directly &mdash; <b>only</b> via <code>transition()</code>.</td></tr>
+  <tr><td>R3</td><td>No domain logic in route handlers. Handlers <b>validate &rarr; authorize &rarr; call core &rarr; serialize</b>. Nothing else.</td></tr>
+  <tr><td>R4</td><td>Everything crossing an HTTP boundary has a Zod schema in <code>packages/contracts</code>.</td></tr>
+  <tr><td>R5</td><td><code>packages/core</code> imports nothing from next / react / drizzle.</td></tr>
+  <tr><td>R6</td><td><code>apps/ad-server</code> must not import <code>packages/db</code>.</td></tr>
+  <tr><td>R7</td><td>Money = integer minor units + currency column. No floats anywhere.</td></tr>
+  <tr><td>R8</td><td>Every migration is reversible and additive.</td></tr>
+  <tr><td>R9</td><td>No dependency outside CLAUDE.md &sect;8 without approval.</td></tr>
+  <tr><td>R10</td><td>Widget build fails above <b>15&nbsp;KB gzipped</b> (CI-checked size budget).</td></tr>
+  <tr><td>R11</td><td>Widget reserves exact dimensions &mdash; <b>zero layout shift</b>.</td></tr>
+  <tr><td>R12</td><td>Commit after each numbered step with a conventional-commit message; update <code>TODO.md</code> after each step.</td></tr>
+  <tr><td>R13</td><td>If a step is bigger than expected, stop and report rather than half-finish.</td></tr>
+</table>
+
+<!-- ============ 9 ============ -->
+<h2>9 &nbsp; Phased Roadmap</h2>
+<table>
+  <tr><th>Phase</th><th>Theme</th><th>Delivers</th></tr>
+  <tr><td><span class="badge b-p1">1</span></td><td><b>Walking Skeleton</b></td><td>Monorepo, schema, contracts, state machine, auth + multi-org, create Property/Slot, embed snippet, read-only ad-server, embeddable widget with CTA. End-to-end thin slice, no money.</td></tr>
+  <tr><td><span class="badge b-later">2</span></td><td>Booking flow</td><td>Sponsor-facing booking of a date range, creative upload, publisher approval, driving the state machine end to end.</td></tr>
+  <tr><td><span class="badge b-later">3</span></td><td>Payments</td><td>Stripe integration, priced slots, invoices &mdash; money moves.</td></tr>
+  <tr><td><span class="badge b-later">4</span></td><td>Calendar &amp; availability</td><td>Availability calendar UI, scheduling, live serving by date.</td></tr>
+  <tr><td><span class="badge b-later">5</span></td><td>Stats &amp; reporting</td><td>Impressions/clicks, sponsor &amp; publisher dashboards.</td></tr>
+</table>
+<div class="callout stop"><span class="lbl">Scope fence</span>Phase 1 builds <b>none</b> of Phase 2+. No payments, no booking flow, no calendar, no stats. Writing Stripe code in Phase 1 is out of scope &mdash; stop.</div>
+
+<!-- ============ 10 ============ -->
+<h2>10 &nbsp; Phase 1 Build Plan <span class="badge b-p1">Walking Skeleton</span></h2>
+<p>Planning first: before any file is written, produce the exact folder/file tree, the proposed Drizzle schema table-by-table, any spec ambiguities, and anything to defer &mdash; then wait for approval. After approval, scaffold in order, committing after each step.</p>
+<table>
+  <tr><th>Step</th><th>Deliverable</th><th>Commit</th></tr>
+  <tr><td><b>1</b></td><td>Monorepo skeleton: pnpm workspaces + Turborepo, TS strict, shared <code>tsconfig.base</code>, ESLint + Prettier, <code>.gitignore</code>, <code>.env.example</code>, root <code>TODO.md</code>.</td><td><code>chore: scaffold monorepo</code></td></tr>
+  <tr><td><b>2</b></td><td><code>packages/db</code>: Drizzle schema + migrations for Phase 1 entities. Raw SQL migration enabling <code>btree_gist</code> + <code>EXCLUDE</code> overlap constraint. Money as integer minor units.</td><td><code>feat(db): phase-1 schema</code></td></tr>
+  <tr><td><b>3</b></td><td><code>packages/contracts</code>: Zod schemas for all entities crossing the HTTP boundary.</td><td><code>feat(contracts): zod schemas</code></td></tr>
+  <tr><td><b>4</b></td><td><code>packages/core</code>: pure <code>transition(booking, event)</code> with exhaustive switch + unit tests. Nothing else.</td><td><code>feat(core): booking state machine</code></td></tr>
+  <tr><td><b>5</b></td><td><code>apps/web</code>: Next.js + Tailwind + shadcn/ui. Better Auth org plugin (multi-org switch). Screens: sign up, sign in, org switcher, create Property, create Slot (300&times;250 sidebar), embed-snippet page.</td><td><code>feat(web): auth + dashboard</code></td></tr>
+  <tr><td><b>6</b></td><td><code>apps/ad-server</code>: standalone read-only. <code>GET /serve/:slotPublicId</code> &rarr; <code>{creative|null, bookingId|null, width, height}</code>. Hardcoded creative allowed. No <code>packages/db</code> import.</td><td><code>feat(ad-server): serve endpoint</code></td></tr>
+  <tr><td><b>7</b></td><td><code>apps/widget</code>: vanilla TS + esbuild, Shadow DOM, reserves exact dimensions, fetches ad-server; no creative &rarr; &ldquo;Sponsor this spot&rdquo; CTA &rarr; <code>/{property-slug}/sponsor?slot=&hellip;</code>. CI size budget &le;15&nbsp;KB gz.</td><td><code>feat(widget): embeddable slot</code></td></tr>
+</table>
+<h4>Ad-server response contract</h4>
+<pre>GET /serve/:slotPublicId  →  200 application/json
+{
+  "creative":  { "imageUrl": string, "clickUrl": string } | null,
+  "bookingId": string | null,
+  "width":     300,
+  "height":    250
+}</pre>
+
+<!-- ============ 11 ============ -->
+<h2>11 &nbsp; Out of Scope — Phase 1</h2>
+<div class="grid2">
+  <div class="card">
+    <h4><span class="badge b-out">Do not build</span></h4>
+    <ul>
+      <li>Stripe / payments of any kind</li>
+      <li>The sponsor booking flow</li>
+      <li>Availability calendar</li>
+      <li>Impression / click stats</li>
+      <li>Creative upload pipeline (hardcoded in P1)</li>
+      <li>Multiple slot sizes / placements</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>Deferred (design later)</h4>
+    <ul>
+      <li>Pricing model &amp; currency handling UX</li>
+      <li>Notifications / email</li>
+      <li>Public marketplace / discovery</li>
+      <li>Fraud &amp; content moderation of creatives</li>
+      <li>Rate limiting on ad-server</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============ 12 ============ -->
+<h2>12 &nbsp; Acceptance Criteria — Phase 1 Done</h2>
+<ol>
+  <li>A user can sign up, sign in, and belongs to at least one org; can create a second org and <b>switch</b> between them.</li>
+  <li>A publisher org can create a Property and a 300&times;250 sidebar Slot, and view its embed snippet.</li>
+  <li>The DB rejects two overlapping active bookings on the same slot (constraint verified).</li>
+  <li><code>transition()</code> passes its unit tests and is the only writer of booking status.</li>
+  <li><code>ad-server</code> returns valid JSON for a slot public id and imports nothing from <code>packages/db</code>.</li>
+  <li>The widget renders into Shadow DOM with zero layout shift and shows the CTA when there is no creative; build is &le;15&nbsp;KB gzipped.</li>
+  <li><code>TODO.md</code> reflects every completed step; each step is a conventional commit.</li>
+</ol>
+
+<footer>
+  Be My Sponsor &mdash; Product &amp; Engineering Specification v1.0 &nbsp;·&nbsp; 24 July 2026 &nbsp;·&nbsp;
+  CLAUDE.md is the binding source of truth; this document summarises it for planning. &nbsp;·&nbsp; Confidential draft.
+</footer>
+
+</div>

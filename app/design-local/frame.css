@@ -1,0 +1,498 @@
+/* =============================================================================
+   12 · FRAMES & WINDOW CHROME
+   Containers that say what a thing IS before you read it: a Mac window says
+   "this is an app", a terminal says "this is a command", a viewfinder says
+   "this is footage".
+
+   All of them are CSS only, all of them wrap arbitrary content, and all of
+   them use the same tokens as everything else — so they retheme for free.
+   ========================================================================== */
+
+/* ── Shared shell ────────────────────────────────────────────────────────── */
+
+.win {
+	--win-bar: 2.25rem;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	border-radius: var(--radius-lg);
+	border: var(--border-hair) solid var(--line-default);
+	background: var(--bg-surface);
+	overflow: hidden;
+	box-shadow: var(--shadow-3);
+	isolation: isolate;
+}
+
+.win__bar {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	height: var(--win-bar);
+	padding-inline: var(--space-3);
+	background: var(--bg-sunken);
+	border-bottom: var(--border-hair) solid var(--line-subtle);
+	font-family: var(--font-slate);
+	font-size: var(--text-2xs);
+	letter-spacing: 0.08em;
+	color: var(--fg-subtle);
+	flex: none;
+}
+
+.win__body {
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+}
+
+/* Traffic lights. Grey by default — they're chrome, not decoration. Add
+   .win__dots-color when the window IS the subject of the shot. */
+.win__dots { display: inline-flex; gap: 6px; flex: none; }
+
+.win__dots > span {
+	width: 10px;
+	height: 10px;
+	border-radius: var(--radius-full);
+	background: var(--line-strong);
+}
+
+.win__dots-color > span:nth-child(1) { background: #ff5f57; }
+.win__dots-color > span:nth-child(2) { background: #febc2e; }
+.win__dots-color > span:nth-child(3) { background: #28c840; }
+
+.win__title { flex: 1; text-align: center; }
+
+/* ── 1 · macOS window ────────────────────────────────────────────────────── */
+
+.win-mac { --win-bar: 2.5rem; border-radius: var(--radius-xl); }
+
+.win-mac .win__bar {
+	background: linear-gradient(to bottom,
+		color-mix(in srgb, var(--bg-sunken) 70%, var(--bg-surface)),
+		var(--bg-sunken));
+}
+
+/* ── 2 · VS Code / editor ────────────────────────────────────────────────
+   Activity rail, tab strip, gutter line numbers. The gutter is a background
+   gradient, not markup, so any <pre> drops straight in. */
+
+.win-code {
+	background: var(--ink-950);
+	color: var(--ink-100);
+	border-color: rgb(255 255 255 / 0.10);
+	color-scheme: dark;
+}
+
+.win-code .win__bar {
+	background: #16161f;
+	border-bottom-color: rgb(255 255 255 / 0.08);
+	color: rgb(255 255 255 / 0.55);
+}
+
+.win-code__tabs {
+	display: flex;
+	align-items: stretch;
+	background: #101017;
+	border-bottom: var(--border-hair) solid rgb(255 255 255 / 0.07);
+	font-family: var(--font-slate);
+	font-size: var(--text-2xs);
+}
+
+.win-code__tab {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2);
+	padding: var(--space-2) var(--space-4);
+	color: rgb(255 255 255 / 0.45);
+	border-right: var(--border-hair) solid rgb(255 255 255 / 0.07);
+}
+
+.win-code__tab[aria-selected='true'] {
+	background: var(--ink-950);
+	color: var(--ink-50);
+	box-shadow: inset 0 2px 0 0 var(--accent);
+}
+
+.win-code__body {
+	display: grid;
+	grid-template-columns: 2.75rem 1fr;
+	font-family: var(--font-slate);
+	font-size: var(--text-xs);
+	line-height: 1.7;
+}
+
+.win-code__gutter {
+	padding: var(--space-3) var(--space-2);
+	text-align: right;
+	color: rgb(255 255 255 / 0.22);
+	background: #0d0d14;
+	border-right: var(--border-hair) solid rgb(255 255 255 / 0.06);
+	user-select: none;
+}
+
+.win-code__lines {
+	padding: var(--space-3) var(--space-4);
+	overflow-x: auto;
+	white-space: pre;
+}
+
+/* Minimal syntax colours — five roles, borrowed from the status hues so the
+   palette stays closed. The four that follow are the same four hues re-used:
+   markup and CSS need to name a tag, an attribute, a property and a selector,
+   and inventing new colours for them would open a palette this system keeps
+   deliberately shut. Punctuation recedes rather than colours. */
+.tok-key { color: #ff8fa5; }
+.tok-str { color: #6ee7ad; }
+.tok-num { color: #f2d795; }
+.tok-fn  { color: #93c2ff; }
+.tok-com { color: rgb(255 255 255 / 0.32); font-style: italic; }
+.tok-tag { color: #ff8fa5; }
+.tok-attr { color: #f2d795; }
+.tok-prop { color: #93c2ff; }
+.tok-sel { color: #ffc59c; }
+.tok-var { color: #c7b6ff; }
+.tok-punc { color: rgb(255 255 255 / 0.45); }
+
+/* ── 3 · terminal ────────────────────────────────────────────────────────── */
+
+.win-term {
+	background: var(--ink-1000);
+	color: var(--ink-100);
+	border-color: rgb(255 255 255 / 0.10);
+	font-family: var(--font-slate);
+	color-scheme: dark;
+}
+
+.win-term .win__bar { background: #0d0d14; color: rgb(255 255 255 / 0.5); border-bottom-color: rgb(255 255 255 / 0.07); }
+
+.win-term__body {
+	padding: var(--space-4);
+	font-size: var(--text-xs);
+	line-height: 1.75;
+	white-space: pre-wrap;
+}
+
+.win-term__prompt::before {
+	content: '❯ ';
+	color: var(--accent);
+}
+
+/* Blinking block cursor. Stops under reduced-motion like everything else. */
+.win-term__cursor {
+	display: inline-block;
+	width: 0.55em;
+	height: 1em;
+	background: var(--accent);
+	vertical-align: -0.15em;
+	animation: fxBlink 1.05s steps(1) infinite;
+}
+
+@keyframes fxBlink { 50% { opacity: 0; } }
+
+/* ── 4 · browser ─────────────────────────────────────────────────────────── */
+
+.win-browser .win__bar { gap: var(--space-2); }
+
+.win-browser__url {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	height: 1.5rem;
+	padding-inline: var(--space-3);
+	border-radius: var(--radius-pill);
+	background: var(--bg-canvas);
+	border: var(--border-hair) solid var(--line-subtle);
+	font-family: var(--font-slate);
+	font-size: var(--text-2xs);
+	color: var(--fg-subtle);
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+/* ── 5 · phone ───────────────────────────────────────────────────────────
+   For screenshots of the site on mobile, and for IG/Shorts mockups. */
+
+.win-phone {
+	--win-bar: 0;
+	aspect-ratio: 9 / 19.5;
+	border-radius: 2.25rem;
+	border: 8px solid var(--ink-900);
+	background: var(--bg-canvas);
+	box-shadow: var(--shadow-4);
+	max-width: 20rem;
+}
+
+.win-phone::before {
+	content: '';
+	position: absolute;
+	top: 0.6rem;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 32%;
+	height: 1.1rem;
+	border-radius: var(--radius-pill);
+	background: var(--ink-900);
+	z-index: var(--z-raised);
+}
+
+/* ── 6 · camera shutter ──────────────────────────────────────────────────
+   Six blades that close over a frame. The "photo taken" transition, and the
+   loading state for a gallery. Purely decorative: it never blocks input. */
+
+.shutter {
+	position: relative;
+	overflow: hidden;
+	isolation: isolate;
+}
+
+.shutter__blades {
+	position: absolute;
+	inset: 0;
+	z-index: var(--z-raised);
+	pointer-events: none;
+	display: grid;
+	place-items: center;
+}
+
+.shutter__blades > span {
+	position: absolute;
+	width: 150%;
+	height: 150%;
+	background: var(--ink-1000);
+	transform-origin: 50% 50%;
+	clip-path: polygon(50% 50%, 100% 0, 100% 100%);
+	transition: transform var(--dur-4) var(--ease-inout);
+}
+
+.shutter__blades > span:nth-child(1) { transform: rotate(0deg)   translateX(88%); }
+.shutter__blades > span:nth-child(2) { transform: rotate(60deg)  translateX(88%); }
+.shutter__blades > span:nth-child(3) { transform: rotate(120deg) translateX(88%); }
+.shutter__blades > span:nth-child(4) { transform: rotate(180deg) translateX(88%); }
+.shutter__blades > span:nth-child(5) { transform: rotate(240deg) translateX(88%); }
+.shutter__blades > span:nth-child(6) { transform: rotate(300deg) translateX(88%); }
+
+/* Closed state — add .is-closed to fire it. */
+.shutter.is-closed .shutter__blades > span:nth-child(1) { transform: rotate(0deg)   translateX(0); }
+.shutter.is-closed .shutter__blades > span:nth-child(2) { transform: rotate(60deg)  translateX(0); }
+.shutter.is-closed .shutter__blades > span:nth-child(3) { transform: rotate(120deg) translateX(0); }
+.shutter.is-closed .shutter__blades > span:nth-child(4) { transform: rotate(180deg) translateX(0); }
+.shutter.is-closed .shutter__blades > span:nth-child(5) { transform: rotate(240deg) translateX(0); }
+.shutter.is-closed .shutter__blades > span:nth-child(6) { transform: rotate(300deg) translateX(0); }
+
+/* ── 7 · viewfinder ──────────────────────────────────────────────────────
+   Moved here from the layout layer: it's a frame, not a layout primitive.
+   Four corners, a rec bug, and optional grid lines / focus box.
+
+   .frame in 06-layout.css remains as the plain two-corner bracket for cards;
+   this is the full camera version. */
+
+/* NOTE — .vf draws its top-left corner with ::before, and so does .pattern.
+   Never put both on the same element: the two rules fight over one pseudo and
+   you get a rounded box instead of a corner. Put the pattern on a child. */
+.vf {
+	--vf-color: var(--craft);
+	--vf-size: 12%;
+	--vf-weight: var(--border-2);
+	--vf-inset: 4%;
+	position: relative;
+}
+
+.vf::before,
+.vf::after,
+.vf > .vf__tr,
+.vf > .vf__bl {
+	content: '';
+	position: absolute;
+	width: var(--vf-size);
+	aspect-ratio: 1;
+	border-style: solid;
+	border-color: var(--vf-color);
+	border-width: 0;
+	pointer-events: none;
+	z-index: var(--z-raised);
+}
+
+.vf::before { top: var(--vf-inset); left: var(--vf-inset); border-top-width: var(--vf-weight); border-left-width: var(--vf-weight); }
+.vf::after { bottom: var(--vf-inset); right: var(--vf-inset); border-bottom-width: var(--vf-weight); border-right-width: var(--vf-weight); }
+.vf > .vf__tr { top: var(--vf-inset); right: var(--vf-inset); border-top-width: var(--vf-weight); border-right-width: var(--vf-weight); }
+.vf > .vf__bl { bottom: var(--vf-inset); left: var(--vf-inset); border-bottom-width: var(--vf-weight); border-left-width: var(--vf-weight); }
+
+.vf-signal { --vf-color: var(--accent); }
+.vf-ink    { --vf-color: var(--line-strong); }
+.vf-light  { --vf-color: rgb(255 255 255 / 0.8); }
+
+/* Rule-of-thirds overlay — the composition grid inside a viewfinder. */
+.vf-thirds > .vf__grid {
+	position: absolute;
+	inset: var(--vf-inset);
+	pointer-events: none;
+	background:
+		linear-gradient(to right, transparent 33.2%, var(--vf-color) 33.2%, var(--vf-color) 33.4%, transparent 33.4%,
+		                transparent 66.5%, var(--vf-color) 66.5%, var(--vf-color) 66.7%, transparent 66.7%),
+		linear-gradient(to bottom, transparent 33.2%, var(--vf-color) 33.2%, var(--vf-color) 33.4%, transparent 33.4%,
+		                transparent 66.5%, var(--vf-color) 66.5%, var(--vf-color) 66.7%, transparent 66.7%);
+	opacity: 0.35;
+}
+
+/* Rec bug. There is deliberately NO centre focus box: a square in the middle
+   of the frame fights whatever the frame is actually showing, which is the
+   opposite of what a viewfinder is for. Corners and the bug, nothing else. */
+.vf__rec {
+	position: absolute;
+	top: var(--vf-inset);
+	left: 50%;
+	transform: translateX(-50%);
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2);
+	font-family: var(--font-slate);
+	font-size: var(--text-2xs);
+	letter-spacing: var(--tracking-slate);
+	color: var(--vf-color);
+}
+
+.vf__rec::before {
+	content: '';
+	width: var(--dot-md);
+	height: var(--dot-md);
+	border-radius: var(--radius-full);
+	background: var(--accent);
+	animation: fx-pulse 1.6s var(--ease-inout) infinite;
+}
+
+/* ── 8 · polaroid / contact sheet ────────────────────────────────────────── */
+
+.polaroid {
+	background: var(--bg-surface);
+	padding: var(--space-3) var(--space-3) var(--space-8);
+	border-radius: var(--radius-sm);
+	box-shadow: var(--shadow-3);
+	rotate: -1.2deg;
+}
+
+.polaroid > img,
+.polaroid > .polaroid__img {
+	display: block;
+	width: 100%;
+	aspect-ratio: 1;
+	object-fit: cover;
+	background: var(--bg-muted);
+}
+
+.polaroid__caption {
+	margin-top: var(--space-3);
+	font-family: var(--font-slate);
+	font-size: var(--text-2xs);
+	letter-spacing: 0.08em;
+	color: var(--fg-subtle);
+	text-align: center;
+}
+
+/* ── 9 · book ────────────────────────────────────────────────────────────
+   A cover with a spine and a page edge. For the courses, the guides, the
+   resume, and anything that wants to read as "a thing you can finish".
+
+     <article class="book">
+       <div class="book__cover"> … title … </div>
+     </article>  */
+
+.book {
+	--book-spine: 1.1rem;
+	position: relative;
+	display: block;
+	aspect-ratio: 3 / 4.2;
+	border-radius: var(--radius-xs) var(--radius-md) var(--radius-md) var(--radius-xs);
+	background: var(--bg-inverse);
+	color: var(--fg-on-inverse);
+	box-shadow: var(--shadow-3);
+	overflow: hidden;
+	isolation: isolate;
+	transition: var(--t-transform), var(--t-shadow);
+}
+
+/* The spine: a darker band down the left edge with a highlight, which is the
+   whole reason a flat rectangle reads as a book. */
+.book::before {
+	content: '';
+	position: absolute;
+	inset: 0 auto 0 0;
+	width: var(--book-spine);
+	z-index: 2;
+	background:
+		linear-gradient(to right,
+			rgb(0 0 0 / 0.45) 0%,
+			rgb(0 0 0 / 0.18) 42%,
+			rgb(255 255 255 / 0.14) 60%,
+			rgb(0 0 0 / 0.10) 100%);
+}
+
+/* The page edge on the right — thin, warm, slightly striped. */
+.book::after {
+	content: '';
+	position: absolute;
+	inset: 0 0 0 auto;
+	width: 5px;
+	z-index: 2;
+	background:
+		repeating-linear-gradient(to bottom, rgb(255 255 255 / 0.55) 0 1px, rgb(255 255 255 / 0.2) 1px 3px);
+}
+
+.book__cover {
+	position: relative;
+	z-index: 1;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+	padding: var(--space-6) var(--space-5) var(--space-5) calc(var(--book-spine) + var(--space-4));
+}
+
+.book__kicker {
+	font-family: var(--font-slate);
+	font-size: var(--text-2xs);
+	letter-spacing: var(--tracking-slate);
+	text-transform: uppercase;
+	color: color-mix(in srgb, currentColor 62%, transparent);
+}
+
+.book__title {
+	font-family: var(--font-display);
+	font-size: var(--text-xl);
+	font-weight: var(--weight-bold);
+	line-height: 1.05;
+	letter-spacing: var(--tracking-tight);
+	text-wrap: balance;
+}
+
+.book__foot { margin-top: auto; }
+
+@media (hover: hover) and (pointer: fine) {
+	.book:hover { transform: translate3d(0, -4px, 0) rotate(-0.6deg); box-shadow: var(--shadow-4); }
+}
+
+/* Stack of books — a shelf, for a course index. */
+.book-shelf { display: flex; gap: var(--space-4); align-items: flex-end; }
+.book-shelf > .book:nth-child(even) { rotate: 1.2deg; }
+
+/* ── 10 · film strip ─────────────────────────────────────────────────────── */
+
+.filmstrip {
+	position: relative;
+	padding-block: 1.1rem;
+	background: var(--ink-1000);
+	border-radius: var(--radius-sm);
+}
+
+.filmstrip::before,
+.filmstrip::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: 1.1rem;
+	background: repeating-linear-gradient(to right,
+		rgb(255 255 255 / 0.16) 0 10px, transparent 10px 22px);
+}
+
+.filmstrip::before { top: 0; }
+.filmstrip::after { bottom: 0; }

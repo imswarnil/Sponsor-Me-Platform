@@ -1,0 +1,285 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* ── Creator Design System · "Frame & Signal" ────────────────────────────────
+   The token layer is vendored verbatim from ../../design-system/src/1-foundation
+   so it can be re-synced with a plain `cp`. Never hand-edit app/creator/*.css —
+   customisation happens by overriding a token *after* the import, which is the
+   entire customisation API of the system. */
+@import "./creator/01-color.css";
+@import "./creator/02-typography.css";
+@import "./creator/03-space.css";
+@import "./creator/04-elevation.css";
+@import "./creator/05-motion.css";
+@import "./creator/09-logo.css";
+@import "./creator/12-frame.css";
+@import "./creator/15-syntax.css";
+
+/* Dark mode is the system's own contract: an explicit [data-theme] wins, and
+   with no explicit choice we follow the OS. Mirrors 01-color.css exactly. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+}
+
+/* ── The three faces, bound to next/font ─────────────────────────────────────
+   Overriding the primitives (not the -effective aliases) so every DS class —
+   .t-h1, .t-slate, .t-stat — picks the loaded webfont up automatically. */
+:root {
+  --font-display: var(--font-space-grotesk), "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-inter), "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-slate: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, "SF Mono", "Cascadia Mono", monospace;
+}
+
+/* ── Design tokens → Tailwind theme ──────────────────────────────────────────
+   Every Tailwind colour utility resolves to a Tier-2 semantic alias, never to a
+   ramp step. Overriding one alias in creator/01-color.css therefore rebrands
+   the whole platform — that is the point of the two-tier system.
+
+   Legacy shadcn names are kept pointed at their nearest DS alias so existing
+   markup keeps working: `accent` stays the hover *surface* (shadcn's meaning)
+   and `pop` carries the DS `--accent` — the signal, the record light. */
+@theme {
+  /* Surfaces */
+  --color-background: var(--bg-canvas);
+  --color-canvas: var(--bg-canvas);
+  --color-surface: var(--bg-surface);
+  --color-card: var(--bg-surface);
+  --color-popover: var(--bg-raised);
+  --color-raised: var(--bg-raised);
+  --color-sunken: var(--bg-sunken);
+  --color-inverse: var(--bg-inverse);
+  --color-media: var(--bg-media);
+  --color-scrim: var(--bg-scrim);
+  --color-muted: var(--bg-muted);
+  --color-secondary: var(--bg-sunken);
+  --color-accent: var(--bg-sunken); /* shadcn's "hover surface", not the signal */
+  --color-primary: var(--bg-inverse); /* the ink button — weight without colour */
+  --color-primary-foreground: var(--fg-on-inverse);
+
+  /* Foreground */
+  --color-foreground: var(--fg-default);
+  --color-card-foreground: var(--fg-default);
+  --color-popover-foreground: var(--fg-default);
+  --color-muted-foreground: var(--fg-muted);
+  --color-secondary-foreground: var(--fg-default);
+  --color-accent-foreground: var(--fg-default);
+  --color-subtle: var(--fg-subtle);
+  --color-faint: var(--fg-faint);
+  --color-on-inverse: var(--fg-on-inverse);
+  --color-on-accent: var(--fg-on-accent);
+
+  /* ── The signal — one accent, rationed ─────────────────────────────────────
+     Two names, because a fill and a piece of text need different steps of the
+     same ramp: `pop` is the FILL (signal-500, which needs white on top), and
+     `signal` is the legible accent TEXT tone (signal-700 on light, signal-400
+     on dark — both clear 4.5:1 on the canvas). Using `pop` as a text colour is
+     the one way to fail contrast with these tokens. */
+  --color-pop: var(--accent);
+  --color-pop-foreground: var(--fg-on-accent);
+  --color-pop-hover: var(--accent-hover);
+  --color-pop-press: var(--accent-press);
+  --color-pop-soft: var(--accent-soft);
+  --color-pop-soft-foreground: var(--accent-soft-fg);
+  --color-signal: var(--fg-accent);
+
+  /* Craft — the rationed amber. One per page, maximum. */
+  --color-craft: var(--craft);
+  --color-craft-soft: var(--craft-soft);
+  --color-craft-foreground: var(--craft-fg);
+
+  /* Lines */
+  --color-border: var(--line-default);
+  --color-input: var(--line-default);
+  --color-line-subtle: var(--line-subtle);
+  --color-line-strong: var(--line-strong);
+  --color-line-accent: var(--line-accent);
+  --color-ring: var(--focus-ring);
+
+  /* Status. `-soft` is the tint, the bare name is the legible foreground. */
+  --color-destructive: var(--danger-fg);
+  --color-destructive-foreground: var(--pure-white);
+  --color-destructive-soft: var(--danger-bg);
+  --color-destructive-line: var(--danger-line);
+  --color-success: var(--success-fg);
+  --color-success-soft: var(--success-bg);
+  --color-success-line: var(--success-line);
+  --color-warning: var(--warning-fg);
+  --color-warning-soft: var(--warning-bg);
+  --color-warning-line: var(--warning-line);
+  --color-info: var(--info-fg);
+  --color-info-soft: var(--info-bg);
+  --color-info-line: var(--info-line);
+
+  /* Faces */
+  --font-sans: var(--font-body-effective);
+  --font-display: var(--font-heading-effective);
+  --font-mono: var(--font-slate);
+
+  /* The rest of the fluid type scale, the tracking ladder and the radius
+     ladder already live in creator/*.css under the exact names Tailwind emits
+     (--text-sm, --tracking-tight, --radius-lg …), so those utilities pick up
+     the system's values with no mapping at all. Only the steps Tailwind has no
+     key for are restated here — keep them in step with 02-typography.css. */
+  --text-2xs: 0.6875rem; /* 11px · slate voice only */
+  --text-md: 1.0625rem; /* 17px · long-form body */
+  --tracking-slate: 0.14em; /* mono uppercase labels */
+
+  /* Component-level radius intents, so a corner is retuned in one place. */
+  --radius-control: var(--radius-md);
+  --radius-card: var(--radius-xl);
+  --radius-media: var(--radius-lg);
+  --radius-sheet: var(--radius-2xl);
+  --radius-pill: 999px;
+
+  /* Depth comes from lines first, shadow second. */
+  --shadow-xs: var(--shadow-1);
+  --shadow-sm: var(--shadow-1);
+  --shadow-md: var(--shadow-2);
+  --shadow-lg: var(--shadow-3);
+  --shadow-xl: var(--shadow-4);
+  --shadow-2xl: var(--shadow-5);
+  --inset-shadow-sm: var(--shadow-inset);
+
+  /* Control heights — a button, an input and a select are the same object. */
+  --spacing-control-sm: var(--control-sm);
+  --spacing-control-md: var(--control-md);
+  --spacing-control-lg: var(--control-lg);
+
+  /* The page's left/right breathing room, and the three section densities.
+     Anything that touches the page edge derives from `--gutter`; nothing
+     hardcodes a padding. */
+  --spacing-gutter: var(--gutter);
+  --spacing-section-sm: var(--section-sm);
+  --spacing-section-md: var(--section-md);
+  --spacing-section-lg: var(--section-lg);
+
+  /* Content columns, from the system's single source of horizontal rhythm. */
+  --container-prose: var(--w-prose);
+  --container-narrow: var(--w-narrow);
+  --container-site: var(--w-site);
+  --container-wide: var(--w-wide);
+
+  /* Measures — long-form prose caps at 68ch, UI copy at 46ch so cards break
+     predictably. `max-w-measure` / `max-w-lead` / `max-w-ui`. */
+  --container-measure: var(--measure-prose);
+  --container-lead: var(--measure-lead);
+  --container-ui: var(--measure-ui);
+}
+
+/* ── The inverse island ──────────────────────────────────────────────────────
+   `[data-surface='inverse']` (creator/01-color.css) flips the Tier-2 aliases on
+   a subtree, so a dark block can sit inside a light page without touching the
+   document theme.
+
+   It needs help here, and the reason is subtle. A custom property's value is
+   substituted where it is DECLARED, not where it is used: `--color-foreground:
+   var(--fg-default)` is resolved once at `:root` and the resulting colour is
+   what inherits down. Re-pointing `--fg-default` further down the tree
+   therefore does nothing to it. (Dark mode escapes this only because
+   `[data-theme='dark']` matches `:root` itself, re-running the declarations.)
+
+   So every Tailwind alias that an inverse island can plausibly use is declared
+   again here. Add a line whenever a new surface/foreground/line alias is added
+   to @theme above — the two lists have to move together. */
+[data-surface='inverse'] {
+  --color-background: var(--bg-canvas);
+  --color-canvas: var(--bg-canvas);
+  --color-surface: var(--bg-surface);
+  --color-card: var(--bg-surface);
+  --color-popover: var(--bg-raised);
+  --color-raised: var(--bg-raised);
+  --color-sunken: var(--bg-sunken);
+  --color-muted: var(--bg-muted);
+  --color-secondary: var(--bg-sunken);
+  --color-accent: var(--bg-sunken);
+
+  --color-foreground: var(--fg-default);
+  --color-card-foreground: var(--fg-default);
+  --color-popover-foreground: var(--fg-default);
+  --color-muted-foreground: var(--fg-muted);
+  --color-secondary-foreground: var(--fg-default);
+  --color-accent-foreground: var(--fg-default);
+  --color-subtle: var(--fg-subtle);
+
+  --color-signal: var(--fg-accent);
+  --color-pop-soft: var(--accent-soft);
+
+  --color-border: var(--line-default);
+  --color-input: var(--line-default);
+  --color-line-subtle: var(--line-subtle);
+  --color-line-strong: var(--line-strong);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* The focus ring is two-tone so it survives on light and dark alike. It is
+     never removed — :focus-visible already limits it to keyboard users, and it
+     inherits whatever corner the focused element already has. */
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--ring-focus);
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    min-height: 100dvh;
+  }
+
+  ::selection {
+    background: var(--selection-bg);
+    color: var(--selection-fg);
+  }
+
+  /* Motion is honest: everything off when the reader has asked for less. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+@layer utilities {
+  /* Backdrops derive from --pattern-ink so a pattern never needs to know
+     which theme it is on. */
+  .bg-grid {
+    background-image: radial-gradient(var(--pattern-ink) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  .bg-rule {
+    background-image: linear-gradient(var(--line-subtle) 1px, transparent 1px);
+    background-size: 100% var(--space-8);
+  }
+
+  /* A single restrained wash of the signal at the top of a hero. */
+  .bg-signal-wash,
+  .bg-mux-glow,
+  .bg-mux-glow-lg {
+    background-image: radial-gradient(
+      55% 55% at 50% -8%,
+      color-mix(in srgb, var(--accent) 10%, transparent),
+      transparent 70%
+    );
+  }
+
+  /* Kept as an alias: the system has no gradient text — the signal is solid.
+     For an inverse island use the system's own `data-surface="inverse"`, which
+     flips every alias rather than just the two you remembered. */
+  .text-gradient {
+    color: var(--fg-accent);
+  }
+}

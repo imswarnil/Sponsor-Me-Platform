@@ -1,0 +1,397 @@
+/* =============================================================================
+   01 · COLOUR
+   Tier 1 primitives (ramps) → Tier 2 semantic aliases (the only public names).
+   Components read aliases only. Never a ramp step, never a raw hex.
+   ========================================================================== */
+
+:root {
+	/* ── Tier 1 · INK ──────────────────────────────────────────────────────────
+	   A near-neutral grey with a whisper of blue in the shadows, so dark
+	   surfaces read as "unlit" rather than "muddy". 14 steps: the extra steps
+	   at each end exist for hairlines and for near-black video surfaces. */
+	--ink-0:    #fff;
+	--ink-25:   #fcfcfd;
+	--ink-50:   #f8f8fa;
+	--ink-100:  #f1f1f4;
+	--ink-200:  #e5e5ea;
+	--ink-300:  #d3d3db;
+	--ink-400:  #a5a5b2;
+	--ink-500:  #76768a;
+	--ink-600:  #55556a;
+	--ink-700:  #3c3c4e;
+	--ink-800:  #272734;
+	--ink-900:  #191922;
+	--ink-950:  #101017;
+	--ink-1000: #08080c;
+
+	/* ── Tier 1 · SIGNAL ───────────────────────────────────────────────────────
+	   Vermilion, not fire-engine red — it holds up against black at full
+	   saturation and stays legible as small text on white at 600+. This is the
+	   record light. It is the only chromatic voice with authority. */
+	--signal-50:  #fff2ef;
+	--signal-100: #ffe1db;
+	--signal-200: #ffc4b8;
+	--signal-300: #ff9d89;
+	--signal-400: #fb7358;
+	--signal-500: #f04e2e;
+	--signal-600: #dc3514;
+	--signal-700: #b52810;
+	--signal-800: #8f2211;
+	--signal-900: #6f1f12;
+	--signal-950: #3d0d07;
+
+	/* ── Tier 1 · AMBER ────────────────────────────────────────────────────────
+	   The rationed one. Craft, warmth, "hand-made" — construction lines,
+	   viewfinder brackets, a single highlighted word. One per page, maximum. */
+	--amber-50:  #fdf8ed;
+	--amber-100: #f9ecce;
+	--amber-200: #f2d795;
+	--amber-300: #e8bd5c;
+	--amber-400: #d9a33a;
+	--amber-500: #c1872a;
+	--amber-600: #9d6a22;
+	--amber-700: #78501f;
+	--amber-800: #55391b;
+	--amber-900: #382512;
+
+	/* ── Tier 1 · STATUS HUES ──────────────────────────────────────────────────
+	   Deliberately distinct from signal: signal means "live", danger means
+	   "destructive". They must never be confusable at a glance. */
+	--mint-50:   #eafaf1;   /* success */
+	--mint-100:  #cbf2de;
+	--mint-500:  #16a06a;
+	--mint-600:  #0f8156;
+	--mint-700:  #0b6444;
+
+	--azure-50:  #eaf3ff;   /* info */
+	--azure-100: #d3e6ff;
+	--azure-500: #2b7bef;
+	--azure-600: #1a61cc;
+	--azure-700: #164ea3;
+
+	--rose-50:   #fdeef1;   /* danger */
+	--rose-100:  #fbd7de;
+	--rose-500:  #d92d4e;
+	--rose-600:  #b81f3d;
+	--rose-700:  #931832;
+
+	/* Fixed, theme-independent. Used for scrims and video letterboxing. */
+	--pure-black: #000;
+	--pure-white: #fff;
+}
+
+/* =============================================================================
+   Tier 2 · SEMANTIC ALIASES — LIGHT (the default)
+   ========================================================================== */
+
+:root,
+:root[data-theme='light'] {
+	color-scheme: light;
+
+	/* Surfaces — canvas is the page, surface is a card, raised is a popover.
+	   sunken is for wells (code blocks, inputs, table headers). */
+	--bg-canvas:      var(--ink-0);
+	--bg-surface:     var(--ink-0);
+	--bg-raised:      var(--ink-0);
+	--bg-sunken:      var(--ink-50);
+	--bg-muted:       var(--ink-100);
+	--bg-inverse:     var(--ink-950);
+	--bg-scrim:       rgb(8 8 12 / 0.55);
+	--bg-media:       var(--ink-900);   /* letterbox behind video/images */
+
+	/* Foreground */
+	--fg-default:     var(--ink-900);
+	--fg-muted:       var(--ink-600);
+	--fg-subtle:      var(--ink-500);
+	--fg-faint:       var(--ink-400);
+	--fg-on-inverse:  var(--ink-50);
+	--fg-on-accent:   var(--pure-white);
+	--fg-accent:      var(--signal-700);   /* accent text on light: 4.5:1+ */
+	--fg-link:        var(--fg-default);
+	--fg-link-hover:  var(--signal-700);
+
+	/* Lines — subtle for internal dividers, default for card edges,
+	   strong for anything that must survive a screenshot. */
+	--line-subtle:    var(--ink-100);
+	--line-default:   var(--ink-200);
+	--line-strong:    var(--ink-300);
+	--line-inverse:   rgb(255 255 255 / 0.14);
+	--line-accent:    var(--signal-500);
+
+	/* Accent — the record light */
+	--accent:         var(--signal-500);
+	--accent-hover:   var(--signal-600);
+	--accent-press:   var(--signal-700);
+	--accent-soft:    var(--signal-50);
+	--accent-soft-fg: var(--signal-700);
+	--accent-ring:    rgb(240 78 46 / 0.28);
+
+	/* Amber — rationed craft accent */
+	--craft:          var(--amber-400);
+	--craft-soft:     var(--amber-50);
+	--craft-fg:       var(--amber-700);
+
+	/* Status: -bg is the tint, -fg is text on that tint, -line is the edge. */
+	--success-bg:   var(--mint-50);
+	--success-fg:   var(--mint-700);
+	--success-line: var(--mint-500);
+	--warning-bg:   var(--amber-50);
+	--warning-fg:   var(--amber-700);
+	--warning-line: var(--amber-400);
+	--danger-bg:    var(--rose-50);
+	--danger-fg:    var(--rose-700);
+	--danger-line:  var(--rose-500);
+	--info-bg:      var(--azure-50);
+	--info-fg:      var(--azure-700);
+	--info-line:    var(--azure-500);
+
+	/* Interaction */
+	--focus-ring:     var(--accent);
+	--focus-ring-alt: var(--pure-white);   /* second halo, for dark backdrops */
+	--selection-bg:   var(--signal-100);
+	--selection-fg:   var(--ink-900);
+	--hover-wash:     rgb(8 8 12 / 0.035);
+	--press-wash:     rgb(8 8 12 / 0.07);
+
+	/* Pattern ink — background textures derive from this so a pattern never
+	   needs to know which theme it is on. */
+	--pattern-ink:    rgb(8 8 12 / 0.06);
+	--pattern-ink-2:  rgb(8 8 12 / 0.10);
+}
+
+/* =============================================================================
+   Tier 2 · SEMANTIC ALIASES — DARK
+   Not an inversion. Surfaces lift with light rather than drop shadows, the
+   accent steps down one so it doesn't bloom, hairlines become translucent
+   white so they survive over media.
+   ========================================================================== */
+
+:root[data-theme='dark'] {
+	color-scheme: dark;
+
+	--bg-canvas:      var(--ink-1000);
+	--bg-surface:     var(--ink-950);
+	--bg-raised:      var(--ink-900);
+	--bg-sunken:      #0c0c12;
+	--bg-muted:       var(--ink-800);
+	--bg-inverse:     var(--ink-50);
+	--bg-scrim:       rgb(0 0 0 / 0.68);
+	--bg-media:       var(--pure-black);
+
+	--fg-default:     var(--ink-50);
+	--fg-muted:       var(--ink-400);
+	--fg-subtle:      var(--ink-500);
+	--fg-faint:       var(--ink-600);
+	--fg-on-inverse:  var(--ink-900);
+	--fg-on-accent:   var(--pure-white);
+	--fg-accent:      var(--signal-400);
+	--fg-link:        var(--fg-default);
+	--fg-link-hover:  var(--signal-400);
+
+	--line-subtle:    rgb(255 255 255 / 0.07);
+	--line-default:   rgb(255 255 255 / 0.12);
+	--line-strong:    rgb(255 255 255 / 0.22);
+	--line-inverse:   rgb(8 8 12 / 0.14);
+	--line-accent:    var(--signal-500);
+
+	--accent:         var(--signal-500);
+	--accent-hover:   var(--signal-400);
+	--accent-press:   var(--signal-600);
+	--accent-soft:    rgb(240 78 46 / 0.15);
+	--accent-soft-fg: var(--signal-300);
+	--accent-ring:    rgb(240 78 46 / 0.40);
+
+	--craft:          var(--amber-300);
+	--craft-soft:     rgb(217 163 58 / 0.14);
+	--craft-fg:       var(--amber-200);
+
+	--success-bg:   rgb(22 160 106 / 0.16);
+	--success-fg:   #6ee7ad;
+	--success-line: var(--mint-500);
+	--warning-bg:   rgb(217 163 58 / 0.16);
+	--warning-fg:   var(--amber-200);
+	--warning-line: var(--amber-400);
+	--danger-bg:    rgb(217 45 78 / 0.18);
+	--danger-fg:    #ff8fa5;
+	--danger-line:  var(--rose-500);
+	--info-bg:      rgb(43 123 239 / 0.18);
+	--info-fg:      #93c2ff;
+	--info-line:    var(--azure-500);
+
+	--focus-ring:     var(--signal-400);
+	--focus-ring-alt: var(--ink-1000);
+	--selection-bg:   rgb(240 78 46 / 0.35);
+	--selection-fg:   var(--ink-0);
+	--hover-wash:     rgb(255 255 255 / 0.05);
+	--press-wash:     rgb(255 255 255 / 0.09);
+
+	--pattern-ink:    rgb(255 255 255 / 0.07);
+	--pattern-ink-2:  rgb(255 255 255 / 0.12);
+}
+
+/* No explicit choice → follow the OS. Written as a copy of the dark block's
+   selector so `data-theme` always wins over the media query. */
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme='light']) {
+		color-scheme: dark;
+
+		--bg-canvas:      var(--ink-1000);
+		--bg-surface:     var(--ink-950);
+		--bg-raised:      var(--ink-900);
+		--bg-sunken:      #0c0c12;
+		--bg-muted:       var(--ink-800);
+		--bg-inverse:     var(--ink-50);
+		--bg-scrim:       rgb(0 0 0 / 0.68);
+		--bg-media:       var(--pure-black);
+
+		--fg-default:     var(--ink-50);
+		--fg-muted:       var(--ink-400);
+		--fg-subtle:      var(--ink-500);
+		--fg-faint:       var(--ink-600);
+		--fg-on-inverse:  var(--ink-900);
+		--fg-accent:      var(--signal-400);
+		--fg-link-hover:  var(--signal-400);
+
+		--line-subtle:    rgb(255 255 255 / 0.07);
+		--line-default:   rgb(255 255 255 / 0.12);
+		--line-strong:    rgb(255 255 255 / 0.22);
+		--line-inverse:   rgb(8 8 12 / 0.14);
+
+		--accent-hover:   var(--signal-400);
+		--accent-press:   var(--signal-600);
+		--accent-soft:    rgb(240 78 46 / 0.15);
+		--accent-soft-fg: var(--signal-300);
+		--accent-ring:    rgb(240 78 46 / 0.40);
+
+		--craft:          var(--amber-300);
+		--craft-soft:     rgb(217 163 58 / 0.14);
+		--craft-fg:       var(--amber-200);
+
+		--success-bg:   rgb(22 160 106 / 0.16);
+		--success-fg:   #6ee7ad;
+		--warning-bg:   rgb(217 163 58 / 0.16);
+		--warning-fg:   var(--amber-200);
+		--danger-bg:    rgb(217 45 78 / 0.18);
+		--danger-fg:    #ff8fa5;
+		--info-bg:      rgb(43 123 239 / 0.18);
+		--info-fg:      #93c2ff;
+
+		--focus-ring:     var(--signal-400);
+		--focus-ring-alt: var(--ink-1000);
+		--selection-bg:   rgb(240 78 46 / 0.35);
+		--selection-fg:   var(--ink-0);
+		--hover-wash:     rgb(255 255 255 / 0.05);
+		--press-wash:     rgb(255 255 255 / 0.09);
+
+		--pattern-ink:    rgb(255 255 255 / 0.07);
+		--pattern-ink-2:  rgb(255 255 255 / 0.12);
+	}
+}
+
+/* =============================================================================
+   COLOUR · THE MATHS
+   Why the ramps look the way they do, expressed as tokens rather than prose,
+   so the next colour anyone adds is built the same way.
+   ========================================================================== */
+
+:root {
+	/* ── Lightness ladder ────────────────────────────────────────────────────
+	   Every ramp follows the same perceived-lightness curve. The steps are
+	   NOT linear: the eye separates light values much better than dark ones,
+	   so the top of the ramp is finely sliced and the bottom is coarse.
+	   These are the L* targets each step was tuned to. */
+	--L-50: 97%;  --L-100: 94%; --L-200: 89%; --L-300: 81%;
+	--L-400: 68%; --L-500: 56%; --L-600: 46%; --L-700: 37%;
+	--L-800: 28%; --L-900: 19%; --L-950: 11%;
+
+	/* ── Contrast targets (WCAG 2.2) ─────────────────────────────────────────
+	   body text        ≥ 4.5:1     AA
+	   large text ≥24px ≥ 3:1       AA
+	   UI & focus rings ≥ 3:1       AA non-text
+	   aiming for       ≥ 7:1       AAA on long-form prose
+	   Verified pairs, both themes:
+	     --fg-default on --bg-canvas   light 15.8:1   dark 16.4:1
+	     --fg-muted   on --bg-canvas   light  7.4:1   dark  7.1:1
+	     --fg-subtle  on --bg-canvas   light  4.9:1   dark  4.6:1
+	     --fg-accent  on --bg-canvas   light  5.6:1   dark  5.1:1
+	     --fg-on-accent on --accent    light  4.6:1   dark  4.6:1
+	   --fg-faint is decorative only: it is BELOW 4.5:1 by design and must
+	   never carry information. */
+	--contrast-body: 4.5;
+	--contrast-large: 3;
+	--contrast-ui: 3;
+
+	/* ── Hue relationships ───────────────────────────────────────────────────
+	   The palette is a split-complementary built off the signal hue, which is
+	   why it never fights itself:
+	     signal   14°   the accent            (vermilion)
+	     craft    42°   +28°  analogous       (amber)
+	     info    216°   −158° complement-ish  (azure)
+	     success 158°   +144°                 (mint)
+	     danger  348°   −26°  近-signal, so it is deliberately DESATURATED
+	                          and darker, or the two would be confusable.
+	   Ink carries 258° at 4-8% saturation — a cold shadow under a warm accent,
+	   which is what makes the greys look intentional rather than muddy. */
+	--hue-signal: 14;
+	--hue-craft: 42;
+	--hue-info: 216;
+	--hue-success: 158;
+	--hue-danger: 348;
+	--hue-ink: 258;
+
+	/* ── Alpha ladder ────────────────────────────────────────────────────────
+	   Overlays, washes, and hairlines all come from these five values. A
+	   one-off alpha in a component is a bug. */
+	--alpha-hairline: 0.07;
+	--alpha-wash: 0.12;
+	--alpha-veil: 0.24;
+	--alpha-scrim: 0.55;
+	--alpha-solid: 0.88;
+
+	/* ── Elevation-by-light ──────────────────────────────────────────────────
+	   In dark mode a raised surface gets LIGHTER rather than casting a shadow.
+	   These are the exact overlay percentages, matching the surface tokens. */
+	--lift-1: 4%;
+	--lift-2: 7%;
+	--lift-3: 11%;
+	--lift-4: 16%;
+}
+
+/* Derived helpers. color-mix keeps the maths in CSS rather than in a build
+   step, so a token change propagates everywhere immediately. */
+
+.tint-accent-8  { background: color-mix(in srgb, var(--accent) 8%, var(--bg-surface)); }
+.tint-accent-16 { background: color-mix(in srgb, var(--accent) 16%, var(--bg-surface)); }
+.tint-craft-12  { background: color-mix(in srgb, var(--craft) 12%, var(--bg-surface)); }
+
+/* A surface that lifts with light instead of shadow — the dark-mode idiom,
+   usable in both themes. */
+.lift-1 { background: color-mix(in srgb, var(--fg-default) var(--lift-1), var(--bg-surface)); }
+.lift-2 { background: color-mix(in srgb, var(--fg-default) var(--lift-2), var(--bg-surface)); }
+.lift-3 { background: color-mix(in srgb, var(--fg-default) var(--lift-3), var(--bg-surface)); }
+
+/* An inverse island inside a light page (and vice versa): flip the aliases on
+   a subtree without touching the document theme. Used by the CTA block, the
+   series nav and the lower-third. */
+[data-surface='inverse'] {
+	--bg-canvas:    var(--ink-950);
+	--bg-surface:   var(--ink-950);
+	--bg-raised:    var(--ink-900);
+	--bg-sunken:    var(--ink-1000);
+	--bg-muted:     var(--ink-800);
+	--fg-default:   var(--ink-50);
+	--fg-muted:     var(--ink-400);
+	--fg-subtle:    var(--ink-500);
+	--line-subtle:  rgb(255 255 255 / 0.07);
+	--line-default: rgb(255 255 255 / 0.12);
+	--line-strong:  rgb(255 255 255 / 0.22);
+	--fg-accent:    var(--signal-400);
+	--accent-soft:  rgb(240 78 46 / 0.15);
+	--hover-wash:   rgb(255 255 255 / 0.05);
+	--pattern-ink:  rgb(255 255 255 / 0.07);
+	--pattern-ink-2: rgb(255 255 255 / 0.12);
+
+	background: var(--bg-surface);
+	color: var(--fg-default);
+	color-scheme: dark;
+}

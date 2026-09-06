@@ -1,0 +1,150 @@
+/* =============================================================================
+   15 · SYNTAX
+   Code that reads in both themes, plus the copy affordance. The five token
+   roles reuse 12-frame's dark hues; light theme gets its own measured set.
+   Markup: <figure class="codebox"><figcaption class="codebox__head">…
+   <button class="codebox__copy" data-copy>…</button></figcaption>
+   <pre class="codebox__pre"><code>…</code></pre></figure>
+   ========================================================================== */
+
+.codebox {
+	background: var(--ink-950);
+	color: var(--ink-100, #e5e5ea);
+	border: var(--border-hair) solid rgb(255 255 255 / 0.08);
+	border-radius: var(--radius-lg);
+	overflow: hidden;
+	color-scheme: dark;
+	margin: 0;
+}
+
+.codebox__head {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+	border-bottom: var(--border-hair) solid rgb(255 255 255 / 0.08);
+	font-family: var(--font-slate);
+	font-size: var(--text-2xs);
+	letter-spacing: var(--tracking-slate);
+	text-transform: uppercase;
+	color: rgb(255 255 255 / 0.5);
+}
+
+.codebox__lang { margin-right: auto; }
+
+.codebox__copy {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-1);
+	border: var(--border-hair) solid rgb(255 255 255 / 0.14);
+	background: transparent;
+	color: rgb(255 255 255 / 0.65);
+	border-radius: var(--radius-sm);
+	font: inherit;
+	padding: 3px var(--space-2);
+	cursor: pointer;
+	transition: var(--t-colors);
+}
+
+.codebox__copy:hover { background: rgb(255 255 255 / 0.08); color: #fff; }
+.codebox__copy[data-copied] { color: var(--signal-300, #ff9c86); border-color: currentColor; }
+
+.codebox__pre {
+	margin: 0;
+	padding: var(--space-4);
+	overflow-x: auto;
+	font-family: var(--font-slate);
+	font-size: var(--text-xs);
+	line-height: 1.7;
+	tab-size: 2;
+}
+
+/* Line numbers: <code class="codebox__ln"> with one .ln per line. */
+.codebox__pre .ln { counter-increment: ln; display: block; padding-left: 2.4em; position: relative; }
+.codebox__pre .ln::before {
+	content: counter(ln);
+	position: absolute;
+	left: 0;
+	width: 1.8em;
+	text-align: right;
+	color: rgb(255 255 255 / 0.25);
+}
+.codebox__pre code { counter-reset: ln; display: block; }
+.codebox__pre .ln-hl { background: rgb(255 255 255 / 0.06); box-shadow: inset 2px 0 0 var(--accent); }
+
+/* Light twin — for docs prose where a dark slab is too loud. */
+.codebox-light {
+	background: var(--bg-sunken);
+	color: var(--fg-default);
+	border-color: var(--line-default);
+	color-scheme: light dark;
+}
+
+.codebox-light .codebox__head { border-color: var(--line-subtle); color: var(--fg-faint); }
+.codebox-light .codebox__copy { border-color: var(--line-default); color: var(--fg-subtle); }
+.codebox-light .codebox__copy:hover { background: var(--bg-surface); color: var(--fg-default); }
+.codebox-light .tok-key { color: #c22557; }
+.codebox-light .tok-str { color: #1a7f4e; }
+.codebox-light .tok-num { color: #9c6a10; }
+.codebox-light .tok-fn  { color: #1d5fbf; }
+.codebox-light .tok-com { color: var(--fg-faint); font-style: italic; }
+.codebox-light .tok-tag { color: #c22557; }
+.codebox-light .tok-attr { color: #9c6a10; }
+.codebox-light .tok-prop { color: #1d5fbf; }
+.codebox-light .tok-sel { color: #a2451b; }
+.codebox-light .tok-var { color: #6b3fc4; }
+.codebox-light .tok-punc { color: var(--fg-faint); }
+.codebox-light .codebox__pre .ln::before { color: var(--fg-faint); opacity: 0.6; }
+.codebox-light .codebox__pre .ln-hl { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
+
+/* ── Arrival ──────────────────────────────────────────────────────────────────
+   A code block settles in when it first scrolls into view. One short fade and
+   rise for the whole slab — enough to say "this just arrived", not so much
+   that the reader waits on it. The finished state is the resting state, so
+   nothing is hidden if the animation never runs.
+   Markup: <figure class="codebox" data-play> — highlight.js drives the rest.
+   -------------------------------------------------------------------------- */
+
+.codebox[data-play].is-playing {
+	animation: cb-in var(--dur-3, 260ms) var(--ease-out, ease-out) both;
+}
+
+@keyframes cb-in {
+	0% { opacity: 0; transform: translateY(6px); }
+	100% { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.codebox[data-play].is-playing { animation: none; }
+}
+
+/* Inline copy chip for one-liners (`npm run build`). */
+.copy-line {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2);
+	font-family: var(--font-slate);
+	font-size: var(--text-xs);
+	background: var(--bg-sunken);
+	border: var(--border-hair) solid var(--line-default);
+	border-radius: var(--radius-md);
+	padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+	max-width: 100%;
+}
+
+.copy-line > code { overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+
+.copy-line > button {
+	border: 0;
+	background: var(--bg-surface);
+	border-radius: var(--radius-sm);
+	padding: 2px var(--space-2);
+	font: inherit;
+	color: var(--fg-subtle);
+	cursor: pointer;
+	flex: none;
+	transition: var(--t-colors);
+}
+
+.copy-line > button:hover { color: var(--fg-default); }
+.copy-line > button[data-copied] { color: var(--accent); }
