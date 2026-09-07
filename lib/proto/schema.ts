@@ -48,6 +48,8 @@ export const slots = pgTable('bms_slot', {
   discountThresholdDays: integer('discount_threshold_days'),
   discountPercent: integer('discount_percent'),
   adType: text('ad_type'), // banner | video | button | text — visual/preset only, see lib/ad-types.ts
+  /** Seeded demo sponsorship, shown with a "Sample" badge — see `members.isSample`. */
+  isSample: boolean('is_sample').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 });
 
@@ -233,6 +235,16 @@ export const members = pgTable('bms_member', {
   startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
   /** When the current paid period runs out. Past this, `expireStaleMembers` lapses it. */
   renewsAt: timestamp('renews_at', { withTimezone: true }).notNull(),
+  /**
+   * Seeded demo data, not a real member (`scripts/seed-samples.mjs`).
+   *
+   * The wall renders these with a visible "Sample" badge. The site's whole
+   * position is that a figure is real or it is absent (CLAUDE.md §4) — a
+   * populated-looking wall of invented people would break that quietly, which
+   * is the worst way to break it. This column is what keeps the demo data
+   * honest instead.
+   */
+  isSample: boolean('is_sample').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 });
 

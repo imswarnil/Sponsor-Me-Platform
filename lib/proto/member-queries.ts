@@ -20,6 +20,8 @@ export type WallMember = {
   blurb: string | null;
   linkUrl: string | null;
   tierName: string;
+  /** Seeded demo row — the wall says so out loud. See scripts/seed-samples.mjs. */
+  isSample: boolean;
 };
 
 /**
@@ -61,7 +63,8 @@ export async function getActiveWallMembers(limit = 200): Promise<WallMember[]> {
       instagramHandle: members.instagramHandle,
       blurb: members.blurb,
       linkUrl: members.linkUrl,
-      tierName: members.tierName
+      tierName: members.tierName,
+      isSample: members.isSample
     })
     .from(members)
     .where(eq(members.status, 'active'))

@@ -181,10 +181,18 @@ export default async function SponsorPage({
               <CardContent className="p-5 text-sm">
                 <div className="flex items-center justify-between">
                   <p className="font-medium">This spot is currently sponsored.</p>
-                  {validity ? (
-                    <Badge variant="pop" className="gap-1"><CalendarClock className="size-3" /> {validity}</Badge>
-                  ) : null}
+                  <div className="flex items-center gap-2">
+                    {slot.isSample ? <Badge variant="outline">Sample</Badge> : null}
+                    {validity ? (
+                      <Badge variant="pop" className="gap-1"><CalendarClock className="size-3" /> {validity}</Badge>
+                    ) : null}
+                  </div>
                 </div>
+                {slot.isSample ? (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Sample data while the site is being built — there is no real advertiser here.
+                  </p>
+                ) : null}
                 {slot.adLinkUrl ? (
                   <a href={slot.adLinkUrl} className="mt-1 inline-block text-signal hover:underline">
                     {slot.adHeadline || 'Visit advertiser'} {slot.adCtaLabel ? `— ${slot.adCtaLabel}` : ''} →

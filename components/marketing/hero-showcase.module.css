@@ -1,0 +1,64 @@
+/* The hero's auto-cycling placement preview. Two animations only: the mock
+   arriving, and the bar that shows how long it stays. Both are switched off
+   under prefers-reduced-motion, where the component also stops advancing on
+   its own (see hero-showcase.tsx — the JS checks the same media query, so
+   the motion and the timer are never out of step). */
+
+@keyframes mockIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.mock {
+  animation: mockIn var(--dur-3, 320ms) var(--ease-out, cubic-bezier(0.2, 0, 0, 1)) both;
+}
+
+/* Every mock has to occupy the same height or the whole hero jumps each time
+   the cycle reaches a phone: `.win-phone` is `aspect-ratio: 9 / 19.5`, so at
+   its own 20rem max-width it stands ~43rem tall — more than twice the browser
+   frames beside it. 12rem wide lands it at exactly 26rem, the height the row
+   is sized to.
+
+   This lives here rather than as a Tailwind utility on the element because
+   `app/design-local/frame.css` is UNLAYERED, and unlayered CSS beats every
+   layered rule outright — Tailwind's utilities are in `@layer utilities`, so
+   `max-w-*` loses to `.win-phone` no matter how specific the selector is
+   (`app/globals.css` declares the layer order). A CSS module is unlayered
+   too, so here it is a plain specificity contest, which this wins. */
+.row :global(.win-phone) {
+  max-width: 12rem;
+}
+
+.bar {
+  transform-origin: left center;
+  animation: fill linear both;
+  animation-duration: var(--cycle, 3400ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mock,
+  .bar {
+    animation: none;
+  }
+  /* Without the fill animation the bar would sit at scaleX(0) — invisible.
+     A static full bar reads as "this one, indefinitely", which is exactly
+     what the component does when it stops advancing. */
+  .bar {
+    transform: scaleX(1);
+  }
+}

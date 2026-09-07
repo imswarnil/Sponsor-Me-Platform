@@ -1,8 +1,10 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ArrowUpRight, Coins, Eye, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge, Eyebrow } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ChannelIcon } from '@/components/marketing/channel-icon';
 import { SwarnilWordmark } from '@/components/logo';
 import { StartConversationForm } from '@/components/marketing/start-conversation-form';
@@ -14,55 +16,60 @@ import { TwoDoors } from '@/components/marketing/two-doors';
 import { PointsNote } from '@/components/marketing/points-note';
 import { PlatformFacts } from '@/components/marketing/platform-facts';
 import { FeatureStack } from '@/components/marketing/feature-stack';
-import { SupportSignalArt } from '@/components/marketing/support-signal-art';
+import { HeroShowcase } from '@/components/marketing/hero-showcase';
 import { Thanks } from '@/components/marketing/thanks';
 import { getActiveWallMembers, expireStaleMembers } from '@/lib/proto/member-queries';
 import { CHANNEL_LIST } from '@/lib/channels';
 import { site } from '@/lib/site';
 
 /* Reads the wall, the open placements and the Ghost tier per request — see
-   CLAUDE.md §3. Nothing on this page is a build-time snapshot. */
+   CLAUDE.md §3. Nothing on this page is a build-time snapshot.
+
+   The page function itself is deliberately NOT async and awaits nothing: a
+   single top-level await here would hold the entire document — hero included —
+   until Neon, Ghost, YouTube and GitHub had all answered. Each data-backed
+   section is its own async component behind its own <Suspense>, so the hero
+   is in the browser while the slow ones are still fetching, and one slow
+   upstream can only delay its own section. */
 export const dynamic = 'force-dynamic';
 
-export default async function HomePage() {
-  await expireStaleMembers();
-  const members = await getActiveWallMembers(24);
-
+export default function HomePage() {
   return (
     <>
       {/* ── Hero ─────────────────────────────────────────────────────────────
-          One claim, no fork yet. The fork is the next section, and putting it
-          there rather than in the hero is the whole point of the redesign: the
-          headline is the thing both audiences share, and the doors are where
-          they part. */}
+          Two columns: the claim, and a working picture of the claim. The
+          right-hand column cycles the six places a placement actually runs,
+          which is the fastest answer to "what is this site" — you see an ad
+          slot land in a blog sidebar, a video, an inbox, a README before you
+          have read a word. The fork (the two doors) stays below both, because
+          the headline is the thing both audiences share and the doors are
+          where they part. */}
       <section className="border-b border-line-subtle">
-        <div className="mx-auto max-w-site px-gutter py-20 lg:py-28">
-          <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_auto]">
-            <div className="max-w-3xl">
+        <div className="mx-auto max-w-site px-gutter py-16 lg:py-24">
+          <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
+            <div>
               <Eyebrow className="mb-5">Sponsor {site.creator} directly</Eyebrow>
               <h1 className="text-balance font-display text-4xl font-bold leading-[1.04] tracking-tighter lg:text-5xl">
-                Back the work, not the <span className="text-signal">ad network</span>.
+                Put yourself in front of <span className="text-signal">my audience</span>.
               </h1>
               <p className="mt-5 max-w-lead text-pretty text-lg text-muted-foreground">
-                I make videos, write a blog and a newsletter, post photos, and ship open source. If
-                any of it has been useful to you or your product, you can put your name on it —
-                directly, with nobody in the middle taking a cut and nothing following my readers
-                around the internet.
+                I make videos, write a blog and a newsletter, and ship open source. You can buy a
+                spot on any of it — pick the channel, pick your dates, and your name runs there.
+                No agency, no ad network, no cold emails.
               </p>
               <p className="mt-6 font-label text-2xs uppercase tracking-slate text-faint">
                 No third-party cookies · No agency in the middle · Every placement disclosed
               </p>
             </div>
-            {/* Decoration only — hidden below lg rather than shrunk, so it
-                never competes with the claim on a narrow screen. */}
-            <div className="hidden lg:block">
-              <SupportSignalArt />
-            </div>
+            <HeroShowcase />
           </div>
 
-          {/* The fork, immediately — above the fold on anything desktop-sized. */}
-          <div className="mt-14">
-            <TwoDoors />
+          {/* The fork, immediately — above the fold on anything desktop-sized.
+              It reads live prices, so it streams in behind the hero. */}
+          <div className="mt-16">
+            <Suspense fallback={<TwoDoorsSkeleton />}>
+              <TwoDoors />
+            </Suspense>
           </div>
         </div>
       </section>
@@ -82,7 +89,9 @@ export default async function HomePage() {
           sub="Read live from the blog. A channel that isn't connected says so rather than showing a number I made up."
         />
         <div className="mt-10">
-          <AudienceStats />
+          <Suspense fallback={<TileRowSkeleton n={4} />}>
+            <AudienceStats />
+          </Suspense>
         </div>
       </section>
 
@@ -152,22 +161,19 @@ export default async function HomePage() {
             sub="Members appear here and on every site I embed the wall on — with their own line and their own link."
           />
           <div className="mt-10">
-            <PlatformFacts />
+            <Suspense fallback={<Skeleton className="mx-auto h-10 w-full max-w-2xl" />}>
+              <PlatformFacts />
+            </Suspense>
           </div>
           <div className="mt-12">
-            <SponsorWall members={members} layout="full" />
-            {members.length > 0 ? (
-              <div className="mt-10 flex justify-center">
-                <Button asChild variant="outline">
-                  <Link href="/members">
-                    See the whole wall <ArrowRight className="size-4" />
-                  </Link>
-                </Button>
-              </div>
-            ) : null}
+            <Suspense fallback={<TileRowSkeleton n={4} />}>
+              <WallSection />
+            </Suspense>
           </div>
           <div className="mt-12">
-            <GitHubSponsors />
+            <Suspense fallback={null}>
+              <GitHubSponsors />
+            </Suspense>
           </div>
         </div>
       </section>
@@ -254,6 +260,50 @@ export default async function HomePage() {
 
       <Thanks />
     </>
+  );
+}
+
+/**
+ * The wall, and the link to the rest of it. Its own component purely so the
+ * two reads it needs (the lapse sweep, then the members) sit behind their own
+ * Suspense boundary instead of blocking the document.
+ */
+async function WallSection() {
+  await expireStaleMembers();
+  const members = await getActiveWallMembers(24);
+
+  return (
+    <>
+      <SponsorWall members={members} layout="full" />
+      {members.length > 0 ? (
+        <div className="mt-10 flex justify-center">
+          <Button asChild variant="outline">
+            <Link href="/members">
+              See the whole wall <ArrowRight className="size-4" />
+            </Link>
+          </Button>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function TileRowSkeleton({ n }: { n: number }) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {Array.from({ length: n }).map((_, i) => (
+        <Skeleton key={i} className="h-32 rounded-card" />
+      ))}
+    </div>
+  );
+}
+
+function TwoDoorsSkeleton() {
+  return (
+    <div className="grid gap-5 md:grid-cols-2">
+      <Skeleton className="h-64 rounded-card" />
+      <Skeleton className="h-64 rounded-card" />
+    </div>
   );
 }
 

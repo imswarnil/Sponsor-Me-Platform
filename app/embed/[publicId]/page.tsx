@@ -73,7 +73,7 @@ export default async function EmbedContent({ params }: { params: Promise<{ publi
                   opacity: 0.6
                 }}
               >
-                Sponsored
+                {slot.isSample ? 'Sample — not a real advertiser' : 'Sponsored'}
               </span>
             </span>
           </div>

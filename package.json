@@ -17,6 +17,8 @@
     "db:seed": "node scripts/seed.mjs",
     "db:setup": "npm run db:push && npm run db:fk && npm run db:seed",
     "dodo:setup": "node scripts/dodo-setup.mjs",
+    "db:samples": "node scripts/seed-samples.mjs",
+    "db:samples:clean": "node scripts/seed-samples.mjs --clean",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf:typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"

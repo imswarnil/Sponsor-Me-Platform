@@ -37,12 +37,12 @@ export const metadata: Metadata = {
     type: 'website',
     siteName: site.name,
     url: site.self,
-    title: 'Sponsor Swarnil — back the work, not the ad network',
+    title: 'Sponsor Swarnil — put yourself in front of my audience',
     description: site.description
   },
   twitter: { card: 'summary_large_image' },
   title: {
-    default: 'Sponsor Swarnil — back the work, not the ad network',
+    default: 'Sponsor Swarnil — put yourself in front of my audience',
     template: '%s · Sponsor Swarnil'
   },
   description: `Sponsor ${site.creator} directly: a placement on any of his sites, or a membership that puts you on the sponsor wall. No ad network, no middleman, no tracking cookies.`,

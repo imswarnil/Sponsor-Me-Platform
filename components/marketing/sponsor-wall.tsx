@@ -75,6 +75,11 @@ function Face({ m, layout }: { m: WallMember; layout: WallLayout }) {
         <Avatar m={m} layout={layout} />
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">{m.displayName}</p>
+          {m.isSample ? (
+            <p className="mt-1 inline-block rounded-pill border border-line-subtle px-1.5 font-label text-2xs uppercase tracking-slate text-faint">
+              Sample
+            </p>
+          ) : null}
           {m.blurb ? (
             <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{m.blurb}</p>
           ) : null}
@@ -152,12 +157,23 @@ export function SponsorWall({
         ? 'flex flex-col gap-3'
         : 'flex flex-wrap items-center gap-2';
 
+  const samples = members.filter((m) => m.isSample).length;
+
   return (
     <div>
       {heading ? (
         <h2 className="mb-3 font-label text-2xs uppercase tracking-slate text-subtle">
           {heading}
         </h2>
+      ) : null}
+      {/* Said once for the whole wall as well as per face: a visitor should
+          never have to notice a small badge to know what they are looking at. */}
+      {samples > 0 ? (
+        <p className="mb-5 text-xs text-muted-foreground">
+          {samples === members.length
+            ? 'Everyone here is sample data while the site is being built — not real members.'
+            : `${samples} of these are sample data while the site is being built — not real members.`}
+        </p>
       ) : null}
       <div className={container}>
         {members.map((m) => (

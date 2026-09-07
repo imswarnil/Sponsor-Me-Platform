@@ -60,7 +60,8 @@ export default async function MembershipPage({
       instagramHandle: membership.instagramHandle,
       blurb: membership.blurb,
       linkUrl: membership.linkUrl,
-      tierName: membership.tierName
+      tierName: membership.tierName,
+      isSample: membership.isSample
     }
   ];
 
