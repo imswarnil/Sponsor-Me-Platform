@@ -32,30 +32,22 @@ export default async function HomePage() {
           there rather than in the hero is the whole point of the redesign: the
           headline is the thing both audiences share, and the doors are where
           they part. */}
-      <section className="bg-grid bg-signal-wash relative overflow-hidden border-b border-line-subtle">
-        <div className="mx-auto max-w-site px-gutter py-24 lg:py-32">
+      <section className="border-b border-line-subtle">
+        <div className="mx-auto max-w-site px-gutter py-20 lg:py-28">
           <div className="max-w-3xl">
             <Eyebrow className="mb-5">Sponsor {site.creator} directly</Eyebrow>
-            <h1 className="text-balance font-display text-5xl font-bold leading-[1.03] tracking-tighter sm:text-6xl lg:text-7xl">
+            <h1 className="text-balance font-display text-4xl font-bold leading-[1.04] tracking-tighter lg:text-5xl">
               Back the work, not the <span className="text-signal">ad network</span>.
             </h1>
-            <p className="mt-6 max-w-lead text-pretty text-md text-muted-foreground">
+            <p className="mt-5 max-w-lead text-pretty text-lg text-muted-foreground">
               I make videos, write a blog and a newsletter, post photos, and ship open source. If
               any of it has been useful to you or your product, you can put your name on it —
               directly, with nobody in the middle taking a cut and nothing following my readers
               around the internet.
             </p>
-            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-              {[
-                'No third-party cookies',
-                'No agency in the middle',
-                'Every placement disclosed'
-              ].map((point) => (
-                <span key={point} className="inline-flex items-center gap-1.5">
-                  <ShieldCheck className="size-4 text-signal" /> {point}
-                </span>
-              ))}
-            </div>
+            <p className="mt-6 font-label text-2xs uppercase tracking-slate text-faint">
+              No third-party cookies · No agency in the middle · Every placement disclosed
+            </p>
           </div>
 
           {/* The fork, immediately — above the fold on anything desktop-sized. */}
