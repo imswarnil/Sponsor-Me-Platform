@@ -23,7 +23,8 @@ const nav: NavItem[] = [
   { label: 'Overview', href: '/sponsor', icon: 'LayoutDashboard', exact: true },
   { label: 'Membership', href: '/sponsor/membership', icon: 'Users' },
   { label: 'Messages', href: '/sponsor/messages', icon: 'MessageSquare' },
-  { label: 'History', href: '/sponsor/history', icon: 'Receipt' }
+  { label: 'History', href: '/sponsor/history', icon: 'Receipt' },
+  { label: 'Account', href: '/account', icon: 'Settings' }
 ];
 
 export default async function SponsorLayout({ children }: { children: React.ReactNode }) {

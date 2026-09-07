@@ -2,6 +2,7 @@ import { PageHeader } from '@/components/app/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmbedSnippet } from '@/components/app/embed-snippet';
+import { GhostMembersWidget } from '@/components/app/ghost-members-widget';
 import { SponsorWall } from '@/components/marketing/sponsor-wall';
 import { requireCreator } from '@/lib/proto/roles';
 import {
@@ -138,6 +139,22 @@ export default async function StudioMembersPage() {
             ))}
           </div>
         )}
+      </section>
+
+      {/* A different list, deliberately not mixed with the one above: this is
+          the raw Ghost newsletter list (paid or not, wall or not), separate
+          from bms_members. See components/app/ghost-members-widget.tsx. */}
+      <section className="mt-10">
+        <h2 className="font-label text-2xs uppercase tracking-slate text-subtle">
+          Ghost newsletter members
+        </h2>
+        <p className="mt-2 max-w-lead text-sm text-muted-foreground">
+          Everyone on {process.env.GHOST_API_URL ?? 'the blog'}, not just the ones who paid to be
+          on the wall.
+        </p>
+        <div className="mt-3">
+          <GhostMembersWidget />
+        </div>
       </section>
     </>
   );

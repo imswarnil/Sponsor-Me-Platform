@@ -3,8 +3,10 @@
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
+import { revalidatePath } from 'next/cache';
 import { getAuth, isAuthConfigured } from '@/lib/auth/server';
 import { safeNext } from '@/lib/safe-next';
+import { getCurrentUserId, updateProfileName } from '@/lib/proto/queries';
 
 /**
  * The only way a client component is allowed to touch authentication.
@@ -184,4 +186,60 @@ export async function resetPasswordAction(
   }
 
   redirect('/login?reset=1');
+}
+
+/**
+ * Update the display name, for a signed-in account.
+ *
+ * Writes both copies: Neon Auth's own `name` (what a future OAuth provider or
+ * the admin console would show) and `bms_profile.name` (what this app actually
+ * renders everywhere — the console shell, the wall, notifications). The two
+ * are separate rows by design (see schema.ts); nothing keeps them in sync but
+ * this action, so it must always write both.
+ */
+export async function updateProfileAction(
+  _prev: AuthActionState,
+  formData: FormData
+): Promise<AuthActionState> {
+  if (!isAuthConfigured()) return { error: NOT_CONFIGURED };
+
+  const userId = await getCurrentUserId();
+  if (!userId) return { error: 'Sign in to update your profile.' };
+
+  const parsed = z
+    .object({ name: z.string().trim().min(1, 'Please enter a name.').max(80) })
+    .safeParse({ name: formData.get('name') });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const { error } = await getAuth().updateUser({ name: parsed.data.name });
+  if (error) return { error: readableError(error.message) };
+
+  await updateProfileName(userId, parsed.data.name);
+  revalidatePath('/account');
+  return { ok: 'Saved.' };
+}
+
+const passwordChange = z.object({
+  currentPassword: z.string().min(1, 'Enter your current password.'),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters.')
+});
+
+/** Changing a known password while signed in — distinct from the forgot/reset
+ *  flow above, which is for someone who cannot sign in at all. */
+export async function changePasswordAction(
+  _prev: AuthActionState,
+  formData: FormData
+): Promise<AuthActionState> {
+  if (!isAuthConfigured()) return { error: NOT_CONFIGURED };
+
+  const parsed = passwordChange.safeParse({
+    currentPassword: formData.get('currentPassword'),
+    newPassword: formData.get('newPassword')
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const { error } = await getAuth().changePassword(parsed.data);
+  if (error) return { error: readableError(error.message) };
+
+  return { ok: 'Password changed.' };
 }

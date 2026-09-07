@@ -30,7 +30,8 @@ const nav: NavItem[] = [
   { label: 'Messages', href: '/studio/messages', icon: 'MessageSquare' },
   { label: 'Sponsors', href: '/studio/sponsors', icon: 'Handshake' },
   { label: 'Members', href: '/studio/members', icon: 'Users' },
-  { label: 'Earnings', href: '/studio/earnings', icon: 'Coins' }
+  { label: 'Earnings', href: '/studio/earnings', icon: 'Coins' },
+  { label: 'Account', href: '/account', icon: 'Settings' }
 ];
 
 export default async function StudioLayout({ children }: { children: React.ReactNode }) {

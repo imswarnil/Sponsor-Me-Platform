@@ -108,6 +108,12 @@ export async function getUserById(id: string) {
   return rows[0] ?? null;
 }
 
+/** The display name shown everywhere in the app — separate from Neon Auth's own
+ *  copy, which updateProfileAction updates alongside this one. */
+export async function updateProfileName(id: string, name: string) {
+  await db.update(profiles).set({ name }).where(eq(profiles.id, id));
+}
+
 export async function getUserSlots(ownerId: string, includeArchived = false) {
   const where = includeArchived
     ? eq(slots.ownerId, ownerId)

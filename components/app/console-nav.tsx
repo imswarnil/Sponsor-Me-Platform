@@ -12,6 +12,7 @@ import {
   MessageSquare,
   Radio,
   Receipt,
+  Settings,
   Users,
   type LucideIcon
 } from 'lucide-react';
@@ -27,7 +28,8 @@ const icons: Record<string, LucideIcon> = {
   Coins,
   Receipt,
   Radio,
-  MessageSquare
+  MessageSquare,
+  Settings
 };
 
 export type NavItem = { label: string; href: string; icon: string; exact?: boolean };
