@@ -1,10 +1,18 @@
 # sponsor.imswarnil.com
 
-Swarnil's own sponsorship platform. Sponsors browse and buy placements across **every site
-Swarnil builds** — the blog, YouTube, the newsletter, Instagram, the courses, the themes and
-the open-source projects — on any custom date range, or shout him out on their own social
-accounts as an "ambassador". GitHub Sponsors sits alongside it as the recurring,
-no-negotiation route.
+Swarnil's own sponsorship platform. There are two ways in, for two different people:
+
+- **A placement** — a brand takes a spot on one of Swarnil's channels (the blog sidebar, a
+  YouTube read, a newsletter block, an Instagram post, a README badge, or an "ambassador"
+  shout-out on the sponsor's own accounts) for any custom date range, across **every site
+  Swarnil builds**.
+- **A membership** — a reader pays one fixed amount a month and gets a face on the public
+  sponsor wall, which is embedded across those same sites, plus a paid membership on the blog.
+
+GitHub Sponsors sits alongside both as the recurring, no-negotiation route.
+
+**Prices are in points, not money** — nothing charges a card yet. Every account starts with
+1,000 points, so the whole flow can be walked end to end before real payments land.
 
 Single-tenant on purpose: there are exactly two roles, Swarnil (`/studio`) and a sponsor.
 
@@ -12,9 +20,10 @@ See `CLAUDE.md` for the full architecture/rulebook and `HOWTOUSE.md` for a route
 
 ## Stack
 
-Next.js (App Router) · Drizzle ORM + **Neon** Postgres · **Neon Auth** (email + password,
-CLAUDE.md §3) · Tailwind v4 · a vendored design system (`app/creator/*.css`, see CLAUDE.md §4)
-· GitHub Sponsors, read-only (CLAUDE.md §10).
+Next.js (App Router) on **Cloudflare Workers** (`@opennextjs/cloudflare`) · Drizzle ORM +
+**Neon** Postgres · **Neon Auth** (email + password, CLAUDE.md §3) · Tailwind v4 · a vendored
+design system (`app/creator/*.css`, see CLAUDE.md §4) · GitHub Sponsors, read-only
+(CLAUDE.md §10).
 
 ## Local development
 
@@ -49,11 +58,23 @@ npm run db:push
 
 ## Deployment
 
-Git-connected to Vercel — pushes to `main` deploy straight to production.
+**Cloudflare Workers, via OpenNext** — the same stack as the sibling sites under `~/Swarnil`.
 
-**Not currently reachable:** neither `sponsor.imswarnil.com` nor `advertise.imswarnil.com`
-has a DNS record, and no Neon project has been created yet, so `DATABASE_URL` is empty and
-DB-backed routes 500. See `TODO.md` for what unblocks it.
+```bash
+npm run preview     # build + run the real Worker on workerd locally (:8788)
+npm run cf:deploy   # build + ship
+```
+
+```
+sponsor.imswarnil.com     canonical — the only Worker route
+advertise.imswarnil.com   a Cloudflare Redirect Rule to the above, not a route
+```
+
+**Not reachable yet:** neither hostname has a DNS record (checked 2026-09-07), so there is
+nothing for the Worker Route to attach to. The Neon database and Neon Auth *are* live and
+the built Worker serves real data locally — what is missing is account state, in the order
+`TODO.md` lists it: DNS record → `wrangler secret put` → trust the origin in Neon Auth →
+deploy → Redirect Rule.
 
 ## Deploy your own
 

@@ -1,5 +1,10 @@
-// App tables. Identity is Supabase Auth (auth.users). Per-user app data (points, role)
-// lives in bms_profile, whose id == auth.users.id (populated by a DB trigger on signup).
+// App tables. Identity is NEON AUTH — `neon_auth.user`, a schema Neon provisions
+// and migrates, which drizzle-kit must never touch (see drizzle/manual/). Per-user
+// app data (points, role) lives in bms_profile, whose id == neon_auth.user.id.
+//
+// That row is written by `ensureProfile()` in queries.ts on an account's first
+// authenticated request. It used to be a Postgres trigger on Supabase's
+// auth.users; Neon owns its auth schema, so there is nowhere to hang one.
 import { boolean, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const profiles = pgTable('bms_profile', {

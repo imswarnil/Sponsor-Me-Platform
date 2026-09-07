@@ -34,6 +34,26 @@ that one. If you find historical references to "Phase 1–5", "spec track", "pro
 membership in old commit messages or docs, they describe that abandoned direction — ignore
 them; this file describes what's actually live.
 
+### The two doors
+
+There are exactly **two** ways to back this work, they are for two different people, and
+every public surface says so in the same order:
+
+| | Who | What they get | Priced |
+|---|---|---|---|
+| **Placement** | a brand | a spot on one channel, dates they choose, creative they supply | per week, `bms_slot.pricePoints` |
+| **Membership** | a reader | a face on the public sponsor wall + a paid membership on the blog | fixed monthly, read live from the Ghost tier |
+
+The homepage used to sell only the first while the nav offered the second, so a reader
+landed on an advertiser's pitch. `components/marketing/two-doors.tsx` is the fork, and it
+is the first thing under the hero. Both doors read their numbers live — cheapest open
+placement out of Neon, tier price out of Ghost, member count off the wall — and a number
+that cannot be read is **absent**, never guessed (§4).
+
+`components/marketing/points-note.tsx` states, on every page that quotes a price, that
+points are not money. When real payments land (REBUILD.md, Dodo) that component is the one
+thing that has to change, and its absence is the signal that it did.
+
 ---
 
 ## §1 — Architecture
@@ -41,9 +61,18 @@ them; this file describes what's actually live.
 A single Next.js App Router app at the repo root. No monorepo, no workspace.
 
 ```
-app/            routes — marketing pages, /studio (creator admin), /sponsor (advertiser
-                dashboard), /placements (public catalogue), /s/[publicId] (buy a placement),
-                /embed/[publicId] (the widget iframe), auth pages
+app/(marketing)/  EVERY page a logged-out visitor can reach, under ONE shell:
+                  / (the homepage), /placements, /placements/[channel], /members,
+                  /members/join, /how-it-works, /s/[publicId] (buy a placement).
+                  layout.tsx supplies the header and footer and declares
+                  `force-dynamic` for the whole segment — SiteHeader reads the
+                  session, so §3's rule applies to all of it at once. The route
+                  group costs nothing at the URL: /placements is still /placements.
+                  Each of these pages used to carry its own copied header bar and
+                  three had no footer at all.
+app/            the rest — /studio (creator admin), /sponsor (advertiser
+                dashboard), /embed/[publicId] (the widget iframe), auth pages,
+                robots.ts + sitemap.ts
 components/     UI, organized by area: ui/ (primitives), app/ (studio+sponsor consoles),
                 auth/, marketing/
 lib/proto/      the real backend — schema.ts (Drizzle), db.ts, queries.ts, actions.ts,
@@ -271,19 +300,75 @@ first and names the offending pid; `npm run stop` clears both the processes and 
 
 ## §8 — Deployment
 
+**Cloudflare Workers, via OpenNext.** Same stack as the two sibling sites under
+`~/Swarnil` (`links.imswarnil.com` and `nac.imswarnil.com`), so there is one deployment
+story across the umbrella rather than three.
+
+```bash
+npm run preview     # build + run the real Worker on workerd locally (port 8788)
+npm run cf:deploy   # build + ship
+npm run cf:typegen  # regenerate cloudflare-env.d.ts from wrangler.jsonc
+```
+
+### Why not GitHub Pages
+
+`REBUILD.md` planned a static export to Pages plus a small API Worker. That cannot work:
+every page reads the session or the database per request, and §3 requires it — a static
+export has no server actions, no `/api/auth/[...path]` proxy and no way to gate `/studio`.
+The alternative REBUILD.md itself names ("host the whole app on Cloudflare Workers
+(OpenNext)") is what is implemented. `vercel.json` is gone; Vercel is not the target.
+
+### Two things the adapter changes, both verified against the built Worker
+
+- **PPR had to go.** `experimental.ppr` flushes a static shell with a **200** before the
+  route's own code runs, so `redirect()` in a gate can no longer set the status — it is
+  delivered inside the RSC stream instead. `/studio` answered `307 → /login` in dev and
+  `200` on the Worker for the same signed-out request. Nothing leaked (the shells were all
+  zero bytes, precisely because every page reads the session), but a gated URL returning
+  200 to every crawler and uptime check is a bad signal, and dev disagreeing with
+  production about a status code is a trap. It is off, with the argument in `next.config.ts`.
+  All six gates now answer 307 on the Worker.
+- **A `has: [{ type: 'host' }]` redirect does not fire.** The `advertise` →
+  `sponsor` canonicalisation was written as a Next redirect and returned 200 through the
+  adapter, with both a spoofed `Host` header and a real request URL. It is a **Cloudflare
+  Redirect Rule** on the zone instead — the edge, before the Worker runs. Path redirects
+  (`/browse`, `/pricing`, `/app/*`) *are* honoured; those are verified.
+
+### Hosts
+
+`sponsor.imswarnil.com` is canonical — `lib/site.ts`, `metadataBase`, the sitemap, robots
+and Neon Auth's trusted origin all say so, and it is the only pattern in
+`wrangler.jsonc`'s `routes`. `advertise.imswarnil.com` gets a proxied DNS record and a
+Redirect Rule to it, and is deliberately **not** routed to the Worker: serving the app on
+two hostnames means two cookie origins, two canonical URLs, and a Neon Auth origin check
+that fails on one of them.
+
+Neither name resolves yet (checked against 1.1.1.1, 2026-09-07). A Worker Route attaches
+to an existing **proxied** record rather than owning DNS, so the record comes first — see
+TODO.md for the ordered list.
+
+### Secrets
+
+Set with `wrangler secret put NAME`, never in `wrangler.jsonc` (it is committed). The
+authoritative list is the comment at the bottom of that file, and the names there are the
+ones the code actually reads — `grep -rhoE "process\.env\.[A-Z0-9_]+" app lib scripts`.
+
+Required: `DATABASE_URL` (pooled), `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET`,
+`CREATOR_EMAIL`. **`CREATOR_EMAIL` is not optional in production**: unset, `getCreator()`
+falls back to the oldest account and that fallback *grants admin* (§3). Everything else
+degrades to nothing rendered rather than to an error. Do **not** set `DEMO_EMAIL` /
+`DEMO_PASSWORD` in production — the demo button is an unauthenticated endpoint that mints
+a session, and leaving them unset is what stops it rendering at all.
+
+`.dev.vars` is what `wrangler dev` reads locally (`.env` is Next's, not workerd's). It is
+gitignored, and generated from `.env`:
+
+```bash
+grep -vE '^\s*#' .env | grep -E '^[A-Z_]+=' > .dev.vars
+```
+
 - **GitHub:** `github.com/imswarnil/advertise-with-me-platform` (renamed from `be-my-sponsor`
-  2026-07-28; GitHub redirects the old URL).
-- **Vercel:** project `advertise-with-me-platform` (same rename), git-connected → pushes to
-  `main` auto-deploy directly to **production** (no preview-branch workflow — push straight to
-  `main`). Requires `vercel.json` (`framework: nextjs`) or Vercel serves `public/` statically
-  and 404s every route; middleware matcher must be non-empty or deploy finalization fails.
-- **Domains:** neither `sponsor.imswarnil.com` nor `advertise.imswarnil.com` resolves today
-  (checked against 1.1.1.1, 2026-09-06) — the wildcard DNS this file previously assumed is
-  not in place, so the platform has no live hostname. Both need an actual DNS record before
-  any deploy is reachable.
-- **Env vars** (`DATABASE_URL`, `NEON_AUTH_*`, `CREATOR_EMAIL`) must be set in **all three** Vercel environments
-  (Production, Preview, Development) — a var missing from one silently breaks only that
-  environment, which is exactly how the `CREATOR_EMAIL`-unset-in-prod bug happened once before.
+  2026-07-28; GitHub redirects the old URL). No CI deploy yet — `npm run cf:deploy` is manual.
 - **Supabase is gone entirely** — project deleted, packages removed, `supabase/` config and
   the `.claude/skills/supabase` steps no longer describe anything this repo uses. See §3.
 

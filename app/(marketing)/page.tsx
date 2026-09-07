@@ -1,14 +1,5 @@
 import Link from 'next/link';
-import {
-  ArrowRight,
-  ArrowUpRight,
-  Blocks,
-  Coins,
-  Eye,
-  Handshake,
-  ShieldCheck,
-  Zap
-} from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Coins, Eye, ShieldCheck, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge, Eyebrow } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,87 +9,75 @@ import { StartConversationForm } from '@/components/marketing/start-conversation
 import { AudienceStats } from '@/components/marketing/audience-stats';
 import { PropertiesGrid } from '@/components/marketing/properties-grid';
 import { GitHubSponsors } from '@/components/marketing/github-sponsors';
-import { channels, site } from '@/lib/site';
+import { SponsorWall } from '@/components/marketing/sponsor-wall';
+import { TwoDoors } from '@/components/marketing/two-doors';
+import { PointsNote } from '@/components/marketing/points-note';
+import { Thanks } from '@/components/marketing/thanks';
+import { getActiveWallMembers, expireStaleMembers } from '@/lib/proto/member-queries';
+import { CHANNEL_LIST } from '@/lib/channels';
+import { site } from '@/lib/site';
 
-export default function HomePage() {
+/* Reads the wall, the open placements and the Ghost tier per request — see
+   CLAUDE.md §3. Nothing on this page is a build-time snapshot. */
+export const dynamic = 'force-dynamic';
+
+export default async function HomePage() {
+  await expireStaleMembers();
+  const members = await getActiveWallMembers(24);
+
   return (
     <>
-      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      {/* ── Hero ─────────────────────────────────────────────────────────────
+          One claim, no fork yet. The fork is the next section, and putting it
+          there rather than in the hero is the whole point of the redesign: the
+          headline is the thing both audiences share, and the doors are where
+          they part. */}
       <section className="bg-grid bg-signal-wash relative overflow-hidden border-b border-line-subtle">
-        <div className="mx-auto grid max-w-site gap-12 px-gutter py-24 lg:grid-cols-[1.1fr_0.9fr] lg:py-32">
-          <div className="flex flex-col justify-center">
-            <Eyebrow className="mb-5">Advertise with {site.creator} directly</Eyebrow>
+        <div className="mx-auto max-w-site px-gutter py-24 lg:py-32">
+          <div className="max-w-3xl">
+            <Eyebrow className="mb-5">Sponsor {site.creator} directly</Eyebrow>
             <h1 className="text-balance font-display text-5xl font-bold leading-[1.03] tracking-tighter sm:text-6xl lg:text-7xl">
-              Place your brand in front of <span className="text-signal">my audience</span>.
+              Back the work, not the <span className="text-signal">ad network</span>.
             </h1>
             <p className="mt-6 max-w-lead text-pretty text-md text-muted-foreground">
               I make videos, write a blog and a newsletter, post photos, and ship open source. If
               any of it has been useful to you or your product, you can put your name on it —
-              directly, with no middleman taking a cut.
+              directly, with nobody in the middle taking a cut and nothing following my readers
+              around the internet.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Button asChild size="lg">
-                <Link href="/login?mode=signup&next=/placements">
-                  Advertise with me <ArrowRight className="size-4" />
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link href="/#channels">See what you get</Link>
-              </Button>
-            </div>
             <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <ShieldCheck className="size-4 text-signal" /> No third-party cookies
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Handshake className="size-4 text-signal" /> No agency in the middle
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Blocks className="size-4 text-signal" /> Every placement disclosed
-              </span>
+              {[
+                'No third-party cookies',
+                'No agency in the middle',
+                'Every placement disclosed'
+              ].map((point) => (
+                <span key={point} className="inline-flex items-center gap-1.5">
+                  <ShieldCheck className="size-4 text-signal" /> {point}
+                </span>
+              ))}
             </div>
           </div>
 
-          {/* The blog sidebar slot, as an advertiser would actually see it. */}
-          <div className="flex items-center justify-center">
-            <Card className="w-full max-w-sm shadow-sm">
-              <CardContent className="space-y-4 p-5">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span className="font-mono">imswarnil.com/travel</span>
-                  <Badge variant="outline">Sidebar</Badge>
-                </div>
-                <div className="space-y-3">
-                  <div className="h-3 w-3/4 rounded bg-muted" />
-                  <div className="h-3 w-full rounded bg-muted" />
-                  <div className="h-3 w-5/6 rounded bg-muted" />
-                </div>
-                <div className="relative grid aspect-[300/250] place-items-center overflow-hidden rounded-media border border-dashed border-pop/40 bg-pop/5 text-center">
-                  <div className="space-y-1 px-4">
-                    <p className="font-display text-sm font-semibold text-signal">
-                      Your name could be here
-                    </p>
-                    <p className="text-xs text-muted-foreground">300 × 250 · on every post</p>
-                  </div>
-                  <Badge variant="pop" className="fx-pulse absolute right-2 top-2">
-                    Open
-                  </Badge>
-                </div>
-                <div className="space-y-3">
-                  <div className="h-3 w-full rounded bg-muted" />
-                  <div className="h-3 w-2/3 rounded bg-muted" />
-                </div>
-              </CardContent>
-            </Card>
+          {/* The fork, immediately — above the fold on anything desktop-sized. */}
+          <div className="mt-14">
+            <TwoDoors />
           </div>
         </div>
       </section>
 
-      {/* ── Real numbers, not invented ones ─────────────────────────────────── */}
+      {/* ── Points, before anything quotes a price ───────────────────────────
+          Deliberately the first thing after the doors, because the doors are
+          the first place a number appears. */}
+      <section className="mx-auto max-w-site px-gutter pt-section-md">
+        <PointsNote />
+      </section>
+
+      {/* ── Real numbers, never invented ones ────────────────────────────── */}
       <section className="mx-auto max-w-site px-gutter py-section-md">
         <SectionHeading
           eyebrow="Your audience"
           title="What you'd actually be reaching"
-          sub="Real numbers, pulled live — never a made-up figure."
+          sub="Read live from the blog. A channel that isn't connected says so rather than showing a number I made up."
         />
         <div className="mt-10">
           <AudienceStats />
@@ -109,39 +88,37 @@ export default function HomePage() {
       <section id="channels" className="mx-auto max-w-site px-gutter py-section-md">
         <SectionHeading
           eyebrow="The work"
-          title="Five places your name can live"
-          sub="Advertise on one surface, or take everything for a month. Each one is disclosed as sponsored, every time."
+          title="Six places your name can live"
+          sub="Take one surface, or take everything for a month. Each one is disclosed as sponsored, every time."
         />
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {channels.map((c) => (
+          {CHANNEL_LIST.map((c) => (
             <Card key={c.key} className="h-full">
               <CardContent className="flex h-full flex-col p-6">
                 <div className="mb-4 flex items-center justify-between">
                   <span className="grid size-10 place-items-center rounded-md bg-pop/12 text-signal">
                     <ChannelIcon name={c.icon} className="size-5" />
                   </span>
-                  {c.soon ? <Badge variant="craft">Soon</Badge> : null}
+                  {c.embeddable ? <Badge variant="pop">Live counts</Badge> : null}
                 </div>
                 <h3 className="font-display text-lg font-semibold tracking-tight">{c.label}</h3>
                 {/* flex-1 so the rule below lands on the same line across the
                     row, whatever length each blurb happens to be. */}
-                <p className="mt-2 flex-1 text-sm text-muted-foreground">{c.blurb}</p>
+                <p className="mt-2 flex-1 text-sm text-muted-foreground">{c.placement}</p>
 
                 <div className="mt-5 border-t border-line-subtle pt-4">
                   <p className="font-label text-2xs uppercase tracking-slate text-subtle">
-                    What an advertiser gets
+                    What a week buys
                   </p>
-                  <p className="mt-1.5 text-sm">{c.placement}</p>
+                  <p className="mt-1.5 text-sm">{c.unit}</p>
                 </div>
 
-                {c.href ? (
-                  <a
-                    href={c.href}
-                    className="mt-4 inline-flex w-fit items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    Have a look <ArrowUpRight className="size-3.5 text-faint" />
-                  </a>
-                ) : null}
+                <Link
+                  href={`/placements/${c.key}`}
+                  className="mt-4 inline-flex w-fit items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  See this channel <ArrowUpRight className="size-3.5 text-faint" />
+                </Link>
               </CardContent>
             </Card>
           ))}
@@ -160,46 +137,69 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── The recurring route. Renders nothing without a GITHUB_TOKEN. ──── */}
-      <section className="mx-auto max-w-site px-gutter pb-section-md">
-        <GitHubSponsors />
-      </section>
-
-      {/* ── How it works, from the advertiser's side ─────────────────────── */}
+      {/* ── Who's already here ───────────────────────────────────────────────
+          The wall and the GitHub listing are the same claim from two sources,
+          so they sit together. Both vanish rather than showing a zero: an empty
+          wall renders its own "nobody yet" line, and GitHubSponsors returns
+          null without a token (CLAUDE.md §10). */}
       <section className="border-y border-line-subtle bg-sunken">
         <div className="mx-auto max-w-site px-gutter py-section-md">
           <SectionHeading
-            eyebrow="How it works"
-            title="Three steps, no sales call"
-            sub="Pick a placement, send the creative, watch it run. Nothing to negotiate."
+            eyebrow="Already backing this"
+            title="The people on the wall"
+            sub="Members appear here and on every site I embed the wall on — with their own line and their own link."
           />
-          <div className="mt-12 grid gap-5 md:grid-cols-3">
-            <StepCard
-              n="01"
-              icon={<Eye className="size-5" />}
-              title="Pick a placement"
-              body="Every open spot has a public page: which channel it runs on, what it costs, and how it's been performing."
-            />
-            <StepCard
-              n="02"
-              icon={<Coins className="size-5" />}
-              title="Take it"
-              body="Add a headline, an image and your link, then pay the listed price. No auction, no minimum spend, no contract."
-            />
-            <StepCard
-              n="03"
-              icon={<Zap className="size-5" />}
-              title="It goes live"
-              body="Your placement starts running immediately, and you can see its views and clicks on the same public page."
-            />
+          <div className="mt-12">
+            <SponsorWall members={members} layout="full" />
+            {members.length > 0 ? (
+              <div className="mt-10 flex justify-center">
+                <Button asChild variant="outline">
+                  <Link href="/members">
+                    See the whole wall <ArrowRight className="size-4" />
+                  </Link>
+                </Button>
+              </div>
+            ) : null}
           </div>
-          <div className="mt-10 flex justify-center">
-            <Button asChild variant="outline">
-              <Link href="/how-it-works">
-                Read the long version <ArrowRight className="size-4" />
-              </Link>
-            </Button>
+          <div className="mt-12">
+            <GitHubSponsors />
           </div>
+        </div>
+      </section>
+
+      {/* ── How it works, from the sponsor's side ────────────────────────── */}
+      <section className="mx-auto max-w-site px-gutter py-section-md">
+        <SectionHeading
+          eyebrow="How it works"
+          title="Three steps, no sales call"
+          sub="Pick a placement, send the creative, watch it run. Nothing to negotiate."
+        />
+        <div className="mt-12 grid gap-5 md:grid-cols-3">
+          <StepCard
+            n="01"
+            icon={<Eye className="size-5" />}
+            title="Pick a placement"
+            body="Every open spot has a public page: which channel it runs on, which of my sites it covers, what a week costs, and how it has been performing."
+          />
+          <StepCard
+            n="02"
+            icon={<Coins className="size-5" />}
+            title="Take it"
+            body="Add a headline, an image and your link, choose your dates, and pay the listed price in points. No auction, no minimum, no contract."
+          />
+          <StepCard
+            n="03"
+            icon={<Zap className="size-5" />}
+            title="It goes live"
+            body="Your placement starts running immediately, and the views and clicks it earns show on the same public page you bought it from."
+          />
+        </div>
+        <div className="mt-10 flex justify-center">
+          <Button asChild variant="outline">
+            <Link href="/how-it-works">
+              Read the long version <ArrowRight className="size-4" />
+            </Link>
+          </Button>
         </div>
       </section>
 
@@ -233,22 +233,22 @@ export default function HomePage() {
 
       {/* ── Final CTA ────────────────────────────────────────────────────── */}
       <section className="mx-auto max-w-site px-gutter pb-24">
-        <div
-          data-surface="inverse"
-          className="rounded-sheet px-6 py-16 text-center"
-        >
+        <div data-surface="inverse" className="rounded-sheet px-6 py-16 text-center">
           <h2 className="text-balance font-display text-4xl font-bold tracking-tighter sm:text-5xl">
             Put your name on the <span className="text-signal">next one</span>.
           </h2>
           <p className="mx-auto mt-4 max-w-lead text-muted-foreground">
-            Pick a placement and it runs today. Would rather talk it through first? Start a
-            conversation below.
+            Pick a placement and it runs today, or join the wall and stay on it. Would rather talk
+            it through first? Start a conversation below.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg">
-              <Link href="/login?mode=signup&next=/placements">
+              <Link href="/placements">
                 See open placements <ArrowRight className="size-4" />
               </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline">
+              <Link href="/members">Become a member</Link>
             </Button>
           </div>
           <div className="mt-8">
@@ -259,6 +259,8 @@ export default function HomePage() {
           </p>
         </div>
       </section>
+
+      <Thanks />
     </>
   );
 }

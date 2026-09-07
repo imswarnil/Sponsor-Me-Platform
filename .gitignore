@@ -51,3 +51,12 @@ next-env.d.ts
 postgres_data/
 .env*.local
 .env*
+
+# OpenNext build output (Cloudflare Workers)
+.open-next/
+.wrangler/
+cloudflare-env.d.ts
+
+# wrangler local dev vars (secrets — never committed)
+.dev.vars
+.dev.vars.*

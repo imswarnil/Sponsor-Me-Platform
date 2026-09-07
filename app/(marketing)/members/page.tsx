@@ -1,9 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight, Instagram } from 'lucide-react';
-import { Logo } from '@/components/logo';
-import { BackToSite } from '@/components/back-to-site';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { SponsorWall } from '@/components/marketing/sponsor-wall';
+import { PointsNote } from '@/components/marketing/points-note';
 import { EmbedSnippet } from '@/components/app/embed-snippet';
 import { Button } from '@/components/ui/button';
 import { Eyebrow } from '@/components/ui/badge';
@@ -28,18 +26,9 @@ export default async function MembersPage() {
   ]);
 
   return (
-    <div className="min-h-[100dvh] bg-grid">
-      <header className="flex items-center justify-between border-b border-line-subtle bg-canvas/85 px-gutter py-3 backdrop-blur-md">
-        <Logo />
-        <div className="flex items-center gap-2">
-          <Button asChild size="sm" variant="ghost">
-            <Link href="/placements">Placements</Link>
-          </Button>
-          <BackToSite className="hidden sm:inline-flex" />
-          <ThemeToggle />
-        </div>
-      </header>
-
+    /* Header and footer come from app/(marketing)/layout.tsx — this page used
+       to carry its own bar and no footer at all. */
+    <div className="bg-grid">
       <div className="mx-auto max-w-narrow px-gutter py-16">
         <Eyebrow className="mb-4">Members</Eyebrow>
         <h1 className="text-balance font-display text-4xl font-bold tracking-tighter">
@@ -68,6 +57,10 @@ export default async function MembersPage() {
               Membership pricing is unavailable right now — it is read live from the blog.
             </p>
           )}
+        </div>
+
+        <div className="mt-8">
+          <PointsNote />
         </div>
 
         <section className="mt-16">

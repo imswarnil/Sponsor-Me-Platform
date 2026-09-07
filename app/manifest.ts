@@ -2,10 +2,14 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Advertise With Me',
-    short_name: 'Advertise',
-    description: 'Track your advertising placements — views, clicks, and what you have running.',
-    start_url: '/sponsor',
+    // Named for what this is now, not for the marketplace it started as.
+    name: 'Sponsor Swarnil',
+    short_name: 'Sponsor',
+    description:
+      'Back the work directly — a placement on any of Swarnil\u2019s sites, or a membership on the sponsor wall.',
+    // `/home` decides where you belong (creator or sponsor) instead of assuming
+    // the installer is an advertiser, which /sponsor did.
+    start_url: '/home',
     scope: '/',
     display: 'standalone',
     background_color: '#ffffff',

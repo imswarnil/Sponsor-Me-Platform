@@ -6,10 +6,12 @@
 # ERR_PNPM_IGNORED_BUILDS. Deleting it as "monorepo leftover" is a mistake that
 # has already been made once.
 #
-# These four ship native binaries or codegen that must run at install time:
-# Tailwind's oxide engine, esbuild, sharp's image binary, core-js's postinstall.
+# These ship native binaries or codegen that must run at install time:
+# Tailwind's oxide engine, esbuild, sharp's image binary, core-js's postinstall,
+# and workerd — the Cloudflare runtime `wrangler` runs the Worker on locally.
 allowBuilds:
   '@tailwindcss/oxide': true
   esbuild: true
   sharp: true
   core-js: true
+  workerd: true

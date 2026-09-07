@@ -3,6 +3,7 @@ import {
   ArrowRight,
   BarChart3,
   CheckCircle2,
+  Users,
   Coins,
   Eye,
   MousePointerClick,
@@ -15,12 +16,14 @@ import { Eyebrow } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChannelIcon } from '@/components/marketing/channel-icon';
 import { StartConversationForm } from '@/components/marketing/start-conversation-form';
-import { channels } from '@/lib/site';
+import { PointsNote } from '@/components/marketing/points-note';
+import { CHANNEL_LIST } from '@/lib/channels';
+import { site } from '@/lib/site';
 
 export const metadata = {
   title: 'How it works',
   description:
-    'How advertising with Swarnil works — pick a placement, send the creative, watch it run. No agency, no auction, no contract.'
+    'Both ways to back the work — buy a placement on a channel, or become a member on the sponsor wall. No agency, no auction, no contract.'
 };
 
 export default function HowItWorksPage() {
@@ -30,13 +33,28 @@ export default function HowItWorksPage() {
       <div className="max-w-lead">
         <Eyebrow className="mb-4">The whole loop</Eyebrow>
         <h1 className="text-balance font-display text-4xl font-bold tracking-tighter">
-          How advertising with me works
+          How backing this work works
         </h1>
         <p className="mt-5 text-pretty text-md text-muted-foreground">
-          You pick a placement on one of my channels, send me the creative, and pay the listed
-          price. It runs immediately. There is no agency in the middle, no auction, and nothing to
-          sign — if a spot is open, it is yours.
+          There are two ways in, and they are for two different people.{' '}
+          <b className="text-foreground">A placement</b> is a specific spot on one of my channels
+          for dates you choose — you send the creative, it runs immediately, and there is no
+          agency in the middle, no auction and nothing to sign.{' '}
+          <b className="text-foreground">A membership</b> is one fixed amount a month with no
+          creative and no dates, and it puts you on the public sponsor wall.
         </p>
+        <p className="mt-4 text-pretty text-muted-foreground">
+          The rest of this page is the placement route, step by step. The membership route is
+          short enough to fit in a paragraph, and it is{' '}
+          <Link href="/members" className="text-signal hover:underline">
+            on the members page
+          </Link>
+          .
+        </p>
+      </div>
+
+      <div className="mt-8">
+        <PointsNote />
       </div>
 
       {/* The loop */}
@@ -63,9 +81,12 @@ export default function HowItWorksPage() {
         ))}
       </div>
 
-      {/* The advertiser's journey — the only journey this site has. */}
+      {/* The placement route in full. The membership route is four fields and a
+          button, so it gets a card further down rather than a second ladder. */}
       <section className="mt-16">
-        <h2 className="font-display text-2xl font-bold tracking-tight">Step by step</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight">
+          Buying a placement, step by step
+        </h2>
         <ol className="mt-6 space-y-4">
           <Step
             n={1}
@@ -97,12 +118,12 @@ export default function HowItWorksPage() {
 
         <div className="mt-8 flex flex-wrap gap-2">
           <Button asChild>
-            <Link href="/login?mode=signup&next=/placements">
+            <Link href="/placements">
               See open placements <ArrowRight className="size-4" />
             </Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/#channels">What the channels are</Link>
+            <Link href="/members">Or become a member instead</Link>
           </Button>
         </div>
       </section>
@@ -111,11 +132,11 @@ export default function HowItWorksPage() {
       <section className="mt-16">
         <h2 className="font-display text-2xl font-bold tracking-tight">Where it can run</h2>
         <p className="mt-2 max-w-lead text-muted-foreground">
-          Five surfaces, each with its own kind of placement. You can take one, or take everything
+          Six surfaces, each with its own kind of placement. You can take one, or take everything
           for a month.
         </p>
         <div className="mt-6 space-y-3">
-          {channels.map((c) => (
+          {CHANNEL_LIST.map((c) => (
             <Card key={c.key}>
               <CardContent className="flex items-start gap-4 p-5">
                 <span className="grid size-10 shrink-0 place-items-center rounded-md bg-pop/12 text-signal">
@@ -129,6 +150,33 @@ export default function HowItWorksPage() {
             </Card>
           ))}
         </div>
+      </section>
+
+      {/* The other door, in the shortest form it can honestly take. */}
+      <section className="mt-16">
+        <h2 className="font-display text-2xl font-bold tracking-tight">
+          Becoming a member, in one paragraph
+        </h2>
+        <Card className="mt-5">
+          <CardContent className="p-6">
+            <span className="grid size-10 place-items-center rounded-md bg-pop/12 text-signal">
+              <Users className="size-5" />
+            </span>
+            <p className="mt-4 max-w-measure text-muted-foreground">
+              You give a display name, optionally an Instagram handle, a line about yourself and a
+              link. That becomes your face on the sponsor wall, which I embed across{' '}
+              {site.ownerLabel} and the project sites — so it is seen where the work is, not on a
+              page nobody visits. It also makes you a paid member on the blog for as long as you
+              keep it up. There is no creative to design, no date range to pick and no brief. It
+              renews monthly and you can stop it whenever you like.
+            </p>
+            <Button asChild className="mt-6">
+              <Link href="/members">
+                See the wall <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
       </section>
 
       {/* Money & measurement */}
@@ -212,6 +260,10 @@ export default function HowItWorksPage() {
             a="Not yet. The whole flow runs on points so you can walk through it end to end before anything is charged. Real payments are a later phase."
           />
           <Faq
+            q="What is the difference between a placement and a membership?"
+            a="A placement is a spot: one channel, dates you choose, creative you supply, priced per week. A membership is a face on the sponsor wall for a fixed amount a month, with nothing to design and no dates. Brands usually want the first; readers usually want the second."
+          />
+          <Faq
             q="Can I advertise on more than one channel?"
             a="Yes. Take a single spot, or a month across everything — the placements are listed separately so you can mix them however you like."
           />
@@ -226,9 +278,12 @@ export default function HowItWorksPage() {
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <Button asChild>
-            <Link href="/login?mode=signup&next=/placements">
+            <Link href="/placements">
               See open placements <ArrowRight className="size-4" />
             </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/members">Become a member</Link>
           </Button>
         </div>
         <div className="mt-8">

@@ -1,7 +1,5 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Logo } from '@/components/logo';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,13 +35,9 @@ export default async function JoinPage({
   if (existing?.status === 'active') redirect('/sponsor/membership');
 
   return (
-    <div className="min-h-[100dvh] bg-grid">
-      <header className="flex items-center justify-between px-gutter py-5">
-        <Logo />
-        <ThemeToggle />
-      </header>
-
-      <div className="mx-auto max-w-prose px-gutter py-10">
+    /* Chrome from app/(marketing)/layout.tsx. */
+    <div className="bg-grid">
+      <div className="mx-auto max-w-prose px-gutter py-16">
         <Eyebrow className="mb-4">Membership</Eyebrow>
         <h1 className="text-balance font-display text-3xl font-bold tracking-tight">
           How you&rsquo;ll appear on the wall

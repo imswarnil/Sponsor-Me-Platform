@@ -1,8 +1,5 @@
 import Link from 'next/link';
 import { ArrowRight, CalendarClock } from 'lucide-react';
-import { Logo } from '@/components/logo';
-import { BackToSite } from '@/components/back-to-site';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { ChannelIcon } from '@/components/marketing/channel-icon';
 import { AdPreviewShowcase } from '@/components/marketing/ad-preview-showcase';
 import { StartConversationForm } from '@/components/marketing/start-conversation-form';
@@ -10,6 +7,7 @@ import { SlotGrid } from '@/components/marketing/slot-grid';
 import { AudienceStats } from '@/components/marketing/audience-stats';
 import { PropertiesGrid } from '@/components/marketing/properties-grid';
 import { GitHubSponsors } from '@/components/marketing/github-sponsors';
+import { PointsNote } from '@/components/marketing/points-note';
 import { Button } from '@/components/ui/button';
 import { Badge, Eyebrow } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,7 +18,7 @@ import {
   getPlacementsWithAvailability,
   getStatsForSlots
 } from '@/lib/proto/queries';
-import { getCreatorId, getViewer, homeFor } from '@/lib/proto/roles';
+import { getCreatorId } from '@/lib/proto/roles';
 import { CHANNEL_LIST } from '@/lib/channels';
 import { site } from '@/lib/site';
 import { getGhostAdminStats } from '@/lib/ghost';
@@ -34,7 +32,7 @@ export const metadata = {
 export default async function PlacementsPage() {
   await expireStaleSlots();
 
-  const [viewer, creatorId] = await Promise.all([getViewer(), getCreatorId()]);
+  const creatorId = await getCreatorId();
   const [openRows, allRows, pastSponsors, ghost] = await Promise.all([
     getOpenPlacements(creatorId),
     creatorId ? getPlacementsWithAvailability(creatorId) : Promise.resolve([]),
@@ -45,26 +43,9 @@ export default async function PlacementsPage() {
   const stats = await getStatsForSlots([...openRows, ...sponsoredRows].map((s) => s.id));
 
   return (
-    <div className="min-h-[100dvh] bg-grid">
-      <header className="flex items-center justify-between border-b border-line-subtle bg-canvas/85 px-gutter py-3 backdrop-blur-md">
-        <Logo />
-        <div className="flex items-center gap-2">
-          {viewer ? (
-            <Button asChild size="sm" variant="ghost">
-              <Link href={homeFor(viewer.role)}>
-                {viewer.role === 'creator' ? 'Studio' : 'Your advertising'}
-              </Link>
-            </Button>
-          ) : (
-            <Button asChild size="sm" variant="ghost">
-              <Link href="/login?next=/placements">Log in</Link>
-            </Button>
-          )}
-          <BackToSite className="hidden sm:inline-flex" />
-          <ThemeToggle />
-        </div>
-      </header>
-
+    /* The page chrome comes from app/(marketing)/layout.tsx now — this page
+       used to carry its own bar and no footer at all. */
+    <div className="bg-grid">
       <div className="mx-auto max-w-narrow px-gutter py-16">
         <Eyebrow className="mb-4">Advertising placements</Eyebrow>
         <h1 className="text-balance font-display text-4xl font-bold tracking-tighter">
@@ -74,6 +55,10 @@ export default async function PlacementsPage() {
           Each one runs on a channel of mine and is disclosed as sponsored wherever it appears.
           The listed price is the whole price, and you can pick any custom date range.
         </p>
+
+        <div className="mt-8">
+          <PointsNote />
+        </div>
 
         <section className="mt-10">
           <h2 className="font-label text-2xs uppercase tracking-slate text-subtle">

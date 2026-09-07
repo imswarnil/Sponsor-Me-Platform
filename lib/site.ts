@@ -13,7 +13,11 @@ export const site = {
   owner: 'https://imswarnil.com',
   ownerLabel: 'imswarnil.com',
   blog: 'https://imswarnil.com/travel',
-  github: 'https://github.com/imswarnil'
+  github: 'https://github.com/imswarnil',
+  /** The recurring, no-negotiation door — see CLAUDE.md §10. */
+  githubSponsors: 'https://github.com/sponsors/imswarnil',
+  /** Routed to the same Worker, but 308s to `self` — see next.config.ts. */
+  altHost: 'https://advertise.imswarnil.com'
 } as const;
 
 /**
@@ -80,9 +84,15 @@ export const channels: Channel[] = [
   }
 ];
 
-/** Public nav. Single-tenant: everything here is about sponsoring the creator. */
+/**
+ * Public nav. Single-tenant: everything here is about sponsoring the creator.
+ *
+ * Ordered as the two doors are ordered everywhere else — the brand's page, then
+ * the reader's — with the shared explainer last. "The work" was dropped: it was
+ * an in-page anchor that only resolved on the homepage and read as a fifth
+ * destination when it was really a scroll.
+ */
 export const marketingNav = [
-  { label: 'The work', href: '/#channels' },
   { label: 'Placements', href: '/placements' },
   { label: 'Members', href: '/members' },
   { label: 'How it works', href: '/how-it-works' }

@@ -1,9 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CalendarClock, Coins, Eye, MousePointerClick } from 'lucide-react';
-import { Logo } from '@/components/logo';
-import { BackToSite } from '@/components/back-to-site';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { OfferForm } from '@/components/app/offer-form';
 import { countPendingOffers } from '@/lib/proto/offer-queries';
 import { Button } from '@/components/ui/button';
@@ -60,23 +57,27 @@ export default async function SponsorPage({
   const channel = toChannel(slot.placement);
 
   return (
-    <div className="min-h-[100dvh] bg-grid">
-      <header className="flex items-center justify-between border-b border-line-subtle bg-canvas/85 px-gutter py-3 backdrop-blur-md">
-        <Logo />
-        <div className="flex items-center gap-2">
+    /* Header and footer come from app/(marketing)/layout.tsx. The one thing
+       this page's old bespoke bar carried that the shared one cannot — what you
+       have left to spend, right where you are about to spend it — moved into
+       the page as a strip rather than being lost with the duplicate chrome. */
+    <div className="bg-grid">
+      <div className="mx-auto max-w-narrow px-gutter pt-8">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-line-subtle bg-sunken px-5 py-3">
+          <p className="text-sm text-muted-foreground">
+            Placements are priced in points, not money — nothing charges a card.
+          </p>
           {me ? (
             <Badge variant="pop" className="gap-1.5 px-2.5">
-              <Coins className="size-3" /> {me.points} pts
+              <Coins className="size-3" /> {me.points.toLocaleString()} pts to spend
             </Badge>
           ) : (
-            <Button asChild size="sm" variant="ghost">
-              <Link href={`/login?next=/s/${publicId}`}>Log in</Link>
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/login?next=/s/${publicId}`}>Log in to take this spot</Link>
             </Button>
           )}
-          <BackToSite className="hidden sm:inline-flex" />
-          <ThemeToggle />
         </div>
-      </header>
+      </div>
 
       <div className="mx-auto grid max-w-narrow gap-8 px-gutter py-16 md:grid-cols-[300px_1fr]">
         {/* What the placement actually looks like, where there is something to

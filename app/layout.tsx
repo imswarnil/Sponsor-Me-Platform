@@ -27,6 +27,20 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  /* Without this every og:image and canonical URL is emitted relative, which
+     is meaningless to a crawler and makes Next warn on every build. `site.self`
+     is the canonical host — `advertise.imswarnil.com` reaches the same Worker
+     but 308s here, so it never appears in a tag. */
+  metadataBase: new URL(site.self),
+  alternates: { canonical: '/' },
+  openGraph: {
+    type: 'website',
+    siteName: site.name,
+    url: site.self,
+    title: 'Sponsor Swarnil — back the work, not the ad network',
+    description: site.description
+  },
+  twitter: { card: 'summary_large_image' },
   title: {
     default: 'Sponsor Swarnil — back the work, not the ad network',
     template: '%s · Sponsor Swarnil'

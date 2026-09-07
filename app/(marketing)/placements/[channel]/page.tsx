@@ -1,9 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight, CalendarClock } from 'lucide-react';
-import { Logo } from '@/components/logo';
-import { BackToSite } from '@/components/back-to-site';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { ChannelIcon } from '@/components/marketing/channel-icon';
 import { AdPreviewShowcase } from '@/components/marketing/ad-preview-showcase';
 import { StartConversationForm } from '@/components/marketing/start-conversation-form';
@@ -17,7 +14,7 @@ import {
   getPlacementsWithAvailability,
   getStatsForSlots
 } from '@/lib/proto/queries';
-import { getCreatorId, getViewer, homeFor } from '@/lib/proto/roles';
+import { getCreatorId } from '@/lib/proto/roles';
 import { CHANNELS, isChannelKey, type ChannelKey } from '@/lib/channels';
 import { site } from '@/lib/site';
 
@@ -39,7 +36,7 @@ export default async function ChannelPlacementsPage({
   const channel = CHANNELS[channelParam as ChannelKey];
 
   await expireStaleSlots();
-  const [viewer, creatorId] = await Promise.all([getViewer(), getCreatorId()]);
+  const creatorId = await getCreatorId();
   const [openRows, allRows] = await Promise.all([
     getOpenPlacements(creatorId),
     creatorId ? getPlacementsWithAvailability(creatorId) : Promise.resolve([])
@@ -49,26 +46,8 @@ export default async function ChannelPlacementsPage({
   const stats = await getStatsForSlots([...openHere, ...sponsoredHere].map((s) => s.id));
 
   return (
-    <div className="min-h-[100dvh] bg-grid">
-      <header className="flex items-center justify-between border-b border-line-subtle bg-canvas/85 px-gutter py-3 backdrop-blur-md">
-        <Logo />
-        <div className="flex items-center gap-2">
-          {viewer ? (
-            <Button asChild size="sm" variant="ghost">
-              <Link href={homeFor(viewer.role)}>
-                {viewer.role === 'creator' ? 'Studio' : 'Your advertising'}
-              </Link>
-            </Button>
-          ) : (
-            <Button asChild size="sm" variant="ghost">
-              <Link href="/login?next=/placements">Log in</Link>
-            </Button>
-          )}
-          <BackToSite className="hidden sm:inline-flex" />
-          <ThemeToggle />
-        </div>
-      </header>
-
+    /* Chrome from app/(marketing)/layout.tsx. */
+    <div className="bg-grid">
       <div className="mx-auto max-w-narrow px-gutter py-16">
         <Link
           href="/placements"

@@ -1,0 +1,63 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sponsor-imswarnil",
+  "main": ".open-next/worker.js",
+
+  // nodejs_compat is required by the OpenNext adapter, and the compatibility
+  // date must be 2024-09-23 or later for Next.js to work on workerd.
+  "compatibility_date": "2026-09-06",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+
+  "observability": {
+    "enabled": true
+  },
+
+  // Worker Routes rather than a Custom Domain, matching links.imswarnil.com and
+  // nac.imswarnil.com: a route attaches to whatever DNS record already exists
+  // for the hostname — as long as that record is PROXIED through Cloudflare —
+  // so the Worker never has to own the DNS entry.
+  //
+  // ONE host. `sponsor` is canonical — it is what lib/site.ts, the metadata
+  // base, the sitemap and Neon Auth's trusted origin all say.
+  //
+  // `advertise.imswarnil.com` is deliberately NOT routed here. It gets its own
+  // proxied DNS record and a Cloudflare REDIRECT RULE on the zone, which 308s
+  // every path to `sponsor` at the edge before this Worker runs. Routing it
+  // here instead would serve the whole app on a second hostname under a
+  // different origin — two sets of cookies, two canonical URLs, and a Neon Auth
+  // origin check that fails on one of them. See CLAUDE.md §8.
+  "routes": [{ "pattern": "sponsor.imswarnil.com/*", "zone_name": "imswarnil.com" }]
+
+  // Secrets are NOT set here — they would be committed. Upload each one with
+  // `wrangler secret put NAME`. These names are the ones the code actually
+  // reads (grep `process.env.` under app/ lib/ scripts/); a name that drifts
+  // from the code fails silently, which is how the CREATOR_EMAIL-unset-in-prod
+  // bug happened once before. See CLAUDE.md §8.
+  //
+  // Required — the app does not work without these:
+  //   DATABASE_URL            Neon, the POOLED endpoint (-pooler in the host)
+  //   NEON_AUTH_BASE_URL      Neon Auth
+  //   NEON_AUTH_COOKIE_SECRET Neon Auth
+  //   CREATOR_EMAIL           who gets /studio. Unset falls back to the OLDEST
+  //                           account, which grants admin — always set it here.
+  //
+  // Optional — each one degrades to nothing rendered rather than to an error:
+  //   GITHUB_TOKEN            GitHub Sponsors, read-only (scope read:user)
+  //   GITHUB_LOGIN            whose sponsors listing to read
+  //   GHOST_API_URL           https://imswarnil.com
+  //   GHOST_ADMIN_API_KEY     real post/member counts, and the tier price
+  //   GHOST_SPONSOR_TIER      the tier name to match; falls back to the cheapest
+  //   APP_ORIGIN              only the seed script reads this
+  //
+  // Do NOT set DEMO_EMAIL / DEMO_PASSWORD in production: the demo button is an
+  // unauthenticated endpoint that mints a session (TODO.md, Hardening), and
+  // leaving them unset is what stops it from rendering at all.
+  //
+  // DATABASE_URL_UNPOOLED is for schema work and seeding only — it never runs
+  // on the Worker, so it does not belong here.
+}
