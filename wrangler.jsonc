@@ -52,6 +52,8 @@
   //   GHOST_API_URL           https://imswarnil.com
   //   GHOST_ADMIN_API_KEY     real post/member counts, and the tier price
   //   GHOST_SPONSOR_TIER      the tier name to match; falls back to the cheapest
+  //   YOUTUBE_API_KEY         subscriber count on the homepage (same key as
+  //   YOUTUBE_CHANNEL         imswarnil.github.io's Worker, if you have one)
   //   APP_ORIGIN              only the seed script reads this
   //
   // Do NOT set DEMO_EMAIL / DEMO_PASSWORD in production: the demo button is an

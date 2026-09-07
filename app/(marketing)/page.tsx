@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, ArrowUpRight, Coins, Eye, ShieldCheck, Zap } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Coins, Eye, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge, Eyebrow } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,6 +12,9 @@ import { GitHubSponsors } from '@/components/marketing/github-sponsors';
 import { SponsorWall } from '@/components/marketing/sponsor-wall';
 import { TwoDoors } from '@/components/marketing/two-doors';
 import { PointsNote } from '@/components/marketing/points-note';
+import { PlatformFacts } from '@/components/marketing/platform-facts';
+import { FeatureStack } from '@/components/marketing/feature-stack';
+import { SupportSignalArt } from '@/components/marketing/support-signal-art';
 import { Thanks } from '@/components/marketing/thanks';
 import { getActiveWallMembers, expireStaleMembers } from '@/lib/proto/member-queries';
 import { CHANNEL_LIST } from '@/lib/channels';
@@ -34,20 +37,27 @@ export default async function HomePage() {
           they part. */}
       <section className="border-b border-line-subtle">
         <div className="mx-auto max-w-site px-gutter py-20 lg:py-28">
-          <div className="max-w-3xl">
-            <Eyebrow className="mb-5">Sponsor {site.creator} directly</Eyebrow>
-            <h1 className="text-balance font-display text-4xl font-bold leading-[1.04] tracking-tighter lg:text-5xl">
-              Back the work, not the <span className="text-signal">ad network</span>.
-            </h1>
-            <p className="mt-5 max-w-lead text-pretty text-lg text-muted-foreground">
-              I make videos, write a blog and a newsletter, post photos, and ship open source. If
-              any of it has been useful to you or your product, you can put your name on it —
-              directly, with nobody in the middle taking a cut and nothing following my readers
-              around the internet.
-            </p>
-            <p className="mt-6 font-label text-2xs uppercase tracking-slate text-faint">
-              No third-party cookies · No agency in the middle · Every placement disclosed
-            </p>
+          <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_auto]">
+            <div className="max-w-3xl">
+              <Eyebrow className="mb-5">Sponsor {site.creator} directly</Eyebrow>
+              <h1 className="text-balance font-display text-4xl font-bold leading-[1.04] tracking-tighter lg:text-5xl">
+                Back the work, not the <span className="text-signal">ad network</span>.
+              </h1>
+              <p className="mt-5 max-w-lead text-pretty text-lg text-muted-foreground">
+                I make videos, write a blog and a newsletter, post photos, and ship open source. If
+                any of it has been useful to you or your product, you can put your name on it —
+                directly, with nobody in the middle taking a cut and nothing following my readers
+                around the internet.
+              </p>
+              <p className="mt-6 font-label text-2xs uppercase tracking-slate text-faint">
+                No third-party cookies · No agency in the middle · Every placement disclosed
+              </p>
+            </div>
+            {/* Decoration only — hidden below lg rather than shrunk, so it
+                never competes with the claim on a narrow screen. */}
+            <div className="hidden lg:block">
+              <SupportSignalArt />
+            </div>
           </div>
 
           {/* The fork, immediately — above the fold on anything desktop-sized. */}
@@ -141,6 +151,9 @@ export default async function HomePage() {
             title="The people on the wall"
             sub="Members appear here and on every site I embed the wall on — with their own line and their own link."
           />
+          <div className="mt-10">
+            <PlatformFacts />
+          </div>
           <div className="mt-12">
             <SponsorWall members={members} layout="full" />
             {members.length > 0 ? (
@@ -197,8 +210,8 @@ export default async function HomePage() {
 
       {/* ── Why direct ───────────────────────────────────────────────────── */}
       <section className="mx-auto max-w-site px-gutter py-section-md">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          <div>
+        <div className="grid gap-12 lg:grid-cols-2">
+          <div className="lg:sticky lg:top-24 lg:self-start">
             <SectionHeading
               align="left"
               eyebrow="Why direct"
@@ -206,20 +219,7 @@ export default async function HomePage() {
               sub="And it would follow my readers around the internet to do it. I would rather know who is backing the work, and have them know exactly where their name ends up."
             />
           </div>
-          <ul className="space-y-4">
-            {[
-              'You deal with me, not an account manager.',
-              'The price is the price — no auction, no reserve, no spend minimum.',
-              'No third-party cookies and no cross-site tracking of my readers.',
-              'Every sponsored placement says so, plainly, wherever it appears.',
-              'You can see the views and clicks your placement gets, on a public page.'
-            ].map((point) => (
-              <li key={point} className="flex gap-3">
-                <ShieldCheck className="mt-0.5 size-4 shrink-0 text-signal" />
-                <span className="text-muted-foreground">{point}</span>
-              </li>
-            ))}
-          </ul>
+          <FeatureStack />
         </div>
       </section>
 

@@ -1,11 +1,12 @@
 import { FileText, Users, Youtube, Instagram } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { getGhostAdminStats } from '@/lib/ghost';
+import { getYouTubeStats } from '@/lib/youtube';
 
 /** What an advertiser actually cares about: real numbers where they exist, an honest
  *  "not connected yet" where they don't. Never an invented figure — see CLAUDE.md §4. */
 export async function AudienceStats() {
-  const ghost = await getGhostAdminStats();
+  const [ghost, youtube] = await Promise.all([getGhostAdminStats(), getYouTubeStats()]);
 
   const tiles = [
     ghost
@@ -14,7 +15,9 @@ export async function AudienceStats() {
     ghost
       ? { icon: Users, label: 'Newsletter subscribers', value: ghost.memberCount.toLocaleString(), live: true }
       : { icon: Users, label: 'Newsletter', value: 'Not connected', live: false },
-    { icon: Youtube, label: 'YouTube', value: 'Connect to show real numbers', live: false },
+    youtube
+      ? { icon: Youtube, label: 'YouTube subscribers', value: youtube.subscriberCount.toLocaleString(), live: true }
+      : { icon: Youtube, label: 'YouTube', value: 'Connect to show real numbers', live: false },
     { icon: Instagram, label: 'Instagram', value: 'Connect to show real numbers', live: false }
   ];
 
