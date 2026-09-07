@@ -51,6 +51,7 @@ next-env.d.ts
 postgres_data/
 .env*.local
 .env*
+!.env.example
 
 # OpenNext build output (Cloudflare Workers)
 .open-next/
