@@ -16,6 +16,7 @@
     "db:fk": "node scripts/apply-sql.mjs drizzle/manual/*.sql",
     "db:seed": "node scripts/seed.mjs",
     "db:setup": "npm run db:push && npm run db:fk && npm run db:seed",
+    "dodo:setup": "node scripts/dodo-setup.mjs",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf:typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
@@ -30,6 +31,7 @@
     "autoprefixer": "^10.4.21",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dodopayments": "^2.49.0",
     "dotenv": "^16.5.0",
     "drizzle-kit": "^0.31.1",
     "drizzle-orm": "^0.43.1",
@@ -42,6 +44,7 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "server-only": "^0.0.1",
+    "standardwebhooks": "^1.1.1",
     "swr": "^2.3.3",
     "tailwind-merge": "^3.3.0",
     "tailwindcss": "4.1.7",

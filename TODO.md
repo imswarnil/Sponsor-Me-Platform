@@ -41,9 +41,39 @@ and there is no way to buy more, so the whole thing is a working preview of the 
 That is stated on `/`, `/placements`, `/members`, `/how-it-works` and `/s/[publicId]` by
 `components/marketing/points-note.tsx`.
 
-- [ ] Real payments (REBUILD.md step 5, Dodo Payments). The money step is isolated to
-      `sponsorSlot` in `lib/proto/actions.ts` and `chargeForMembership` in
-      `lib/proto/membership.ts`. Deleting `PointsNote` is how the site stops saying this.
+- [x] **Dodo Payments infrastructure.** `lib/dodo.ts` — lazy client (prefers
+      `DODO_PAYMENTS_KEY_LIVE` over `_TEST_MODE` the moment it's set, nothing else to
+      change), `createCheckout()`, and `verifyDodoWebhook()` via `standardwebhooks` (the
+      `dodopayments` SDK itself has no verification helper in 2.49.0 — confirmed by
+      reading its shipped types, not assumed). `scripts/dodo-setup.mjs` created the one
+      pay-what-you-want product every checkout charges against (`DODO_PRODUCT_ID`, test
+      mode). `app/api/webhooks/dodo/route.ts` verifies and logs `payment.succeeded`.
+      Verified end to end against the real test-mode API: checkout session created,
+      checkout page actually loads.
+- [ ] **Wire it into a purchase.** Nothing calls `createCheckout` yet — `sponsorSlot`
+      (`lib/proto/actions.ts`) and `joinAsMember` (`lib/proto/membership.ts`) still charge
+      points synchronously in one request. A real checkout is asynchronous (redirect to
+      Dodo → webhook confirms later), so this is a flow change, not just a swap:
+  - Decide what carries the buyer's form fields (ad creative, display name/Instagram/blurb
+    for a membership) to the webhook — `metadata` on the checkout session can hold them,
+    so the webhook does the same "create the row" work `joinAsMember` does today, once
+    payment is confirmed instead of once points move.
+  - No anonymous checkout — a payer must already be a signed-in profile
+    (`createCheckout`'s `metadata.profileId`).
+  - Deleting `PointsNote` is how the site stops saying "this isn't real money" — do that
+    the same day this lands, not before.
+  - Register `https://sponsor.imswarnil.com/api/webhooks/dodo` in the Dodo dashboard and
+    set `DODO_PAYMENTS_WEBHOOK_KEY` from what it gives you — the route 401s without it.
+
+## R2 (Cloudflare object storage) — not started
+
+Sponsor ad creative today is a pasted external image URL. R2 replaces that with real
+uploads once it's worth building: one bucket (`sponsor-imswarnil`, `-dev` suffix only if
+needed), presigned PUT URLs minted server-side after auth (credentials never reach the
+browser), content-type/size validated before minting, served from a separate domain
+(e.g. `files.imswarnil.com`) so uploaded content never executes on the app origin. Key
+scheme: `creative/<sponsorshipId>/<filename>`, `mediakit/<filename>`,
+`invoices/<year>/<paymentId>.pdf`.
 
 ## Auth follow-ups
 - [ ] Password reset emails need a sender configured in Neon Auth — the flow is wired but no
@@ -89,7 +119,7 @@ That is stated on `/`, `/placements`, `/members`, `/how-it-works` and `/s/[publi
       (`npm run check:hosts`).
 - [x] GitHub Sponsors, read-only, on `/`, `/placements` and `/studio`.
 - [x] Design system re-synced: one face (Inter), mono for code only.
-- [x] Supabase → Neon Auth migration (REBUILD.md steps 2–3): `lib/auth/`, the proxy route, the
+- [x] Supabase → Neon Auth migration: `lib/auth/`, the proxy route, the
       profile bootstrap that replaces `handle_new_user()`, and `force-dynamic` on the authed
       segments.
 - [x] Neon project `sponsor-imswarnil` created, auth enabled, schema pushed, FK applied.

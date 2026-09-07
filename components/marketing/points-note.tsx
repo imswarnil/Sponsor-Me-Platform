@@ -15,8 +15,8 @@ import { Coins } from 'lucide-react';
  * The same rule as CLAUDE.md §4's "no audience figures": say the true thing or
  * say nothing, and never let a number imply something it isn't.
  *
- * When real payments land (REBUILD.md — Dodo Payments), this component is the
- * one place that has to change, and its absence will be the signal that it did.
+ * When Dodo Payments replaces points (TODO.md), this component is the one place
+ * that has to change, and its absence will be the signal that it did.
  */
 export function PointsNote({ className }: { className?: string }) {
   return (

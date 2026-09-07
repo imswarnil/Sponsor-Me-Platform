@@ -40,9 +40,9 @@ export function MarketingNav({ className }: { className?: string }) {
               'group relative flex items-center gap-1.5 rounded-control px-3 py-2 text-sm text-muted-foreground',
               'transition-colors duration-200 ease-out hover:text-foreground',
               'aria-[current=page]:text-foreground aria-[current=page]:font-medium',
-              'aria-[current=page]:before:absolute aria-[current=page]:before:bottom-0.5',
-              'aria-[current=page]:before:left-1/2 aria-[current=page]:before:size-1.5',
-              'aria-[current=page]:before:-translate-x-1/2 aria-[current=page]:before:rounded-full',
+              'aria-[current=page]:before:absolute aria-[current=page]:before:left-0',
+              'aria-[current=page]:before:top-1/2 aria-[current=page]:before:size-1.5',
+              'aria-[current=page]:before:-translate-y-1/2 aria-[current=page]:before:rounded-full',
               'aria-[current=page]:before:bg-pop aria-[current=page]:before:content-[""]'
             )}
           >

@@ -56,6 +56,13 @@
   //   YOUTUBE_CHANNEL         imswarnil.github.io's Worker, if you have one)
   //   APP_ORIGIN              only the seed script reads this
   //
+  // Dodo Payments — infrastructure is live (lib/dodo.ts), not yet wired into
+  // a checkout button (TODO.md). Set these before that lands:
+  //   DODO_PAYMENTS_KEY_TEST_MODE  test-mode charges. _LIVE wins if both are set.
+  //   DODO_PAYMENTS_KEY_LIVE
+  //   DODO_PRODUCT_ID              from `npm run dodo:setup`, once per key above
+  //   DODO_PAYMENTS_WEBHOOK_KEY    verifies incoming webhooks are really Dodo's
+  //
   // Do NOT set DEMO_EMAIL / DEMO_PASSWORD in production: the demo button is an
   // unauthenticated endpoint that mints a session (TODO.md, Hardening), and
   // leaving them unset is what stops it from rendering at all.

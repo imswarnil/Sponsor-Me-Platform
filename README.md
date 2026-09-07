@@ -1,22 +1,33 @@
 # sponsor.imswarnil.com
 
-Swarnil's own sponsorship platform. There are two ways in, for two different people:
+**A creator's own storefront for being sponsored — no agency, no ad network, no cold DMs.**
 
-- **A placement** — a brand takes a spot on one of Swarnil's channels (the blog sidebar, a
-  YouTube read, a newsletter block, an Instagram post, a README badge, or an "ambassador"
-  shout-out on the sponsor's own accounts) for any custom date range, across **every site
-  Swarnil builds**.
-- **A membership** — a reader pays one fixed amount a month and gets a face on the public
-  sponsor wall, which is embedded across those same sites, plus a paid membership on the blog.
+Swarnil (a solo creator — videos, a blog, a newsletter, open source) built this instead of
+answering sponsorship emails one at a time. It's the thing a media kit PDF and a spreadsheet
+used to be, turned into a real page with real prices and instant checkout.
 
-GitHub Sponsors sits alongside both as the recurring, no-negotiation route.
+There are exactly two ways to back the work here:
 
-**Prices are in points, not money** — nothing charges a card yet. Every account starts with
-1,000 points, so the whole flow can be walked end to end before real payments land.
+| | Who it's for | What they get |
+|---|---|---|
+| **A placement** | A brand with something to promote | A spot on a real channel — a blog sidebar, a YouTube mention, a newsletter block, an Instagram post, a README badge, or a personal shout-out — for whatever dates they pick, disclosed as sponsored every time. |
+| **A membership** | A reader who just wants to help | One fixed price a month. In return: a face on the public sponsor wall (shown across every site the creator runs, not just this one) and a paid membership on the blog. |
 
-Single-tenant on purpose: there are exactly two roles, Swarnil (`/studio`) and a sponsor.
+GitHub Sponsors sits alongside both, for anyone who'd rather just chip in with no strings.
 
-See `CLAUDE.md` for the full architecture/rulebook and `HOWTOUSE.md` for a route map.
+Every number on the site is real or it isn't shown — reach, member counts, view/click stats
+are all read live from the actual sources (the blog, YouTube, GitHub). Nothing here is a
+made-up figure to look more impressive than it is.
+
+**Prices are in points today, not money** — nothing charges a card yet. Every account starts
+with 1,000 points, so the whole flow (browse → pay → go live) can be tried end to end before
+real payments (Dodo Payments, in progress) land. See `points-note.tsx` wherever a price
+appears on the site.
+
+Single-tenant by design: there are exactly two roles, the creator (`/studio`) and a sponsor
+(`/sponsor`) — this isn't a marketplace where strangers list their own placements.
+
+See `CLAUDE.md` for the full architecture/rulebook, `TODO.md` for what's still open.
 
 ## Stack
 

@@ -1,15 +1,14 @@
 # CLAUDE.md — sponsor.imswarnil.com (Swarnil's personal sponsorship platform)
 
-> **2026-09-04 — repo moved & re-scoped.** This project moved from
-> `~/Be My Sponsor/be-my-sponsor` to `~/Swarnil/sponsor.imswarnil.com` with a fresh git
-> history. Re-platforming: Supabase → **Neon + Neon Auth** (done, §3), points → **Dodo
-> Payments** (real money), files → **Cloudflare R2** (`r2/`), Vercel → **GitHub Pages**
-> (static export) + a small Cloudflare Worker API. See `REBUILD.md` for the plan and
-> `docs/IDEA-full-scale.md` for the parked wider-audience idea. This platform is for
-> Swarnil and Swarnil's sponsors only (brands, viewers, anyone sponsoring Swarnil) —
-> never generalize it multi-tenant. Until a migration step lands, the sections below
-> still describe the code accurately — update them as each step completes. §7 (old
-> GitHub/Vercel/domain setup) describes the *previous* deployment.
+> **Re-platforming status.** Moved from `~/Be My Sponsor/be-my-sponsor` to
+> `~/Swarnil/sponsor.imswarnil.com` with a fresh git history on 2026-09-04. Supabase →
+> Neon + Neon Auth: **done** (§3). Vercel → Cloudflare Workers: **done** (§8) — the
+> original plan was GitHub Pages + a small API Worker, abandoned for the reason §8
+> explains. Points → Dodo Payments: **in progress** — `DODO_PAYMENTS_KEY_TEST_MODE` is
+> set, build against it; see TODO.md for the security posture (webhook verification,
+> server-side pricing) before wiring a checkout. Files → Cloudflare R2: **not started**
+> (TODO.md has the plan). This platform is for Swarnil and Swarnil's sponsors only —
+> never generalize it multi-tenant.
 
 This file is the rulebook for this repo. When code and this file disagree, this file wins.
 When this file and a chat instruction disagree, ask before proceeding.
@@ -51,8 +50,8 @@ placement out of Neon, tier price out of Ghost, member count off the wall — an
 that cannot be read is **absent**, never guessed (§4).
 
 `components/marketing/points-note.tsx` states, on every page that quotes a price, that
-points are not money. When real payments land (REBUILD.md, Dodo) that component is the one
-thing that has to change, and its absence is the signal that it did.
+points are not money. When Dodo Payments replaces points (TODO.md) that component is the
+one thing that has to change, and its absence is the signal that it did.
 
 ---
 
@@ -312,11 +311,11 @@ npm run cf:typegen  # regenerate cloudflare-env.d.ts from wrangler.jsonc
 
 ### Why not GitHub Pages
 
-`REBUILD.md` planned a static export to Pages plus a small API Worker. That cannot work:
-every page reads the session or the database per request, and §3 requires it — a static
-export has no server actions, no `/api/auth/[...path]` proxy and no way to gate `/studio`.
-The alternative REBUILD.md itself names ("host the whole app on Cloudflare Workers
-(OpenNext)") is what is implemented. `vercel.json` is gone; Vercel is not the target.
+The original re-platforming plan was a static export to GitHub Pages plus a small API
+Worker. That cannot work: every page reads the session or the database per request, and
+§3 requires it — a static export has no server actions, no `/api/auth/[...path]` proxy
+and no way to gate `/studio`. Hosting the whole app on Cloudflare Workers (OpenNext)
+instead is what is implemented. `vercel.json` is gone; Vercel is not the target.
 
 ### Two things the adapter changes, both verified against the built Worker
 

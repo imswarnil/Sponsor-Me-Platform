@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Check, X } from 'lucide-react';
 import { PageHeader } from '@/components/app/page-header';
-import { Button } from '@/components/ui/button';
+import { SubmitButton } from '@/components/ui/submit-button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ChannelBadge } from '@/components/app/channel-badge';
@@ -122,15 +122,15 @@ export default async function OffersPage({
                   <div className="mt-5 flex gap-2 border-t border-line-subtle pt-4">
                     <form action={acceptOffer}>
                       <input type="hidden" name="offerId" value={offer.id} />
-                      <Button type="submit" size="sm">
+                      <SubmitButton size="sm" pendingText="Accepting...">
                         <Check className="size-4" /> Accept
-                      </Button>
+                      </SubmitButton>
                     </form>
                     <form action={declineOffer}>
                       <input type="hidden" name="offerId" value={offer.id} />
-                      <Button type="submit" size="sm" variant="ghost">
+                      <SubmitButton size="sm" variant="ghost" pendingText="Declining...">
                         <X className="size-4" /> Decline
-                      </Button>
+                      </SubmitButton>
                     </form>
                   </div>
                 </CardContent>
