@@ -1,6 +1,6 @@
 import { Star } from 'lucide-react';
 
-const REPO = 'imswarnil/advertise-with-me-platform';
+const REPO = 'imswarnil/Sponsor-Me-Platform';
 
 async function getStarCount(): Promise<number | null> {
   try {

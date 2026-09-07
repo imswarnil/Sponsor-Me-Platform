@@ -367,8 +367,10 @@ gitignored, and generated from `.env`:
 grep -vE '^\s*#' .env | grep -E '^[A-Z_]+=' > .dev.vars
 ```
 
-- **GitHub:** `github.com/imswarnil/advertise-with-me-platform` (renamed from `be-my-sponsor`
-  2026-07-28; GitHub redirects the old URL). No CI deploy yet — `npm run cf:deploy` is manual.
+- **GitHub:** `github.com/imswarnil/Sponsor-Me-Platform`, created 2026-09-07 with a fresh
+  history when this repo moved here (see the top of this file) — the old
+  `advertise-with-me-platform` repo is unrelated history and no longer exists. No CI deploy
+  yet — `npm run cf:deploy` is manual.
 - **Supabase is gone entirely** — project deleted, packages removed, `supabase/` config and
   the `.claude/skills/supabase` steps no longer describe anything this repo uses. See §3.
 
