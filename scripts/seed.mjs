@@ -1,19 +1,21 @@
 /**
- * Seeds the two accounts this platform needs to be worth looking at:
+ * Seeds the two accounts this platform needs to be worth looking at, plus a
+ * few ad slots so the studio and the homepage are not empty on first open.
  *
- *   1. the CREATOR  — CREATOR_EMAIL / ADMIN_PASSWORD, lands on /studio
- *   2. a DEMO SPONSOR — DEMO_EMAIL / DEMO_PASSWORD, lands on /sponsor
- *
- * ...plus a handful of open placements, so /studio and /placements are not
- * empty the first time they are opened.
+ *   1. the CREATOR      — CREATOR_EMAIL / ADMIN_PASSWORD, lands on /studio
+ *   2. a DEMO SPONSOR   — DEMO_EMAIL / DEMO_PASSWORD,     lands on /dashboard
  *
  * Users are created through the Neon Auth HTTP API, never by writing to
  * `neon_auth` directly: Better Auth owns the password hashing, and a row we
- * inserted ourselves would have a hash it does not accept. The profile rows in
- * `bms_profile` are ours, so those we do write.
+ * inserted ourselves would carry a hash it will not accept. The `sb_profile`
+ * rows are ours, so those we do write.
  *
- * Idempotent. Re-running skips accounts that exist and placements whose names
- * are already taken; it never overwrites a live sponsorship.
+ * WHAT THIS DOES NOT SEED: bids, payments, impressions or activity. Every one
+ * of those is a number somebody would read as a measurement — a leaderboard
+ * with invented sponsors on it is a lie told to the first real one, and fake
+ * view counts are worse. The board starts empty because it *is* empty.
+ *
+ * Idempotent: re-running skips what already exists.
  *
  *   npm run db:seed
  */
@@ -39,9 +41,7 @@ for (const [k, v] of Object.entries({
   DATABASE_URL,
   NEON_AUTH_BASE_URL,
   CREATOR_EMAIL,
-  ADMIN_PASSWORD,
-  DEMO_EMAIL,
-  DEMO_PASSWORD
+  ADMIN_PASSWORD
 })) {
   if (!v) {
     console.error(`Missing ${k} — see .env.example.`);
@@ -49,7 +49,7 @@ for (const [k, v] of Object.entries({
   }
 }
 
-// Schema work and seeding both want a real session, not the HTTP pooler.
+// Seeding wants a real session, not the HTTP pooler.
 const sql = neon(DATABASE_URL_UNPOOLED ?? DATABASE_URL);
 
 /** Better Auth refuses a request whose Origin it does not trust. */
@@ -89,125 +89,93 @@ async function ensureAccount({ email, password, name, label }) {
   return rows[0].id;
 }
 
-/**
- * The profile row. Under Supabase a trigger on `auth.users` did this; Neon owns
- * its own schema, so the app does it instead (lib/proto/queries.ts) and the
- * seed does it here rather than waiting for a first page load.
- *
- * The creator gets no starting points: points are what a sponsor spends, and
- * giving the person being sponsored a balance was always meaningless.
- */
-async function ensureProfile(id, email, name, points) {
+/** The app creates profiles on first request; seeding one keeps them in step. */
+async function ensureProfile(id, email, name, brand) {
   await sql`
-    INSERT INTO bms_profile (id, email, name, points)
-    VALUES (${id}, ${email}, ${name}, ${points})
-    ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, name = EXCLUDED.name`;
+    INSERT INTO sb_profile (id, email, name, brand)
+    VALUES (${id}, ${email}, ${name}, ${brand})
+    ON CONFLICT (id) DO NOTHING`;
 }
-
-/* ── 2 · placements ───────────────────────────────────────────────────────── */
-
-/** A short, readable public id in the same shape the app generates. */
-function publicId() {
-  return 'sl_' + Math.random().toString(36).slice(2, 10);
-}
-
-const PLACEMENTS = [
-  {
-    name: 'Blog sidebar',
-    channel: 'blog',
-    property: 'imswarnil',
-    price: 250,
-    adType: 'banner',
-    width: 300,
-    height: 250,
-    brief: 'The sidebar slot on every post on imswarnil.com. Served by the widget, so views and clicks are counted for real.',
-    specs: '300×250 PNG or JPG, headline under 60 characters.'
-  },
-  {
-    name: 'Newsletter block',
-    channel: 'newsletter',
-    property: null,
-    price: 400,
-    brief: 'A sponsored block inside an issue, written to read like the rest of it.',
-    specs: 'One paragraph, a link, and an optional 600×200 image.'
-  },
-  {
-    name: 'Design system README',
-    channel: 'open-source',
-    property: 'design',
-    price: 150,
-    brief: 'A logo and link in the README and docs of the Frame & Signal design system.',
-    specs: 'SVG or PNG logo, 200px wide, plus a URL.'
-  },
-  {
-    name: 'CRM Analytics Academy banner',
-    channel: 'blog',
-    property: 'crmanalytics',
-    price: 200,
-    adType: 'banner',
-    width: 728,
-    height: 90,
-    brief: 'Above the lesson list on the CRM Analytics Academy course site.',
-    specs: '728×90 PNG or JPG.'
-  },
-  {
-    name: 'Ambassador shout-out',
-    channel: 'ambassador',
-    property: null,
-    price: 100,
-    brief: "You post about my work on your own account, in your own words. No ad to design.",
-    specs: 'Your own words — one post or story.'
-  }
-];
-
-async function ensurePlacements(ownerId) {
-  let created = 0;
-  for (const p of PLACEMENTS) {
-    const existing = await sql`
-      SELECT id FROM bms_slot WHERE owner_id = ${ownerId} AND name = ${p.name} LIMIT 1`;
-    if (existing.length) continue;
-
-    await sql`
-      INSERT INTO bms_slot (
-        public_id, owner_id, name, placement, property, price_points,
-        ad_type, width, height, brief, ad_specs, status
-      ) VALUES (
-        ${publicId()}, ${ownerId}, ${p.name}, ${p.channel}, ${p.property}, ${p.price},
-        ${p.adType ?? null}, ${p.width ?? 300}, ${p.height ?? 250}, ${p.brief}, ${p.specs},
-        'open'
-      )`;
-    created += 1;
-  }
-  console.log(
-    created ? `✓ created ${created} placement(s)` : '· placements already present'
-  );
-}
-
-/* ── run ──────────────────────────────────────────────────────────────────── */
 
 const creatorId = await ensureAccount({
   email: CREATOR_EMAIL,
   password: ADMIN_PASSWORD,
-  name: ADMIN_NAME ?? 'Swarnil Singhai',
-  label: 'creator (admin)'
+  name: ADMIN_NAME ?? 'Swarnil',
+  label: 'creator'
 });
-await ensureProfile(creatorId, CREATOR_EMAIL, ADMIN_NAME ?? 'Swarnil Singhai', 0);
+await ensureProfile(creatorId, CREATOR_EMAIL, ADMIN_NAME ?? 'Swarnil', null);
 
-const demoId = await ensureAccount({
-  email: DEMO_EMAIL,
-  password: DEMO_PASSWORD,
-  name: DEMO_NAME ?? 'Demo Sponsor',
-  label: 'demo sponsor'
-});
-await ensureProfile(demoId, DEMO_EMAIL, DEMO_NAME ?? 'Demo Sponsor', 1000);
+if (DEMO_EMAIL && DEMO_PASSWORD) {
+  const demoId = await ensureAccount({
+    email: DEMO_EMAIL,
+    password: DEMO_PASSWORD,
+    name: DEMO_NAME ?? 'Demo sponsor',
+    label: 'demo sponsor'
+  });
+  await ensureProfile(demoId, DEMO_EMAIL, DEMO_NAME ?? 'Demo sponsor', null);
+} else {
+  console.log('· no DEMO_EMAIL/DEMO_PASSWORD set — skipping the demo account');
+}
 
-await ensurePlacements(creatorId);
+/* ── 2 · ad slots ─────────────────────────────────────────────────────────── */
 
-console.log(`
-Done.
+/**
+ * Real inventory, priced but unsold. `monthly_views` is left NULL on every one
+ * of them: a seeded view count is a fabricated measurement, and the UI is
+ * built to render nothing rather than a number nobody counted.
+ */
+const SLOTS = [
+  {
+    publicId: 'blog-sidebar',
+    name: 'Blog sidebar',
+    property: 'imswarnil',
+    format: 'rect',
+    description: 'The rail beside every post on imswarnil.com.',
+    previewUrl: 'https://imswarnil.com',
+    pricePaise: 250_000
+  },
+  {
+    publicId: 'article-leaderboard',
+    name: 'In-article banner',
+    property: 'imswarnil',
+    format: 'leader',
+    description: 'A wide banner inside the article, after the opening section.',
+    previewUrl: 'https://imswarnil.com',
+    pricePaise: 400_000
+  },
+  {
+    publicId: 'design-docs-rail',
+    name: 'Design system docs',
+    property: 'design',
+    format: 'sky',
+    description: 'The tall rail on every page of the design system documentation.',
+    previewUrl: 'https://design.imswarnil.com',
+    pricePaise: 300_000
+  },
+  {
+    publicId: 'course-inline',
+    name: 'CRM Analytics course',
+    property: 'crmanalytics',
+    format: 'inline',
+    description: 'Inside the course pages, between lessons.',
+    previewUrl: 'https://crmanalytics.imswarnil.com',
+    pricePaise: 200_000
+  }
+];
 
-  Admin  → ${CREATOR_EMAIL}   lands on /studio
-  Demo   → ${DEMO_EMAIL}   lands on /sponsor  (also the "Explore the demo account" button)
+for (const slot of SLOTS) {
+  const existing = await sql`SELECT id FROM sb_slot WHERE public_id = ${slot.publicId} LIMIT 1`;
+  if (existing.length) {
+    console.log(`· slot "${slot.name}" already exists`);
+    continue;
+  }
+  await sql`
+    INSERT INTO sb_slot (public_id, name, property, format, description, preview_url, price_paise)
+    VALUES (${slot.publicId}, ${slot.name}, ${slot.property}, ${slot.format},
+            ${slot.description}, ${slot.previewUrl}, ${slot.pricePaise})`;
+  console.log(`✓ slot "${slot.name}" — ₹${slot.pricePaise / 100}/month`);
+}
 
-Passwords are in .env (ADMIN_PASSWORD / DEMO_PASSWORD). .env is gitignored.
-`);
+console.log('\nDone. Sign in at /signin.');
+console.log(`  creator: ${CREATOR_EMAIL} → /studio`);
+if (DEMO_EMAIL) console.log(`  sponsor: ${DEMO_EMAIL} → /dashboard`);

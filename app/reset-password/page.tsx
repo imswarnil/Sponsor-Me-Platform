@@ -1,30 +1,27 @@
-import Link from 'next/link';
-import { Logo } from '@/components/logo';
-import { BackToSite } from '@/components/back-to-site';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { Suspense } from 'react';
-import { ResetPasswordForm } from '@/components/auth/reset-password-form';
+import { AuthShell } from '@/components/auth-shell';
+import { ResetPasswordForm } from '@/components/password-forms';
 
-export const metadata = { title: 'Set new password' };
+export const dynamic = 'force-dynamic';
+export const metadata = { title: 'Choose a new password' };
 
-export default function ResetPasswordPage() {
+export default async function ResetPasswordPage({
+  searchParams
+}: {
+  searchParams: Promise<{ token?: string }>;
+}) {
+  const { token } = await searchParams;
+
   return (
-    <div className="relative flex min-h-[100dvh] flex-col bg-grid">
-      <div className="flex items-center justify-between px-4 py-5 sm:px-6">
-        <Logo />
-        <BackToSite className="hidden sm:inline-flex" />
-        <ThemeToggle />
-      </div>
-
-      <div className="flex flex-1 items-center justify-center px-4 py-10">
-        <Suspense>
-          <ResetPasswordForm />
-        </Suspense>
-      </div>
-
-      <p className="pb-8 text-center text-sm">
-        <Link href="/login" className="text-signal hover:underline">← Back to log in</Link>
-      </p>
-    </div>
+    <AuthShell title="Choose a new password" lead="Then sign in with it.">
+      {token ? (
+        <ResetPasswordForm token={token} />
+      ) : (
+        <div className="alert alert-danger alert-inline" role="alert">
+          <p className="alert__body">
+            This link is missing its token. Request a new one from the sign-in page.
+          </p>
+        </div>
+      )}
+    </AuthShell>
   );
 }

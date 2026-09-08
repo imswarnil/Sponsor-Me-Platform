@@ -1,25 +1,30 @@
-import './globals.css';
+import './swarnil-design.css';
+import './app.css';
 import type { Metadata, Viewport } from 'next';
 import { IBM_Plex_Mono, Inter } from 'next/font/google';
-import { RegisterServiceWorker } from '@/components/register-service-worker';
-import { NavProgress } from '@/components/nav-progress';
+
 import { site } from '@/lib/site';
 
-/* Two faces — see creator/02-typography.css for the argument.
-   Inter sets the headline and the sentence alike: a headline is Inter worn
-   large with the tracking closed, and a label is Inter worn small, uppercase
-   and tracked open. IBM Plex Mono comes out for code and nothing else, which is
-   why it loads a single weight — a mono headline or a mono badge is a bug now.
-
-   Space Grotesk used to set the headlines. Dropping it removes a font from the
-   critical path and a second set of metrics from every heading/paragraph pair. */
+/**
+ * TWO FACES, and the design system's argument for why.
+ *
+ * Inter sets the headline and the sentence alike: a heading is Inter worn
+ * large with the tracking closed, a label is Inter worn small, uppercase and
+ * tracked open, a figure is Inter small, light and tabular. IBM Plex Mono
+ * comes out for code and nothing else, which is why it loads a single weight —
+ * a mono badge or a mono price is a bug here.
+ *
+ * The variables are what the vendored stylesheet's `--font-body` /
+ * `--font-mono` tokens resolve to, so `next/font` self-hosts both and no
+ * request ever leaves for a font CDN.
+ */
 const body = Inter({
   subsets: ['latin'],
-  // 300 for the data voice (small, light, tabular), 600 for headings and labels.
   weight: ['300', '400', '500', '600', '700'],
   variable: '--font-inter',
   display: 'swap'
 });
+
 const mono = IBM_Plex_Mono({
   subsets: ['latin'],
   weight: ['400'],
@@ -28,30 +33,23 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  /* Without this every og:image and canonical URL is emitted relative, which
-     is meaningless to a crawler and makes Next warn on every build. `site.self`
-     is the canonical host — `advertise.imswarnil.com` reaches the same Worker
-     but 308s here, so it never appears in a tag. */
+  /* Without this, every canonical and og:image is emitted relative — meaningless
+     to a crawler, and Next warns on every build. */
   metadataBase: new URL(site.self),
   alternates: { canonical: '/' },
+  title: {
+    default: `${site.name} — ${site.tagline}`,
+    template: `%s · ${site.name}`
+  },
+  description: site.description,
   openGraph: {
     type: 'website',
     siteName: site.name,
     url: site.self,
-    title: 'Sponsor Swarnil — put yourself in front of my audience',
+    title: `${site.name} — ${site.tagline}`,
     description: site.description
   },
-  twitter: { card: 'summary_large_image' },
-  title: {
-    default: 'Sponsor Swarnil — put yourself in front of my audience',
-    template: '%s · Sponsor Swarnil'
-  },
-  description: `Sponsor ${site.creator} directly: a placement on any of his sites, or a membership that puts you on the sponsor wall. No ad network, no middleman, no tracking cookies.`,
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'Sponsor'
-  }
+  twitter: { card: 'summary_large_image' }
 };
 
 export const viewport: Viewport = {
@@ -62,9 +60,11 @@ export const viewport: Viewport = {
   ]
 };
 
-/* Set data-theme before first paint so there is no flash of the wrong theme.
-   Only an explicit choice is written: with no choice the attribute stays off
-   and the system's own prefers-color-scheme block decides. */
+/**
+ * Set data-theme before first paint, so there is no flash of the wrong theme.
+ * Only an explicit choice is written: with no choice the attribute stays off
+ * and the design system's own prefers-color-scheme block decides.
+ */
 const themeScript = `
 (function () {
   try {
@@ -87,11 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="min-h-[100dvh]">
-        <NavProgress />
-        {children}
-        <RegisterServiceWorker />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

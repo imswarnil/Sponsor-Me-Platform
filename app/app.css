@@ -1,0 +1,621 @@
+/* =============================================================================
+   SPONSORBID — the app's own design layer.
+
+   THE RELATIONSHIP TO THE DESIGN SYSTEM. app/swarnil-design.css is vendored,
+   never hand-edited, and supplies the tokens: colour, type scale, spacing,
+   radii, shadows, motion. Everything below is built FROM those tokens and adds
+   the things this product needs that a general system has no opinion about —
+   a podium, a bid ladder, a live chart, a widget in a browser frame.
+
+   Re-sync the system with:  npm run ds:sync
+
+   These rules sit OUTSIDE every @layer, which is the system's stated
+   customisation API: an unlayered rule beats all layers with no specificity
+   fight, so nothing here needs !important and nothing here can be accidentally
+   out-specified by a component.
+
+   THE IDEA THIS FILE IS DRAWING. A live auction. Money, rank, and the gap
+   between you and the person above you — those three facts should be legible
+   in one glance from across a room. So: figures are large and tabular, rank is
+   a physical object, and the accent is spent almost entirely on first place.
+   ========================================================================== */
+
+/* ── The wordmark ──────────────────────────────────────────────────────────
+   "Sponsor" plain, "Bid" in the accent, a dot on the end. One word carries the
+   colour — the system's rationed-accent argument applied to the name itself. */
+.wordmark {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 0.05em;
+	font-family: var(--font-display);
+	font-size: var(--text-lg);
+	font-weight: var(--weight-bold);
+	letter-spacing: -0.03em;
+	line-height: 1;
+	color: var(--fg-default);
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.wordmark:hover { color: var(--fg-default); }
+.wordmark__bid { color: var(--fg-accent); }
+
+.wordmark__dot {
+	inline-size: 0.28em;
+	block-size: 0.28em;
+	border-radius: var(--radius-full);
+	background: var(--accent);
+	translate: 0.12em -0.02em;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RANK
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* A rank is a physical object, not a number in a cell. Squared with one
+   rounded corner so it reads as a marker rather than a bullet, and tabular so
+   1 and 8 are the same width. */
+.medal {
+	display: grid;
+	place-items: center;
+	inline-size: 2rem;
+	block-size: 2rem;
+	flex: none;
+	border-radius: var(--radius-md);
+	border-start-start-radius: var(--radius-xs);
+	font-family: var(--font-data);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-semibold);
+	font-variant-numeric: tabular-nums lining-nums;
+	line-height: 1;
+	background: var(--bg-sunken);
+	color: var(--fg-faint);
+	border: var(--border-hair) solid var(--line-subtle);
+}
+
+/* First place is the only one that gets the colour. Second and third are
+   deliberately identical to each other — the board has one winner, and drawing
+   silver and bronze would be three prizes where there is one. */
+.medal-1 {
+	background: var(--accent);
+	color: var(--fg-on-accent);
+	border-color: transparent;
+	box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.medal-2,
+.medal-3 {
+	background: var(--bg-raised);
+	color: var(--fg-default);
+	border-color: var(--line-strong);
+}
+
+.medal-sm { inline-size: 1.5rem; block-size: 1.5rem; font-size: var(--text-2xs); }
+.medal-lg { inline-size: 2.75rem; block-size: 2.75rem; font-size: var(--text-lg); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE PODIUM — the top three, as a shape
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Three columns, first place raised. The height difference is the whole point:
+   it says "there is a gap" before a single number has been read. Collapses to
+   one column on a phone, where a podium is just three cards. */
+.podium {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: var(--space-4);
+	align-items: end;
+}
+
+@media (min-width: 48rem) {
+	.podium {
+		grid-template-columns: 1fr 1.25fr 1fr;
+		gap: var(--space-3);
+	}
+	/* Source order is 1, 2, 3 — which is the correct reading and tab order.
+	   The centre column is where first place belongs visually. */
+	.podium__step-1 { order: 2; }
+	.podium__step-2 { order: 1; }
+	.podium__step-3 { order: 3; }
+}
+
+.podium__step {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+	padding: var(--space-5) var(--space-4) var(--space-4);
+	border: var(--border-hair) solid var(--line-default);
+	border-radius: var(--radius-card);
+	background: var(--bg-surface);
+	text-align: center;
+	transition: border-color var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out);
+}
+
+.podium__step:hover { border-color: var(--line-strong); }
+
+/* First place: taller, accent-edged, and lifted. */
+.podium__step-1 {
+	padding-block: var(--space-8) var(--space-5);
+	border-color: var(--accent);
+	box-shadow: var(--shadow-2);
+	background:
+		linear-gradient(to bottom, var(--accent-soft), transparent 40%),
+		var(--bg-surface);
+}
+
+.podium__medal {
+	position: absolute;
+	inset-block-start: 0;
+	inset-inline-start: 50%;
+	translate: -50% -50%;
+}
+
+.podium__brand {
+	font-family: var(--font-display);
+	font-size: var(--text-md);
+	font-weight: var(--weight-semibold);
+	letter-spacing: var(--tracking-tight);
+	color: var(--fg-default);
+	margin: 0;
+}
+
+.podium__step-1 .podium__brand { font-size: var(--text-xl); }
+
+.podium__amount {
+	font-family: var(--font-data);
+	font-size: var(--text-2xl);
+	font-weight: var(--weight-light);
+	font-variant-numeric: tabular-nums lining-nums;
+	letter-spacing: var(--tracking-tighter);
+	line-height: 1;
+	color: var(--fg-default);
+	margin: 0;
+}
+
+.podium__step-1 .podium__amount {
+	font-size: var(--text-4xl);
+	color: var(--fg-accent);
+	font-weight: var(--weight-regular);
+}
+
+.podium__note {
+	font-family: var(--font-label);
+	font-size: var(--text-3xs);
+	font-weight: var(--weight-semibold);
+	letter-spacing: var(--tracking-label);
+	text-transform: uppercase;
+	color: var(--fg-faint);
+	margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE LADDER — everyone, ranked, with the gap drawn
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ladder {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-px);
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+/* Each rung is a grid so the amount column stays aligned all the way down
+   whatever the brand names do. */
+.rung {
+	position: relative;
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	align-items: center;
+	gap: var(--space-4);
+	padding: var(--space-3) var(--space-4);
+	border-radius: var(--radius-md);
+	background: var(--bg-surface);
+	border: var(--border-hair) solid transparent;
+	transition: background var(--dur-2) var(--ease-out), border-color var(--dur-2) var(--ease-out);
+}
+
+.rung:hover {
+	background: var(--bg-raised);
+	border-color: var(--line-default);
+}
+
+/* The proportion bar. Width is this bid as a fraction of the top bid, so the
+   distance between first and fourth is a *picture* rather than arithmetic the
+   reader has to do. It sits behind the row at very low opacity — information,
+   not decoration, but never louder than the text on top of it. */
+.rung__fill {
+	position: absolute;
+	inset-block: 0;
+	inset-inline-start: 0;
+	border-radius: var(--radius-md);
+	background: var(--accent-soft);
+	opacity: 0.55;
+	pointer-events: none;
+	z-index: 0;
+}
+
+/* Everything EXCEPT the fill is lifted above it. The fill must keep its
+   `position: absolute` — a blanket `.rung > *` rule re-positions it as a grid
+   item and it silently steals the first column. */
+.rung > *:not(.rung__fill) { position: relative; z-index: 1; }
+
+.rung__body { min-inline-size: 0; }
+
+.rung__brand {
+	font-size: var(--text-sm);
+	font-weight: var(--weight-semibold);
+	color: var(--fg-default);
+	margin: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.rung__line {
+	font-size: var(--text-xs);
+	color: var(--fg-muted);
+	margin: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.rung__amount {
+	font-family: var(--font-data);
+	font-size: var(--text-md);
+	font-weight: var(--weight-regular);
+	font-variant-numeric: tabular-nums lining-nums;
+	letter-spacing: var(--tracking-tight);
+	color: var(--fg-default);
+	text-align: end;
+	white-space: nowrap;
+}
+
+.rung-mine {
+	border-color: var(--accent);
+	background: var(--accent-soft);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE BOARD — what actually renders on the network
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.board {
+	display: grid;
+	gap: var(--space-4);
+	grid-template-columns: 1fr;
+}
+
+@media (min-width: 40rem) {
+	.board-split { grid-template-columns: 1.7fr 1fr; align-items: stretch; }
+}
+
+.board-split > .ad { block-size: 100%; }
+.board-split > .ad-sponsored .ad__unit { flex: 1; }
+
+.board__minors {
+	display: grid;
+	gap: var(--space-4);
+	grid-template-columns: 1fr;
+	align-content: stretch;
+}
+
+.board__minors > .ad { block-size: 100%; }
+.board__minors > .ad .ad__unit { flex: 1; }
+
+/* First place carries a corner marker so the rank is readable inside the unit
+   itself, on a page that has no leaderboard next to it. */
+.ad__rank {
+	position: absolute;
+	inset-block-start: 1.75rem;
+	inset-inline-end: 0;
+	z-index: 2;
+}
+
+/* A paid unit gets a hairline of accent down its leading edge — enough to say
+   "this one is first" on somebody else's page without shouting. */
+.ad-first .ad__unit {
+	border-inline-start: var(--border-2) solid var(--accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FIGURES AND CHARTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.live-figure {
+	font-family: var(--font-data);
+	font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* An instrument panel: separate bordered cells rather than one filled block
+   split by gaps. The gap-and-background trick draws a coloured rectangle
+   wherever the last row does not fill — a grey cell that looks like a missing
+   figure. Individual cells simply wrap and leave nothing behind. */
+.figures {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+	gap: var(--space-3);
+}
+
+.figure-cell {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-1);
+	padding: var(--space-4);
+	border: var(--border-hair) solid var(--line-default);
+	border-radius: var(--radius-md);
+	background: var(--bg-surface);
+}
+
+.figure-cell__value {
+	font-family: var(--font-data);
+	font-size: var(--text-2xl);
+	font-weight: var(--weight-light);
+	font-variant-numeric: tabular-nums lining-nums;
+	letter-spacing: var(--tracking-tighter);
+	line-height: 1.1;
+	color: var(--fg-default);
+}
+
+.figure-cell__value-accent { color: var(--fg-accent); }
+
+.figure-cell__label {
+	font-family: var(--font-label);
+	font-size: var(--text-3xs);
+	font-weight: var(--weight-semibold);
+	letter-spacing: var(--tracking-label);
+	text-transform: uppercase;
+	color: var(--fg-faint);
+}
+
+.figure-cell__note {
+	font-size: var(--text-xs);
+	color: var(--fg-muted);
+}
+
+/* ── The chart ─────────────────────────────────────────────────────────────
+   Thirty days of views. No charting library: this is a flex row of columns
+   with a height, a baseline and two gridlines, which is the entire feature.
+   A library here would ship more bytes than the whole design system. */
+.chart {
+	position: relative;
+	display: flex;
+	align-items: flex-end;
+	gap: 2px;
+	block-size: 7rem;
+	padding-block-end: var(--border-hair);
+	border-block-end: var(--border-hair) solid var(--line-default);
+}
+
+/* Two gridlines, at a third and two thirds. Drawn as a background rather than
+   as elements so they cannot be mistaken for data. */
+.chart::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	background-image:
+		linear-gradient(to bottom, var(--line-subtle) var(--border-hair), transparent var(--border-hair));
+	background-size: 100% 33.333%;
+	opacity: 0.7;
+}
+
+.chart__col {
+	position: relative;
+	flex: 1 1 0;
+	min-inline-size: 2px;
+	display: flex;
+	align-items: flex-end;
+	block-size: 100%;
+	border-radius: 2px 2px 0 0;
+	transition: background var(--dur-2) var(--ease-out);
+}
+
+.chart__col:hover { background: var(--hover-wash); }
+
+.chart__bar {
+	inline-size: 100%;
+	min-block-size: 2px;
+	border-radius: 2px 2px 0 0;
+	background: var(--accent-soft);
+	transition: background var(--dur-2) var(--ease-out);
+}
+
+.chart__col:hover .chart__bar { background: var(--accent); }
+.chart__bar-peak { background: var(--accent); }
+
+/* A day with nothing gets a visible floor rather than nothing at all — an
+   absent bar reads as "not measured", which is a different claim from zero. */
+.chart__bar-zero { background: var(--line-default); }
+
+.chart__axis {
+	display: flex;
+	justify-content: space-between;
+	margin-block-start: var(--space-2);
+	font-family: var(--font-data);
+	font-size: var(--text-3xs);
+	color: var(--fg-faint);
+}
+
+/* A labelled horizontal bar — per-slot performance, and the bid ladder's
+   cousin. */
+.meter-row {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: var(--space-2) var(--space-4);
+	align-items: baseline;
+	padding-block: var(--space-3);
+	border-block-end: var(--border-hair) solid var(--line-subtle);
+}
+
+.meter-row:last-child { border-block-end: 0; }
+
+.meter-row__track {
+	grid-column: 1 / -1;
+	block-size: 0.375rem;
+	border-radius: var(--radius-full);
+	background: var(--bg-sunken);
+	overflow: hidden;
+}
+
+.meter-row__fill {
+	display: block;
+	block-size: 100%;
+	border-radius: var(--radius-full);
+	background: var(--accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE WIDGET PREVIEW — the thing in a browser, on a page
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* A browser window, so "here is your widget" is answered with a picture of a
+   browser rather than a box floating in an admin panel. The design system has
+   `.win`; this is the part that holds a live iframe at a real size. */
+.viewport {
+	position: relative;
+	border: var(--border-hair) solid var(--line-default);
+	border-radius: var(--radius-media);
+	background: var(--bg-canvas);
+	overflow: hidden;
+	box-shadow: var(--shadow-2);
+}
+
+.viewport__bar {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	padding: var(--space-2) var(--space-3);
+	border-block-end: var(--border-hair) solid var(--line-default);
+	background: var(--bg-sunken);
+}
+
+.viewport__dots {
+	display: flex;
+	gap: 0.3rem;
+	flex: none;
+}
+
+.viewport__dots i {
+	inline-size: 0.55rem;
+	block-size: 0.55rem;
+	border-radius: var(--radius-full);
+	background: var(--line-strong);
+	opacity: 0.5;
+}
+
+.viewport__url {
+	flex: 1;
+	min-inline-size: 0;
+	padding: 0.15rem var(--space-3);
+	border-radius: var(--radius-full);
+	background: var(--bg-canvas);
+	font-family: var(--font-data);
+	font-size: var(--text-3xs);
+	color: var(--fg-faint);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.viewport__body { padding: var(--space-4); background: var(--bg-canvas); }
+
+.viewport__frame {
+	display: block;
+	inline-size: 100%;
+	border: 0;
+	background: transparent;
+}
+
+/* ── The scaled page preview ───────────────────────────────────────────────
+   The real page a slot sits on. `transform: scale` rather than a narrow
+   iframe, because a 500px-wide frame makes the site render its MOBILE layout —
+   a different page from the one being sold. */
+.preview {
+	position: relative;
+	overflow: hidden;
+	border-radius: var(--radius-media);
+	background: var(--bg-surface);
+	block-size: 24rem;
+}
+
+.preview__frame {
+	position: absolute;
+	inset-block-start: 0;
+	inset-inline-start: 0;
+	inline-size: 1280px;
+	block-size: 1800px;
+	border: 0;
+	transform: scale(0.46);
+	transform-origin: 0 0;
+	pointer-events: none;
+}
+
+/* A picture of somebody else's page must never be mistaken for this one. */
+.preview__tag {
+	position: absolute;
+	inset-block-end: var(--space-3);
+	inset-inline-end: var(--space-3);
+	z-index: 1;
+}
+
+/* Fades the bottom edge so the cut-off page reads as "continues" rather than
+   as a page that simply stops. */
+.preview::after {
+	content: '';
+	position: absolute;
+	inset-inline: 0;
+	inset-block-end: 0;
+	block-size: 4rem;
+	pointer-events: none;
+	background: linear-gradient(to top, var(--bg-canvas), transparent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE EMBED ITSELF
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.embed-root {
+	margin: 0;
+	padding: 0;
+	background: transparent;
+	overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SMALL THINGS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ticker__row {
+	display: flex;
+	align-items: baseline;
+	gap: var(--space-3);
+	padding-block: var(--space-3);
+	border-block-end: var(--border-hair) solid var(--line-subtle);
+}
+
+.ticker__row:last-child { border-block-end: 0; }
+
+.truncate-1 {
+	min-inline-size: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* A hero figure — the one number a page is actually about. */
+.headline-figure {
+	font-family: var(--font-data);
+	font-size: var(--text-5xl);
+	font-weight: var(--weight-light);
+	font-variant-numeric: tabular-nums lining-nums;
+	letter-spacing: -0.04em;
+	line-height: 1;
+	color: var(--fg-default);
+	margin: 0;
+}
+
+.headline-figure-accent { color: var(--fg-accent); }

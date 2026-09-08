@@ -6,7 +6,10 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { getAuth, isAuthConfigured } from '@/lib/auth/server';
 import { safeNext } from '@/lib/safe-next';
-import { getCurrentUserId, updateProfileName } from '@/lib/proto/queries';
+import { getCurrentUserId } from '@/lib/roles';
+import { db } from '@/lib/db/client';
+import { profiles } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 
 /**
  * The only way a client component is allowed to touch authentication.
@@ -15,10 +18,9 @@ import { getCurrentUserId, updateProfileName } from '@/lib/proto/queries';
  * URL never reach the browser bundle, and the password never sits in client
  * state longer than the keystroke that produced it.
  *
- * Replaces the Supabase `auth-form.tsx` client calls. Note that sign-up no
- * longer needs an admin-key server action to auto-confirm the email: Neon Auth
- * signs the new account straight in, so `SUPABASE_SERVICE_ROLE_KEY` — a key
- * that could read and write every row — is gone from this app entirely.
+ * Sign-up needs no admin key to auto-confirm an email: Neon Auth signs the new
+ * account straight in, so no key that could read and write every row exists in
+ * this app at all.
  */
 
 export interface AuthActionState {
@@ -66,13 +68,13 @@ function readableError(message: string | undefined): string {
 /**
  * Where to land after signing in.
  *
- * `/studio` and `/sponsor` both bounce a viewer with the wrong role to the
- * other one (lib/proto/roles.ts), so sending everyone to `/sponsor` is enough —
+ * `/studio` and `/dashboard` both bounce a viewer with the wrong role to the
+ * other one (lib/roles.ts), so sending everyone to `/dashboard` is enough —
  * the creator is redirected on to the studio. That keeps this action free of
  * any role logic of its own, and therefore free of a second definition of who
  * the admin is.
  */
-const AFTER_SIGN_IN = '/sponsor';
+const AFTER_SIGN_IN = '/dashboard';
 
 export async function signInAction(
   _prev: AuthActionState,
@@ -185,15 +187,15 @@ export async function resetPasswordAction(
     return { error: 'That reset link has expired or has already been used.' };
   }
 
-  redirect('/login?reset=1');
+  redirect('/signin?reset=1');
 }
 
 /**
  * Update the display name, for a signed-in account.
  *
  * Writes both copies: Neon Auth's own `name` (what a future OAuth provider or
- * the admin console would show) and `bms_profile.name` (what this app actually
- * renders everywhere — the console shell, the wall, notifications). The two
+ * the admin console would show) and `sb_profile.name` (what this app actually
+ * renders everywhere — the header, the board, the ledger). The two
  * are separate rows by design (see schema.ts); nothing keeps them in sync but
  * this action, so it must always write both.
  */
@@ -214,8 +216,8 @@ export async function updateProfileAction(
   const { error } = await getAuth().updateUser({ name: parsed.data.name });
   if (error) return { error: readableError(error.message) };
 
-  await updateProfileName(userId, parsed.data.name);
-  revalidatePath('/account');
+  await db.update(profiles).set({ name: parsed.data.name }).where(eq(profiles.id, userId));
+  revalidatePath('/dashboard');
   return { ok: 'Saved.' };
 }
 

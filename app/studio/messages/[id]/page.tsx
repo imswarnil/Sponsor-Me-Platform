@@ -1,50 +1,47 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { PageHeader } from '@/components/app/page-header';
-import { Card, CardContent } from '@/components/ui/card';
-import { ThreadView } from '@/components/app/thread-view';
-import { requireCreator } from '@/lib/proto/roles';
-import { getThreadById, getThreadMessages, getUserById } from '@/lib/proto/queries';
+import { eq } from 'drizzle-orm';
 
-export const metadata = { title: 'Conversation' };
+import { MessageThread } from '@/components/message-thread';
+import { db } from '@/lib/db/client';
+import { profiles } from '@/lib/db/schema';
+import { markThreadReadAction } from '@/lib/actions';
+import { requireCreator } from '@/lib/roles';
+import { threadFor } from '@/lib/queries';
 
-export default async function StudioMessageThreadPage({
+/** One conversation, from the creator's side. */
+export const dynamic = 'force-dynamic';
+
+export default async function StudioThreadPage({
   params
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const me = await requireCreator('/studio/messages');
+  await requireCreator();
   const { id } = await params;
 
-  const thread = await getThreadById(id);
-  if (!thread || thread.creatorId !== me.id) notFound();
+  const [profile] = await db.select().from(profiles).where(eq(profiles.id, id)).limit(1);
+  if (!profile) notFound();
 
-  const [msgs, requester] = await Promise.all([
-    getThreadMessages(thread.id),
-    getUserById(thread.requesterId)
-  ]);
-  const requesterName = requester?.name || requester?.email || 'Someone';
+  const messages = await threadFor(id);
+  // Opening the thread is reading it.
+  await markThreadReadAction(id);
 
   return (
-    <>
-      <PageHeader
-        title={thread.subject}
-        description={`With ${requesterName}`}
-        breadcrumb={[
-          { label: 'Studio', href: '/studio' },
-          { label: 'Messages', href: '/studio/messages' },
-          { label: thread.subject }
-        ]}
-      />
-      <Card>
-        <CardContent className="p-6">
-          <ThreadView
-            threadId={thread.id}
-            messages={msgs}
-            meId={me.id}
-            senderName={(senderId) => (senderId === me.id ? 'You' : requesterName)}
-          />
-        </CardContent>
-      </Card>
-    </>
+    <div className="section">
+      <div className="container container-md stack">
+        <header className="page-head page-head-sm">
+          <div className="page-head__main">
+            <p className="page-head__eyebrow">
+              <Link href="/studio">← Studio</Link>
+            </p>
+            <h1 className="page-head__title">{profile.brand || profile.name || profile.email}</h1>
+            {profile.email ? <p className="page-head__meta t-fine t-faint">{profile.email}</p> : null}
+          </div>
+        </header>
+
+        <MessageThread messages={messages} selfIsCreator profileId={profile.id} />
+      </div>
+    </div>
   );
 }
