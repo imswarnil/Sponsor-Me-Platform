@@ -25,12 +25,12 @@ export function PointsNote({ className }: { className?: string }) {
     >
       <Coins className="mt-0.5 size-4 shrink-0 text-signal" aria-hidden="true" />
       <div className="text-sm text-muted-foreground">
-        <p className="font-medium text-foreground">Prices here are in points, not money.</p>
+        <p className="font-medium text-foreground">Nothing charges a card yet.</p>
         <p className="mt-1.5 max-w-lead text-pretty">
-          Nothing charges a card yet. Every account starts with 1,000 points, and a placement or
-          a membership spends them — so you can take a spot, see it run, and see exactly what it
-          does before real money is ever part of it. Card payments come later; until then this is
-          the whole story.
+          Prices are in rupees, but this is a preview: every account starts with ₹1,000 of
+          credit, and a placement or a spot on the wall spends that — so you can take a spot, see
+          it run, and see exactly what it does before real money is ever part of it. Card payments
+          come later; until then this is the whole story.
         </p>
       </div>
     </div>

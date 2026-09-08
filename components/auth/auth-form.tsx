@@ -58,7 +58,7 @@ export function AuthForm({ demoEmail }: { demoEmail?: string }) {
           {isSignUp ? (
             <>
               An account is how you manage your sponsorships and see how they are doing. New
-              ones start with <span className="font-medium text-signal">1000 points</span>.
+              ones start with <span className="font-medium text-signal">₹1,000</span> of preview credit.
             </>
           ) : (
             'Sign in to manage your sponsorships.'

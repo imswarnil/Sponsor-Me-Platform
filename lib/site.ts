@@ -98,3 +98,27 @@ export const marketingNav = [
   { label: 'How it works', href: '/how-it-works' }
 ] as const;
 
+/**
+ * Membership: bid once, hold the spot until someone bids more.
+ *
+ * A spot on the wall is a one-time bid from a floor. The wall orders members
+ * by bid, highest first, with a 1st/2nd/3rd podium at the top and bigger
+ * cards for it; a spot never expires and never renews — it is yours for good
+ * until someone outbids you, and you can bid more at any time to move up.
+ * That is the whole game, and /members says so in as many words.
+ *
+ * `minPoints` is the floor bid. It is the old fixed monthly price (the Ghost
+ * "Sponsor" tier was ₹2,000), so nobody already on the wall moved when the
+ * model changed. 1 point = ₹1 — see lib/money.ts.
+ *
+ * Membership is this site's own thing. It used to mirror into a comped Ghost
+ * tier; Ghost is an independent platform and nobody's spot here depends on it
+ * (CLAUDE.md §0). `presets` are the bid form's suggestions; the first is the
+ * floor.
+ */
+export const membership = {
+  minPoints: 2000,
+  maxPoints: 1_000_000,
+  presets: [2000, 5000, 10000]
+} as const;
+

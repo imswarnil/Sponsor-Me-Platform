@@ -10,6 +10,7 @@ import { notifications, offers, profiles, slots, sponsorshipHistory, txns } from
 import { getCurrentUserId } from './queries';
 import { requireCreator } from './roles';
 import { toChannel } from '@/lib/channels';
+import { formatAmount } from '@/lib/money';
 
 /**
  * OFFERS — "make an offer, I decide"
@@ -112,7 +113,7 @@ export async function makeOffer(formData: FormData) {
     userId: slot.ownerId,
     type: 'offer',
     title: `New offer on "${slot.name}"`,
-    body: `${meRows[0].name || 'Someone'} offered ${d.pricePoints} pts for ${days} days.`,
+    body: `${meRows[0].name || 'Someone'} offered ${formatAmount(d.pricePoints)} for ${days} days.`,
     href: '/studio/offers'
   });
 
@@ -154,23 +155,26 @@ export async function acceptOffer(formData: FormData) {
 
   const days = daysBetween(offer.startDate, offer.endDate);
 
-  await db.transaction(async (tx) => {
-    await tx
+  // `batch` is the Neon HTTP driver's transaction: one round-trip, committed
+  // together server-side. `db.transaction` throws on this driver.
+  const decidedAt = new Date();
+  await db.batch([
+    db
       .update(profiles)
       .set({ points: sql`${profiles.points} - ${offer.pricePoints}` })
-      .where(eq(profiles.id, offer.sponsorId));
-    await tx
+      .where(eq(profiles.id, offer.sponsorId)),
+    db
       .update(profiles)
       .set({ points: sql`${profiles.points} + ${offer.pricePoints}` })
-      .where(eq(profiles.id, slot.ownerId));
-    await tx.insert(txns).values({
+      .where(eq(profiles.id, slot.ownerId)),
+    db.insert(txns).values({
       slotId: slot.id,
       fromId: offer.sponsorId,
       toId: slot.ownerId,
       amount: offer.pricePoints
-    });
+    }),
 
-    await tx
+    db
       .update(slots)
       .set({
         status: 'sponsored',
@@ -183,9 +187,9 @@ export async function acceptOffer(formData: FormData) {
         sponsoredStart: offer.startDate,
         sponsoredUntil: offer.endDate
       })
-      .where(eq(slots.id, slot.id));
+      .where(eq(slots.id, slot.id)),
 
-    await tx.insert(sponsorshipHistory).values({
+    db.insert(sponsorshipHistory).values({
       slotId: slot.id,
       ownerId: slot.ownerId,
       sponsorId: offer.sponsorId,
@@ -200,29 +204,26 @@ export async function acceptOffer(formData: FormData) {
       amount: offer.pricePoints,
       startAt: offer.startDate,
       endAt: offer.endDate
-    });
+    }),
 
-    await tx
-      .update(offers)
-      .set({ status: 'accepted', decidedAt: new Date() })
-      .where(eq(offers.id, offer.id));
+    db.update(offers).set({ status: 'accepted', decidedAt }).where(eq(offers.id, offer.id)),
 
     // The slot is gone; every other bid on it is answered by that fact.
-    await tx
+    db
       .update(offers)
-      .set({ status: 'declined', decidedAt: new Date() })
+      .set({ status: 'declined', decidedAt })
       .where(
         and(eq(offers.slotId, slot.id), eq(offers.status, 'pending'), ne(offers.id, offer.id))
-      );
+      ),
 
-    await tx.insert(notifications).values({
+    db.insert(notifications).values({
       userId: offer.sponsorId,
       type: 'sponsored',
       title: `Your offer on "${slot.name}" was accepted`,
-      body: `${offer.pricePoints} pts for ${days} days. It's live.`,
+      body: `${formatAmount(offer.pricePoints)} for ${days} days. It's live.`,
       href: '/sponsor'
-    });
-  });
+    })
+  ]);
 
   revalidatePath('/studio/offers');
   revalidatePath('/studio');

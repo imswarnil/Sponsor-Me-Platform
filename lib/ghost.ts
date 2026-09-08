@@ -64,59 +64,10 @@ export async function getGhostAdminStats(): Promise<GhostStats | null> {
   }
 }
 
-export type GhostMember = {
-  id: string;
-  name: string | null;
-  email: string;
-  avatarUrl: string | null;
-  status: 'free' | 'paid' | 'comped';
-  createdAt: string;
-};
-
-/**
- * The raw Ghost newsletter member list — names, emails, subscription status.
- *
- * Admin-only data: never render this on a public page. Real subscribers never
- * agreed to have their email shown to visitors just for signing up for a
- * newsletter — that consent only exists for people who chose to appear on the
- * sponsor wall (a members.ts row, not this). This is for /studio's own use,
- * the same way the creator would read it in the Ghost admin itself.
+/*
+ * That is the whole file on purpose. Ghost is read here for two numbers an
+ * advertiser cares about — how many posts, how many subscribers — and nothing
+ * else: no member list, no tier, no mirroring. Membership on this site is this
+ * site's own (CLAUDE.md §0); Ghost is an independent platform it does not
+ * write to and does not depend on.
  */
-export async function getGhostMembersList(limit = 100): Promise<GhostMember[] | null> {
-  const baseUrl = process.env.GHOST_API_URL;
-  if (!baseUrl) return null;
-
-  try {
-    const token = await ghostAdminToken();
-    if (!token) return null;
-    const headers = { Authorization: `Ghost ${token}`, 'Accept-Version': 'v5.0' };
-
-    const res = await fetch(
-      `${baseUrl}/ghost/api/admin/members/?limit=${limit}&order=created_at%20desc`,
-      { headers, next: { revalidate: 300 } }
-    );
-    if (!res.ok) return null;
-
-    const data = (await res.json()) as {
-      members?: {
-        id: string;
-        name: string | null;
-        email: string;
-        avatar_image: string | null;
-        status: 'free' | 'paid' | 'comped';
-        created_at: string;
-      }[];
-    };
-
-    return (data.members ?? []).map((m) => ({
-      id: m.id,
-      name: m.name,
-      email: m.email,
-      avatarUrl: m.avatar_image,
-      status: m.status,
-      createdAt: m.created_at
-    }));
-  } catch {
-    return null;
-  }
-}

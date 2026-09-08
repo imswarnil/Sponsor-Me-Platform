@@ -198,18 +198,18 @@ export const offers = pgTable('bms_offer', {
 });
 
 /**
- * A member — someone who pays a fixed amount to back the work and appears on
- * the public sponsor wall.
+ * A member — someone who pays a monthly amount of their choosing to back the
+ * work and takes a spot on the public sponsor wall, ranked and sized by it.
  *
  * Distinct from a placement sponsor: a placement buys a specific spot for a
- * specific run, a member simply supports and gets a face on the wall. This is
- * the row the embeddable wall renders from.
+ * specific run, a member simply backs the work and gets a face on the wall.
+ * This is the row the embeddable wall renders from, on every site it is
+ * embedded on — in one order, highest `pricePoints` first.
  *
- * **Mirrored into Ghost.** While `status` is `active` the person is a comped
- * member of a paid tier on imswarnil.com (see lib/ghost-members.ts), so one
- * payment here means one real membership there. `ghostMemberId` is that link;
- * it is nullable because Ghost being unreachable must never block a join —
- * the sync is retried rather than the payment refused.
+ * This site's own thing. It used to mirror into a comped Ghost tier and read
+ * its price from there; Ghost is an independent platform now (CLAUDE.md §0),
+ * and nobody's spot here depends on a blog answering. The `ghost_member_id`
+ * column that link lived in was dropped by drizzle/manual/003.
  */
 export const members = pgTable('bms_member', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -226,15 +226,19 @@ export const members = pgTable('bms_member', {
   blurb: text('blurb'),
   /** Overrides the Instagram link when set — some people would rather send you elsewhere. */
   linkUrl: text('link_url'),
-  /** The Ghost tier this membership mirrors, and what it costs. */
+  /** A label, kept for the ledger's sake. Always 'Member' for new rows. */
   tierName: text('tier_name').notNull(),
+  /**
+   * The monthly amount, and what the wall is ordered and sized by — highest
+   * first (member-queries.ts). Pay what you want from a floor
+   * (lib/site.ts `membership.minPoints`); raise it to move up. 1 = ₹1.
+   */
   pricePoints: integer('price_points').notNull(),
-  // active | lapsed
+  // active | lapsed. Lapsed only by leaving — a spot never expires on its own
+  // (the `renews_at` clock was dropped by drizzle/manual/004).
   status: text('status').notNull().default('active'),
-  ghostMemberId: text('ghost_member_id'),
+  /** Tie-break on the wall: same bid, earlier arrival sits higher. */
   startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
-  /** When the current paid period runs out. Past this, `expireStaleMembers` lapses it. */
-  renewsAt: timestamp('renews_at', { withTimezone: true }).notNull(),
   /**
    * Seeded demo data, not a real member (`scripts/seed-samples.mjs`).
    *

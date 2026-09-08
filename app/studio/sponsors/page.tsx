@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { formatAmount } from '@/lib/money';
 import { PageHeader } from '@/components/app/page-header';
 import { StatTile, StatRow } from '@/components/app/stat-tile';
 import { ChannelBadge } from '@/components/app/channel-badge';
@@ -43,7 +44,7 @@ export default async function SponsorsPage() {
         <StatTile label="Running now" value={active.length} sub="live placements" />
         <StatTile label="Advertisers" value={earnings.sponsors} sub="all time" />
         <StatTile label="Deals" value={earnings.deals} sub="all time" />
-        <StatTile label="Earned" value={earnings.total} sub="points" />
+        <StatTile label="Earned" value={formatAmount(earnings.total)} sub="all time" />
       </StatRow>
 
       <section className="mt-10">
@@ -127,7 +128,7 @@ export default async function SponsorsPage() {
                       </p>
                     </div>
                     <span className="font-label text-2xs uppercase tracking-slate text-subtle">
-                      {h.amount.toLocaleString()} pts
+                      {formatAmount(h.amount)}
                     </span>
                   </div>
                   {h.brief ? (

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { formatAmount } from '@/lib/money';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -151,7 +152,7 @@ export function OfferForm({
       </div>
 
       <p className="font-label text-2xs uppercase tracking-slate text-subtle">
-        {validRun ? `${days} days · asking ${asking} pts` : '3 to 90 days'}
+        {validRun ? `${days} days · asking ${formatAmount(asking)}` : '3 to 90 days'}
       </p>
 
       <div className="space-y-1.5">
@@ -171,7 +172,7 @@ export function OfferForm({
               setPrice(e.target.value);
             }}
           />
-          <span className="text-sm text-muted-foreground">points, total</span>
+          <span className="text-sm text-muted-foreground">rupees, total</span>
         </div>
         {!affordable ? (
           <p className="text-xs text-destructive">

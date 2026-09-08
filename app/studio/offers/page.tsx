@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { formatAmount } from '@/lib/money';
 import { Check, X } from 'lucide-react';
 import { PageHeader } from '@/components/app/page-header';
 import { SubmitButton } from '@/components/ui/submit-button';
@@ -105,8 +106,7 @@ export default async function OffersPage({
 
                     <div className="text-right">
                       <p className="font-display text-2xl font-bold tracking-tight">
-                        {offer.pricePoints}
-                        <span className="ml-1 text-sm font-normal text-muted-foreground">pts</span>
+                        {formatAmount(offer.pricePoints)}
                       </p>
                       <p className="mt-1 font-label text-2xs uppercase tracking-slate text-subtle">
                         asking {asking}

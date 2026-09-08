@@ -50,8 +50,8 @@
   //   GITHUB_TOKEN            GitHub Sponsors, read-only (scope read:user)
   //   GITHUB_LOGIN            whose sponsors listing to read
   //   GHOST_API_URL           https://imswarnil.com
-  //   GHOST_ADMIN_API_KEY     real post/member counts, and the tier price
-  //   GHOST_SPONSOR_TIER      the tier name to match; falls back to the cheapest
+  //   GHOST_ADMIN_API_KEY     read-only post + subscriber counts; nothing writes
+  //                           to Ghost and membership does not depend on it
   //   YOUTUBE_API_KEY         subscriber count on the homepage (same key as
   //   YOUTUBE_CHANNEL         imswarnil.github.io's Worker, if you have one)
   //   APP_ORIGIN              only the seed script reads this

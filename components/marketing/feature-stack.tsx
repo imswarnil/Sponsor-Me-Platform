@@ -9,7 +9,7 @@ const FEATURES = [
   {
     icon: Coins,
     title: 'The price is the price',
-    body: 'No auction, no reserve, no spend minimum. What is listed is exactly what you pay, in points.'
+    body: 'No auction, no reserve, no spend minimum. What is listed is exactly what you pay.'
   },
   {
     icon: ShieldOff,

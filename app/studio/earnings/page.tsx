@@ -37,7 +37,7 @@ export default async function EarningsPage() {
     <>
       <PageHeader
         title="Earnings"
-        description="Your balance, and every points movement in or out."
+        description="Your balance, and every movement in or out."
         breadcrumb={[{ label: 'Studio', href: '/studio' }, { label: 'Earnings' }]}
       />
 

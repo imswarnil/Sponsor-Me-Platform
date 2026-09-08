@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { formatAmount } from '@/lib/money';
 import { Logo } from '@/components/logo';
 import { BackToSite } from '@/components/back-to-site';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -88,11 +89,11 @@ export function ConsoleShell({
   );
 }
 
-/** The points chip used in both consoles' headers. */
+/** The balance chip used in both consoles' headers. */
 export function PointsBadge({ points }: { points: number }) {
   return (
     <Badge variant="pop" className="gap-1.5 px-2.5">
-      {points.toLocaleString()} pts
+      {formatAmount(points)}
     </Badge>
   );
 }

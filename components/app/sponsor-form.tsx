@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { formatAmount } from '@/lib/money';
 import { CalendarClock, Coins, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SubmitButton } from '@/components/ui/submit-button';
@@ -241,11 +242,13 @@ export function SponsorForm({
           <span className="font-semibold">
             {discountApplies ? (
               <>
-                <span className="mr-1.5 text-xs text-muted-foreground line-through">{base}</span>
-                {total} points
+                <span className="mr-1.5 text-xs text-muted-foreground line-through">
+                  {formatAmount(base)}
+                </span>
+                {formatAmount(total)}
               </>
             ) : (
-              `${total} points`
+              formatAmount(total)
             )}
           </span>
         </div>
@@ -256,16 +259,20 @@ export function SponsorForm({
           <span className="font-medium">{endLabel}</span>
         </div>
         <p className="text-xs text-muted-foreground">
-          {pricePerWeek} pts/week, prorated for {days} day{days === 1 ? '' : 's'}
+          {formatAmount(pricePerWeek)}/week, prorated for {days} day{days === 1 ? '' : 's'}
           {discountApplies ? `, ${discountPercent}% volume discount applied` : ''}. Transfers to{' '}
           {ownerName}; the slot reopens when it ends.
         </p>
       </div>
 
       <SubmitButton className="w-full" disabled={!canAfford} pendingText="Processing…">
-        {!validRange ? 'Pick valid dates' : canAfford ? `Pay ${total} points & go live` : 'Not enough points'}
+        {!validRange
+          ? 'Pick valid dates'
+          : canAfford
+            ? `Pay ${formatAmount(total)} & go live`
+            : 'Not enough credit'}
       </SubmitButton>
-      <p className="text-center text-xs text-muted-foreground">You have {myPoints} points.</p>
+      <p className="text-center text-xs text-muted-foreground">You have {formatAmount(myPoints)}.</p>
     </form>
   );
 }

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { formatAmount } from '@/lib/money';
 import { ArrowRight, ExternalLink, Eye, MousePointerClick } from 'lucide-react';
 import { PageHeader } from '@/components/app/page-header';
 import { StatTile, StatRow } from '@/components/app/stat-tile';
@@ -59,7 +60,7 @@ export default async function SponsorOverviewPage({
 
       <StatRow>
         <StatTile label="Running now" value={live.length} sub="placements" />
-        <StatTile label="Spent" value={spent} sub="points, all time" />
+        <StatTile label="Spent" value={formatAmount(spent)} sub="all time" />
         <StatTile label="Views" value={views} sub="on measurable spots" />
         <StatTile label="Clicks" value={clicks} sub="on measurable spots" />
       </StatRow>

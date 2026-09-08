@@ -41,12 +41,12 @@ every public surface says so in the same order:
 | | Who | What they get | Priced |
 |---|---|---|---|
 | **Placement** | a brand | a spot on one channel, dates they choose, creative they supply | per week, `bms_slot.pricePoints` |
-| **Membership** | a reader | a face on the public sponsor wall + a paid membership on the blog | fixed monthly, read live from the Ghost tier |
+| **Membership** | a reader | a spot on the public sponsor wall, ranked and sized by bid with a 1st/2nd/3rd podium — shown on every site the creator embeds it on | one bid, once, from a floor (`lib/site.ts` `membership.minPoints`); never expires, held until someone bids more; `raiseBid` to move up |
 
 The homepage used to sell only the first while the nav offered the second, so a reader
 landed on an advertiser's pitch. `components/marketing/two-doors.tsx` is the fork, and it
 is the first thing under the hero. Both doors read their numbers live — cheapest open
-placement out of Neon, tier price out of Ghost, member count off the wall — and a number
+placement out of Neon, the wall's count and top amount out of Neon — and a number
 that cannot be read is **absent**, never guessed (§4).
 
 `components/marketing/points-note.tsx` states, on every page that quotes a price, that
@@ -98,6 +98,14 @@ Owned by Drizzle (`lib/proto/schema.ts`). No versioned migrations — `npm run d
 (`drizzle-kit push`) diffs the schema file against the live Neon DB directly. Points are
 plain integers (no real money yet; if that changes, switch to integer minor units + a
 currency column, never floats).
+
+**`db.transaction` does not exist here — use `db.batch([...])`.** The app talks to Neon
+over HTTP (`lib/proto/db.ts`), and that driver throws "No transactions support in
+neon-http driver" the moment a transaction is opened; every money-moving action was
+broken this way until 2026-09-08. `batch` sends the statements in one request and Neon
+commits them as one transaction, which is the atomicity those actions need. The cost is
+that a batch cannot read mid-way: do every read and every check first, then batch the
+writes.
 
 | Table | Purpose |
 |---|---|

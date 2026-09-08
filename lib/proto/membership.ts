@@ -9,33 +9,28 @@ import { db } from './db';
 import { members, notifications, profiles, txns } from './schema';
 import { getCurrentUserId } from './queries';
 import { getCreatorId } from './roles';
-import {
-  getSponsorTier,
-  grantGhostMembership,
-  revokeGhostMembership,
-  ghostAvatarFor
-} from '@/lib/ghost-members';
+import { membership as cfg } from '@/lib/site';
+import { formatAmount } from '@/lib/money';
 
 /**
- * MEMBERSHIP — the fixed-price way to back the work
- * =================================================
+ * MEMBERSHIP — bid once, hold the spot until someone bids more
+ * ============================================================
  *
  * Distinct from buying a placement. A placement is a specific spot for a
- * specific run, negotiated. A membership is one fixed amount, and what you get
- * is a face on the public sponsor wall — plus a real paid membership on
- * imswarnil.com, because the two should not be separate things to keep track of.
+ * specific run, negotiated. A spot on the wall is a one-time bid from a floor
+ * (lib/site.ts `membership.minPoints`): the wall is ordered by bid, highest
+ * first, with a 1st/2nd/3rd podium and bigger cards at the top. A spot never
+ * expires and never renews — it is yours for good until someone outbids you,
+ * and `raiseBid` is how you move up. That is the whole game, and /members
+ * says so in as many words.
  *
- * The Ghost mirror is best-effort by design (lib/ghost-members.ts): a member row
- * is written here whether or not Ghost answers, and `ghostMemberId` stays null
- * until a later call succeeds. Refusing someone's payment because a blog is
- * unreachable would be the worse failure.
+ * Membership is this site's own thing. It used to mirror into a comped Ghost
+ * tier and read its price from there; Ghost is an independent platform now
+ * (CLAUDE.md §0) — nobody's spot here depends on a blog answering.
  *
- * Payment is still points. The whole money step is `chargeForMembership` below,
- * so swapping in a real processor touches one function.
+ * Payment is still preview credit (1 = ₹1, lib/money.ts). The whole money step
+ * is `charge` below, so swapping in Dodo Payments touches one function.
  */
-
-/** One month. Memberships renew monthly, matching the Ghost tier's period. */
-const PERIOD_DAYS = 30;
 
 const profileSchema = z.object({
   displayName: z.string().trim().min(1, 'A name is needed.').max(60),
@@ -72,6 +67,10 @@ const profileSchema = z.object({
     .optional()
 });
 
+/** A bid: whole rupees, at or above the floor, below a ceiling that only
+ *  exists so a typo cannot drain a balance in one click. */
+const bidSchema = z.coerce.number().int().min(cfg.minPoints).max(cfg.maxPoints);
+
 function cleanHandle(raw: string | undefined) {
   if (!raw) return null;
   const h = raw.replace(/^@/, '').trim();
@@ -79,35 +78,62 @@ function cleanHandle(raw: string | undefined) {
 }
 
 /**
- * Move the money for one period.
+ * Move the money.
  *
- * The entire payment step, isolated on purpose: today it debits points, and
- * when Dodo lands this is the only place that changes. Returns false when the
- * member cannot afford it, so callers never half-complete a join.
+ * The entire payment step, isolated on purpose: today it debits preview
+ * credit, and when Dodo lands this is the only place that changes. Returns
+ * false when the member cannot afford it, so callers never half-complete.
  */
-async function chargeForMembership(uid: string, amount: number): Promise<boolean> {
+async function charge(uid: string, amount: number): Promise<boolean> {
   const creatorId = await getCreatorId();
   const rows = await db.select().from(profiles).where(eq(profiles.id, uid)).limit(1);
   if (!rows[0] || rows[0].points < amount) return false;
 
-  await db.transaction(async (tx) => {
-    await tx
-      .update(profiles)
-      .set({ points: sql`${profiles.points} - ${amount}` })
-      .where(eq(profiles.id, uid));
-    if (creatorId) {
-      await tx
+  // One HTTP round-trip, one server-side transaction. The Neon HTTP driver has
+  // no `db.transaction` (no session to hold it open) — `batch` is its atomic
+  // unit, so all of this lands or none of it does.
+  const debit = db
+    .update(profiles)
+    .set({ points: sql`${profiles.points} - ${amount}` })
+    .where(eq(profiles.id, uid));
+  if (creatorId) {
+    await db.batch([
+      debit,
+      db
         .update(profiles)
         .set({ points: sql`${profiles.points} + ${amount}` })
-        .where(eq(profiles.id, creatorId));
-      await tx.insert(txns).values({ slotId: null, fromId: uid, toId: creatorId, amount });
-    }
-  });
+        .where(eq(profiles.id, creatorId)),
+      db.insert(txns).values({ slotId: null, fromId: uid, toId: creatorId, amount })
+    ]);
+  } else {
+    await debit;
+  }
   return true;
 }
 
+async function notifyCreator(title: string, body: string) {
+  const creatorId = await getCreatorId();
+  if (!creatorId) return;
+  await db.insert(notifications).values({
+    userId: creatorId,
+    type: 'system',
+    title,
+    body,
+    href: '/studio/members'
+  });
+}
+
+function revalidateWall() {
+  // Every surface that draws the wall or its totals. /embed/wall is
+  // force-dynamic and needs nothing.
+  revalidatePath('/');
+  revalidatePath('/members');
+  revalidatePath('/studio/members');
+  revalidatePath('/sponsor/membership');
+}
+
 /**
- * Join as a member, or renew an existing membership.
+ * Take a spot on the wall, or retake one after leaving.
  *
  * Anyone can read the members page and fill this in; the sign-in wall is here,
  * at the point of paying — the same rule the offer flow follows.
@@ -125,41 +151,24 @@ export async function joinAsMember(formData: FormData) {
   });
   if (!parsed.success) redirect('/members/join?e=invalid');
 
-  const tier = await getSponsorTier();
-  // Without Ghost we do not know the price, and inventing one would be charging
-  // an amount nobody agreed to.
-  if (!tier || tier.monthlyPrice == null) redirect('/members/join?e=unavailable');
+  const bid = bidSchema.safeParse(formData.get('amount'));
+  if (!bid.success) redirect('/members/join?e=amount');
 
-  // Ghost holds money in the smallest unit; points are whole. ₹2000 → 2000 pts.
-  const price = Math.round(tier.monthlyPrice / 100);
-
-  const meRows = await db.select().from(profiles).where(eq(profiles.id, uid)).limit(1);
-  const me = meRows[0];
-  if (!me) redirect('/login?next=/members/join');
-
-  const paid = await chargeForMembership(uid, price);
+  const paid = await charge(uid, bid.data);
   if (!paid) redirect('/members/join?e=insufficient');
 
-  const renewsAt = new Date(Date.now() + PERIOD_DAYS * 86_400_000);
   const d = parsed.data;
-
-  // Ghost's own avatar (Gravatar-derived) beats an empty circle when the member
-  // gives us no image of their own.
-  const avatar = d.avatarUrl || (me.email ? await ghostAvatarFor(me.email) : null);
-
-  const ghostId = me.email ? await grantGhostMembership(me.email, d.displayName) : null;
-
   const values = {
     displayName: d.displayName,
-    avatarUrl: avatar || null,
+    avatarUrl: d.avatarUrl || null,
     instagramHandle: cleanHandle(d.instagramHandle),
     blurb: d.blurb || null,
     linkUrl: d.linkUrl || null,
-    tierName: tier.name,
-    pricePoints: price,
+    tierName: 'Member',
+    pricePoints: bid.data,
     status: 'active',
-    ghostMemberId: ghostId,
-    renewsAt
+    // A retaken spot is a fresh arrival for the tie-break.
+    startedAt: new Date()
   };
 
   await db
@@ -167,23 +176,55 @@ export async function joinAsMember(formData: FormData) {
     .values({ profileId: uid, ...values })
     .onConflictDoUpdate({ target: members.profileId, set: values });
 
-  const creatorId = await getCreatorId();
-  if (creatorId) {
-    await db.insert(notifications).values({
-      userId: creatorId,
-      type: 'system',
-      title: `New member: ${d.displayName}`,
-      body: `${tier.name} · ${price} pts. They're on the sponsor wall.`,
-      href: '/studio/members'
-    });
-  }
+  await notifyCreator(
+    `New bid: ${d.displayName}`,
+    `${formatAmount(bid.data)}. They're on the sponsor wall.`
+  );
 
-  revalidatePath('/members');
-  revalidatePath('/studio/members');
+  revalidateWall();
   redirect('/members?joined=1');
 }
 
-/** Edit how you appear on the wall. No payment, no Ghost change. */
+/**
+ * Bid more — the move-up action.
+ *
+ * Charges the difference now; the new bid is what holds the spot from here
+ * on. Only ever upward: lowering is leaving and rebidding, which keeps "who is
+ * above whom" a question with exactly one answer. Arrival order is kept, so
+ * bidding more never costs you a tie-break you already had.
+ */
+export async function raiseBid(formData: FormData) {
+  const uid = await getCurrentUserId();
+  if (!uid) redirect('/login?next=/sponsor/membership');
+
+  const rows = await db.select().from(members).where(eq(members.profileId, uid)).limit(1);
+  const m = rows[0];
+  if (!m || m.status !== 'active') redirect('/sponsor/membership');
+
+  const next = bidSchema.safeParse(formData.get('amount'));
+  if (!next.success) redirect('/sponsor/membership?e=amount');
+  if (next.data <= m.pricePoints) redirect('/sponsor/membership?e=notHigher');
+
+  const paid = await charge(uid, next.data - m.pricePoints);
+  if (!paid) redirect('/sponsor/membership?e=insufficient');
+
+  // A raise is a new bid, so it takes a new timestamp: a tie goes to whoever
+  // bid that amount first, and `rankForAmount` promises exactly that.
+  await db
+    .update(members)
+    .set({ pricePoints: next.data, startedAt: new Date() })
+    .where(eq(members.profileId, uid));
+
+  await notifyCreator(
+    `${m.displayName} bid more`,
+    `Now ${formatAmount(next.data)}, from ${formatAmount(m.pricePoints)}.`
+  );
+
+  revalidateWall();
+  redirect('/sponsor/membership?raised=1');
+}
+
+/** Edit how you appear on the wall. No payment. */
 export async function updateMemberProfile(formData: FormData) {
   const uid = await getCurrentUserId();
   if (!uid) redirect('/login?next=/sponsor');
@@ -209,34 +250,17 @@ export async function updateMemberProfile(formData: FormData) {
     })
     .where(eq(members.profileId, uid));
 
-  revalidatePath('/members');
-  revalidatePath('/sponsor/membership');
+  revalidateWall();
   redirect('/sponsor/membership?ok=1');
 }
 
-/**
- * Stop a membership: off the wall here, back to `free` on Ghost.
- *
- * The Ghost member is not deleted — they may have subscribed to the newsletter
- * on their own, and lapsing a sponsorship is no reason to erase someone from a
- * mailing list.
- */
-export async function cancelMembership() {
+/** Leave the wall. Rebidding later is a fresh bid at whatever amount. */
+export async function leaveWall() {
   const uid = await getCurrentUserId();
   if (!uid) redirect('/login?next=/sponsor');
 
-  const rows = await db.select().from(members).where(eq(members.profileId, uid)).limit(1);
-  const m = rows[0];
-  if (!m) redirect('/sponsor/membership');
-
-  const meRows = await db.select().from(profiles).where(eq(profiles.id, uid)).limit(1);
-  if (m.ghostMemberId && meRows[0]?.email) {
-    await revokeGhostMembership(m.ghostMemberId, meRows[0].email);
-  }
-
   await db.update(members).set({ status: 'lapsed' }).where(eq(members.profileId, uid));
 
-  revalidatePath('/members');
-  revalidatePath('/sponsor/membership');
-  redirect('/sponsor/membership?cancelled=1');
+  revalidateWall();
+  redirect('/sponsor/membership?left=1');
 }

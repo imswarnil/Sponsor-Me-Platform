@@ -41,15 +41,19 @@ const clean = process.argv.includes('--clean');
 
 /* ── people ───────────────────────────────────────────────────────────────── */
 
+// Varied bids on purpose: the wall is ranked and sized by bid (lib/site.ts
+// `membership`), so a flat set would demo none of that — no podium, no
+// "bid more to move up". Two at the floor and a tie in the middle, so the
+// tie-break (earlier wins) shows too.
 const SAMPLE_MEMBERS = [
-  { name: 'Ana Duarte', handle: 'ana.builds', blurb: 'Reads the newsletter on the train.' },
-  { name: 'Marcus Hale', handle: 'marcushale', blurb: 'Here for the Salesforce posts.' },
-  { name: 'Priya Nair', handle: 'priya.codes', blurb: 'Been following since the first video.' },
-  { name: 'Tomas Rivas', handle: 'tomasrivas', blurb: 'Open source, mostly.' },
-  { name: 'Chloe Barnes', handle: 'chloe.b', blurb: 'The Kyoto series was worth it.' },
-  { name: 'Devan Shah', handle: 'devanshah', blurb: 'Small monthly, happy to keep it going.' },
-  { name: 'Ines Moreau', handle: 'inesmoreau', blurb: 'Design system nerd.' },
-  { name: 'Sam Okafor', handle: 'samokafor', blurb: 'Found this through a README badge.' }
+  { name: 'Ana Duarte', handle: 'ana.builds', blurb: 'Reads the newsletter on the train.', amount: 12000 },
+  { name: 'Marcus Hale', handle: 'marcushale', blurb: 'Here for the Salesforce posts.', amount: 8000 },
+  { name: 'Priya Nair', handle: 'priya.codes', blurb: 'Been following since the first video.', amount: 5000 },
+  { name: 'Tomas Rivas', handle: 'tomasrivas', blurb: 'Open source, mostly.', amount: 5000 },
+  { name: 'Chloe Barnes', handle: 'chloe.b', blurb: 'The Kyoto series was worth it.', amount: 3000 },
+  { name: 'Devan Shah', handle: 'devanshah', blurb: 'Small bid, happy to be here.', amount: 2500 },
+  { name: 'Ines Moreau', handle: 'inesmoreau', blurb: 'Design system nerd.', amount: 2000 },
+  { name: 'Sam Okafor', handle: 'samokafor', blurb: 'Found this through a README badge.', amount: 2000 }
 ];
 
 const SAMPLE_ADS = [
@@ -118,7 +122,6 @@ async function ensureSampleAccount({ name, handle }) {
 }
 
 let made = 0;
-const renewsAt = new Date(Date.now() + 30 * 86_400_000);
 
 for (const person of SAMPLE_MEMBERS) {
   const { id, email, fresh } = await ensureSampleAccount(person);
@@ -128,14 +131,18 @@ for (const person of SAMPLE_MEMBERS) {
     VALUES (${id}, ${email}, ${person.name}, 0, 'both')
     ON CONFLICT (id) DO NOTHING`;
 
+  // Upsert the bid so re-running after the numbers above change actually
+  // moves people on the wall, rather than leaving the first run's values.
   await sql`
     INSERT INTO bms_member
       (id, profile_id, display_name, instagram_handle, blurb, tier_name,
-       price_points, status, renews_at, is_sample)
+       price_points, status, is_sample)
     VALUES
       (${randomUUID()}, ${id}, ${person.name}, ${person.handle}, ${person.blurb},
-       'Sample', 0, 'active', ${renewsAt.toISOString()}, true)
-    ON CONFLICT (profile_id) DO NOTHING`;
+       'Sample', ${person.amount}, 'active', true)
+    ON CONFLICT (profile_id) DO UPDATE SET
+      price_points = EXCLUDED.price_points,
+      status = 'active'`;
 
   if (fresh) made += 1;
 }

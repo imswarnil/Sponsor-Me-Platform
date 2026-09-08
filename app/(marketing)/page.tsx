@@ -18,7 +18,7 @@ import { PlatformFacts } from '@/components/marketing/platform-facts';
 import { FeatureStack } from '@/components/marketing/feature-stack';
 import { HeroShowcase } from '@/components/marketing/hero-showcase';
 import { Thanks } from '@/components/marketing/thanks';
-import { getActiveWallMembers, expireStaleMembers } from '@/lib/proto/member-queries';
+import { getActiveWallMembers } from '@/lib/proto/member-queries';
 import { CHANNEL_LIST } from '@/lib/channels';
 import { site } from '@/lib/site';
 
@@ -196,7 +196,7 @@ export default function HomePage() {
             n="02"
             icon={<Coins className="size-5" />}
             title="Take it"
-            body="Add a headline, an image and your link, choose your dates, and pay the listed price in points. No auction, no minimum, no contract."
+            body="Add a headline, an image and your link, choose your dates, and pay the listed price. No auction, no minimum, no contract."
           />
           <StepCard
             n="03"
@@ -265,11 +265,10 @@ export default function HomePage() {
 
 /**
  * The wall, and the link to the rest of it. Its own component purely so the
- * two reads it needs (the lapse sweep, then the members) sit behind their own
- * Suspense boundary instead of blocking the document.
+ * read it needs sits behind its own Suspense boundary instead of blocking the
+ * document.
  */
 async function WallSection() {
-  await expireStaleMembers();
   const members = await getActiveWallMembers(24);
 
   return (

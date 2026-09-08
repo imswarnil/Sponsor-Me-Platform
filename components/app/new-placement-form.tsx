@@ -69,7 +69,7 @@ export function NewPlacementForm() {
           className="max-w-40"
         />
         <p className="text-xs text-muted-foreground">
-          In points. A sponsor can pick any custom date range — this is what a full week of it
+          In rupees. A sponsor can pick any custom date range — this is what a full week of it
           costs.
         </p>
       </div>

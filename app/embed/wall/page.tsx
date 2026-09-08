@@ -1,6 +1,6 @@
 import { SponsorWall, type WallLayout } from '@/components/marketing/sponsor-wall';
 import { WallAutoHeight } from '@/components/marketing/wall-auto-height';
-import { expireStaleMembers, getActiveWallMembers } from '@/lib/proto/member-queries';
+import { getActiveWallMembers } from '@/lib/proto/member-queries';
 
 /**
  * The embeddable sponsor wall.
@@ -10,7 +10,9 @@ import { expireStaleMembers, getActiveWallMembers } from '@/lib/proto/member-que
  * next.config.ts — the exemption already covers everything under /embed).
  *
  * Reads nothing about the viewer and renders no interactivity, so there is no
- * session to leak and nothing to trust: it draws faces and links out.
+ * session to leak and nothing to trust: it draws faces and links out. Same
+ * order as everywhere else — highest bid first — so a spot travels with its
+ * rank to every site this is on.
  */
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +31,6 @@ export default async function WallEmbed({
   // Clamped: the limit arrives from a query string on somebody else's page.
   const limit = Math.min(Math.max(parseInt(sp.limit ?? '60', 10) || 60, 1), 200);
 
-  await expireStaleMembers();
   const members = await getActiveWallMembers(limit);
 
   return (

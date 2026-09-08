@@ -75,6 +75,21 @@ browser), content-type/size validated before minting, served from a separate dom
 scheme: `creative/<sponsorshipId>/<filename>`, `mediakit/<filename>`,
 `invoices/<year>/<paymentId>.pdf`.
 
+## Membership — bid once, hold the spot until outbid
+
+Done: a spot on the wall is a one-time bid from a floor (`lib/site.ts` `membership`). The
+wall is ordered and sized by bid — 1st/2nd/3rd on a podium, 1st a 2×2 card — and a spot
+never expires or renews: `renews_at` and the lapse sweep are gone (`drizzle/manual/004`,
+`member-queries.ts`). `raiseBid` charges the difference to move up; `leaveWall` is the only
+way off. The whole Ghost coupling is gone too — no comped tier, no price read from Ghost, no
+member mirror, no `ghost_member_id` (`drizzle/manual/003`). Ghost is read for exactly two
+read-only numbers (posts, subscribers) in `lib/ghost.ts` and nothing else.
+
+- [ ] When Dodo lands, a bid is a single charge and `raiseBid` charges the difference —
+      no subscription object needed. Do not reintroduce a renewal clock.
+- [ ] Lowering a bid is leave-and-rebid by design (one answer to "who is above whom").
+      Revisit only if real members ask for it.
+
 ## Auth follow-ups
 - [ ] Password reset emails need a sender configured in Neon Auth — the flow is wired but no
       mail will arrive without one.

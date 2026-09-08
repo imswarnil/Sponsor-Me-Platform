@@ -106,7 +106,7 @@ export default function HowItWorksPage() {
           <Step
             n={4}
             title="Pay the listed price"
-            body="The price on the page is the price. It runs on points today, so you can walk the whole flow before any real money is involved."
+            body="The price on the page is the price. It runs on preview credit today, so you can walk the whole flow before any real money is involved."
           />
           <Step
             n={5}
@@ -200,7 +200,7 @@ export default function HowItWorksPage() {
               </li>
               <li className="flex gap-2">
                 <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-signal" /> Everything runs on
-                points for now, so you can try the flow risk-free.
+                preview credit for now, so you can try the flow risk-free.
               </li>
               <li className="flex gap-2">
                 <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-signal" /> Real payments come
@@ -257,7 +257,7 @@ export default function HowItWorksPage() {
           />
           <Faq
             q="Is this real money?"
-            a="Not yet. The whole flow runs on points so you can walk through it end to end before anything is charged. Real payments are a later phase."
+            a="Not yet. Prices are in rupees, but the whole flow runs on preview credit so you can walk through it end to end before anything is charged. Real payments are a later phase."
           />
           <Faq
             q="What is the difference between a placement and a membership?"

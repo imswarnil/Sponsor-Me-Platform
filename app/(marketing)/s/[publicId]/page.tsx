@@ -23,7 +23,7 @@ export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Advertise here' };
 
 const errors: Record<string, string> = {
-  insufficient: "You don't have enough points for this spot.",
+  insufficient: "You don't have enough credit for this spot.",
   own: "You can't advertise on your own slot.",
   taken: 'This spot has just been taken by someone else.'
 };
@@ -65,7 +65,7 @@ export default async function SponsorPage({
       <div className="mx-auto max-w-narrow px-gutter pt-8">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-line-subtle bg-sunken px-5 py-3">
           <p className="text-sm text-muted-foreground">
-            Placements are priced in points, not money — nothing charges a card.
+            Prices are in rupees; nothing charges a card yet — this is preview credit.
           </p>
           {me ? (
             <Badge variant="pop" className="gap-1.5 px-2.5">

@@ -11,7 +11,7 @@ There are exactly two ways to back the work here:
 | | Who it's for | What they get |
 |---|---|---|
 | **A placement** | A brand with something to promote | A spot on a real channel — a blog sidebar, a YouTube mention, a newsletter block, an Instagram post, a README badge, or a personal shout-out — for whatever dates they pick, disclosed as sponsored every time. |
-| **A membership** | A reader who just wants to help | One fixed price a month. In return: a face on the public sponsor wall (shown across every site the creator runs, not just this one) and a paid membership on the blog. |
+| **A membership** | A reader who just wants to help | One bid, once, from ₹2,000. In return: a spot on the public sponsor wall, shown across every site the creator runs — ordered and sized by bid, with a 1st/2nd/3rd podium at the top. A spot never expires; it's yours until someone bids more, and you can bid more any time to move up. |
 
 GitHub Sponsors sits alongside both, for anyone who'd rather just chip in with no strings.
 

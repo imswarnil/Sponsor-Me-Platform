@@ -12,6 +12,7 @@ import { getCreatorId, requireCreator } from './roles';
 import { CHANNEL_KEYS, toChannel } from '@/lib/channels';
 import { PROPERTY_KEYS } from '@/lib/properties';
 import { AD_TYPE_KEYS, AD_TYPES } from '@/lib/ad-types';
+import { formatAmount } from '@/lib/money';
 
 function slotPublicId() {
   return 'sl_' + randomBytes(4).toString('hex');
@@ -184,11 +185,15 @@ export async function sponsorSlot(formData: FormData) {
     : base;
   if (!me || me.points < total) redirect(`/s/${publicId}?e=insufficient`);
 
-  await db.transaction(async (tx) => {
-    await tx.update(profiles).set({ points: sql`${profiles.points} - ${total}` }).where(eq(profiles.id, uid));
-    await tx.update(profiles).set({ points: sql`${profiles.points} + ${total}` }).where(eq(profiles.id, slot.ownerId));
-    await tx.insert(txns).values({ slotId: slot.id, fromId: uid, toId: slot.ownerId, amount: total });
-    await tx
+  // All of it or none of it. `batch` is the Neon HTTP driver's transaction —
+  // one round-trip, committed together server-side. (`db.transaction` throws
+  // on this driver: there is no session to hold one open.)
+  const dayLabel = days === 1 ? '1 day' : `${days} days`;
+  await db.batch([
+    db.update(profiles).set({ points: sql`${profiles.points} - ${total}` }).where(eq(profiles.id, uid)),
+    db.update(profiles).set({ points: sql`${profiles.points} + ${total}` }).where(eq(profiles.id, slot.ownerId)),
+    db.insert(txns).values({ slotId: slot.id, fromId: uid, toId: slot.ownerId, amount: total }),
+    db
       .update(slots)
       .set({
         status: 'sponsored',
@@ -202,8 +207,8 @@ export async function sponsorSlot(formData: FormData) {
         sponsoredStart: start,
         sponsoredUntil: end
       })
-      .where(eq(slots.id, slot.id));
-    await tx.insert(sponsorshipHistory).values({
+      .where(eq(slots.id, slot.id)),
+    db.insert(sponsorshipHistory).values({
       slotId: slot.id,
       ownerId: slot.ownerId,
       sponsorId: uid,
@@ -218,17 +223,16 @@ export async function sponsorSlot(formData: FormData) {
       amount: total,
       startAt: start,
       endAt: end
-    });
+    }),
     // Notify the creator.
-    const dayLabel = days === 1 ? '1 day' : `${days} days`;
-    await tx.insert(notifications).values({
+    db.insert(notifications).values({
       userId: slot.ownerId,
       type: 'sponsored',
       title: `"${slot.name}" was sponsored`,
-      body: `${me.name || 'Someone'} took it for ${dayLabel} (${total} pts).`,
+      body: `${me.name || 'Someone'} took it for ${dayLabel} (${formatAmount(total)}).`,
       href: `/studio/placements/${slot.id}`
-    });
-  });
+    })
+  ]);
 
   revalidatePath(`/s/${publicId}`);
   revalidatePath('/studio');
@@ -461,20 +465,21 @@ export async function sendMessage(formData: FormData) {
 
   const recipientId = thread.requesterId === uid ? thread.creatorId : thread.requesterId;
 
-  await db.transaction(async (tx) => {
-    await tx.insert(messages).values({ threadId: thread.id, senderId: uid, body: parsed.data.body });
-    await tx
+  const href = await threadUrl(thread.id);
+  await db.batch([
+    db.insert(messages).values({ threadId: thread.id, senderId: uid, body: parsed.data.body }),
+    db
       .update(threads)
       .set({ lastMessageAt: new Date(), status: 'active' })
-      .where(eq(threads.id, thread.id));
-    await tx.insert(notifications).values({
+      .where(eq(threads.id, thread.id)),
+    db.insert(notifications).values({
       userId: recipientId,
       type: 'message',
       title: `New reply: ${thread.subject}`,
       body: parsed.data.body.slice(0, 140),
-      href: await threadUrl(thread.id)
-    });
-  });
+      href
+    })
+  ]);
 
   revalidatePath(`/studio/messages/${thread.id}`);
   revalidatePath(`/sponsor/messages/${thread.id}`);

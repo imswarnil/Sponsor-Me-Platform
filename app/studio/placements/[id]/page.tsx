@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ExternalLink, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/app/page-header';
+import { formatAmount } from '@/lib/money';
 import { SlotAnalytics } from '@/components/app/slot-analytics';
 import { EmbedSnippet } from '@/components/app/embed-snippet';
 import { ChannelPicker } from '@/components/app/channel-picker';
@@ -77,7 +78,7 @@ export default async function ManagePlacementPage({
           <Badge variant="pop">Open</Badge>
         )}
         <ChannelBadge placement={slot.placement} />
-        <Badge variant="outline">{slot.pricePoints} pts / wk</Badge>
+        <Badge variant="outline">{formatAmount(slot.pricePoints)} / wk</Badge>
         {channel.embeddable ? (
           <Badge variant="outline">
             {slot.width}×{slot.height}

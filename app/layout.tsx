@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import { IBM_Plex_Mono, Inter } from 'next/font/google';
 import { RegisterServiceWorker } from '@/components/register-service-worker';
+import { NavProgress } from '@/components/nav-progress';
 import { site } from '@/lib/site';
 
 /* Two faces — see creator/02-typography.css for the argument.
@@ -78,12 +79,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       suppressHydrationWarning
+      // The design system sets `scroll-behavior: smooth` on <html>; this tells
+      // Next so a route change still lands at the top instantly.
+      data-scroll-behavior="smooth"
       className={`${body.variable} ${mono.variable}`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-[100dvh]">
+        <NavProgress />
         {children}
         <RegisterServiceWorker />
       </body>
