@@ -217,11 +217,19 @@ swr, jose, postgres. Icons are inline SVG; there is no icon package.
 
 ```bash
 npm run db:setup    # push schema → apply constraints → seed accounts + slots
+npm run db:fk       # the constraints alone — the one to reach for day to day
 npm run db:legacy   # DESTRUCTIVE: drops the old bms_* tables. Run once.
 npm run dev         # foreground, Ctrl-C to quit
 npm run serve       # background; waits until it actually answers
 npm run stop | restart | status | logs
 ```
+
+⚠️ **`db:push` works on an empty database and FAILS on this one.** Its diff
+emits `ALTER TABLE x DROP CONSTRAINT "x_col_not_null"` for every NOT NULL column
+— a Postgres 17 feature this branch does not have — and aborts with 42P16. So
+`db:setup` only completes against a fresh branch. **Changes to existing tables
+go in `drizzle/manual/` and are applied by `npm run db:fk`**, which is how
+`004_booking_approved_at.sql` was added. TODO.md §3 has the fix to try.
 
 **The port is defined in exactly one place: `PORT` in `scripts/dev.sh` (3500).**
 `package.json` calls the script instead of repeating the number — when it was
