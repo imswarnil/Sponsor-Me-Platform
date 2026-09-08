@@ -64,38 +64,59 @@ function Avatar({ m, layout }: { m: WallMember; layout: WallLayout }) {
   );
 }
 
-/** One face. A link when they gave somewhere to go, plain otherwise. */
-function Face({ m, layout }: { m: WallMember; layout: WallLayout }) {
+/**
+ * One face.
+ *
+ * `rank` is the member's place on the wall — position in the list, which is
+ * join order (earliest first). It is not a new query and not a score: the
+ * order was always meaningful, this just says so out loud. Set in the wall's
+ * own numerals — Inter, small, tabular — because the design system reserves
+ * mono for code, so a mono count would be a bug (CLAUDE.md §4).
+ */
+function Face({ m, layout, rank }: { m: WallMember; layout: WallLayout; rank: number }) {
   const href = hrefFor(m);
   const handle = m.instagramHandle ? `@${m.instagramHandle}` : null;
 
+  const sampleTag = m.isSample ? (
+    <span className="rounded-pill border border-line-subtle px-1.5 font-label text-2xs uppercase tracking-slate text-faint">
+      Sample
+    </span>
+  ) : null;
+
   const body =
     layout === 'full' ? (
-      <div className="flex flex-col items-center gap-2 text-center">
+      /* A card rather than a bare avatar: the wall is the page's proof, and
+         proof reads better with an edge around it. Lifts a hair on hover so a
+         linked face feels like one. */
+      <div className="relative flex h-full flex-col items-center gap-3 rounded-card border border-border bg-surface p-5 text-center transition-all duration-200 ease-out group-hover:-translate-y-0.5 group-hover:border-line-strong group-hover:shadow-lg group-hover:shadow-black/[0.04]">
+        <span className="absolute left-3.5 top-3 font-label text-2xs tabular-nums text-faint">
+          {String(rank).padStart(2, '0')}
+        </span>
         <Avatar m={m} layout={layout} />
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{m.displayName}</p>
-          {m.isSample ? (
-            <p className="mt-1 inline-block rounded-pill border border-line-subtle px-1.5 font-label text-2xs uppercase tracking-slate text-faint">
-              Sample
+        <div className="min-w-0 w-full">
+          <p className="truncate text-sm font-semibold">{m.displayName}</p>
+          {sampleTag ? <p className="mt-1.5">{sampleTag}</p> : null}
+          {m.blurb ? (
+            <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+              {m.blurb}
             </p>
           ) : null}
-          {m.blurb ? (
-            <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{m.blurb}</p>
-          ) : null}
           {handle ? (
-            <p className="mt-1 inline-flex items-center gap-1 font-label text-2xs uppercase tracking-slate text-subtle">
-              <Instagram className="size-3" />
-              {handle}
+            <p className="mt-2.5 inline-flex max-w-full items-center gap-1 border-t border-line-subtle pt-2.5 font-label text-2xs uppercase tracking-slate text-subtle">
+              <Instagram className="size-3 shrink-0" />
+              <span className="truncate">{handle}</span>
             </p>
           ) : null}
         </div>
       </div>
     ) : layout === 'sidebar' ? (
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 rounded-control p-2 transition-colors group-hover:bg-sunken">
         <Avatar m={m} layout={layout} />
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{m.displayName}</p>
+          <p className="truncate text-sm font-medium">
+            {m.displayName}
+            {m.isSample ? <span className="ml-1.5 text-faint">· sample</span> : null}
+          </p>
           {m.blurb ? (
             <p className="truncate text-xs text-muted-foreground">{m.blurb}</p>
           ) : handle ? (
@@ -106,15 +127,26 @@ function Face({ m, layout }: { m: WallMember; layout: WallLayout }) {
         </div>
       </div>
     ) : (
-      // inline: the face carries the name as a tooltip so the band stays a band
-      <Avatar m={m} layout={layout} />
+      /* inline: an overlapping stack, the way a row of faces is normally
+         drawn. The ring is the page's own background, so each face cuts a
+         clean edge out of the one behind it, and hovering brings one to the
+         front instead of just fading it. */
+      <span className="relative block transition-transform duration-200 ease-out group-hover:-translate-y-0.5">
+        <span className="block rounded-full ring-2 ring-canvas">
+          <Avatar m={m} layout={layout} />
+        </span>
+      </span>
     );
 
-  const title = [m.displayName, m.blurb, handle].filter(Boolean).join(' · ');
+  const title = [m.displayName, m.blurb, handle, m.isSample ? '(sample data)' : null]
+    .filter(Boolean)
+    .join(' · ');
+
+  const shell = layout === 'inline' ? 'group relative hover:z-10' : 'group block h-full';
 
   if (!href) {
     return (
-      <div title={title} className="rounded-control">
+      <div title={title} className={shell}>
         {body}
       </div>
     );
@@ -126,7 +158,7 @@ function Face({ m, layout }: { m: WallMember; layout: WallLayout }) {
       title={title}
       target="_blank"
       rel="noopener noreferrer nofollow"
-      className="rounded-control outline-none transition-opacity hover:opacity-80 focus-visible:opacity-80"
+      className={`${shell} rounded-card outline-none focus-visible:ring-2 focus-visible:ring-pop`}
     >
       {body}
     </a>
@@ -152,10 +184,12 @@ export function SponsorWall({
 
   const container =
     layout === 'full'
-      ? 'grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4'
+      ? 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4'
       : layout === 'sidebar'
-        ? 'flex flex-col gap-3'
-        : 'flex flex-wrap items-center gap-2';
+        ? 'flex flex-col gap-1'
+        : // Overlapping stack — the negative margin is what makes it one row of
+          // faces rather than a scattering of circles.
+          'flex flex-wrap items-center -space-x-2';
 
   const samples = members.filter((m) => m.isSample).length;
 
@@ -176,8 +210,8 @@ export function SponsorWall({
         </p>
       ) : null}
       <div className={container}>
-        {members.map((m) => (
-          <Face key={m.id} m={m} layout={layout} />
+        {members.map((m, i) => (
+          <Face key={m.id} m={m} layout={layout} rank={i + 1} />
         ))}
       </div>
     </div>

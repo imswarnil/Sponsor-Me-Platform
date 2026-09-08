@@ -28,8 +28,30 @@ const getSessionUser = cache(async function getSessionUser() {
   // A deployment with no auth configured should render the public pages as a
   // signed-out visitor rather than crash with a 500.
   if (!isAuthConfigured()) return null;
-  const { data } = await getAuth().getSession();
-  return data?.user ?? null;
+  try {
+    const { data } = await getAuth().getSession();
+    return data?.user ?? null;
+  } catch {
+    /**
+     * A stale or revoked cookie must read as "signed out", never as a 500.
+     *
+     * `getSession()` refreshes the session cookie when its cached data expires
+     * (`sessionDataTtl` in lib/auth/server.ts), and clears it when the session
+     * behind it is gone. Both are cookie *writes*, which Next only permits in a
+     * Server Action or Route Handler — from a page render it throws "Cookies
+     * can only be modified in a Server Action or Route Handler". So anyone
+     * still holding a cookie that has since been revoked (a password change
+     * elsewhere, a signed-out-everywhere) would get an error page instead of
+     * the signed-out page they should see, and could not even reach /login to
+     * fix it, because the header renders on /login too.
+     *
+     * Swallowing it here is right rather than lazy: this function's entire
+     * contract is "the session, or null", and an unreadable session is null.
+     * The cookie stays as it is until a real Server Action (sign-in, sign-out)
+     * gets to rewrite it, which is exactly where a cookie write belongs.
+     */
+    return null;
+  }
 });
 
 /** The current `neon_auth.user.id`, or null. */
