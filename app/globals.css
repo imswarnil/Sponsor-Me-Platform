@@ -1,0 +1,213 @@
+@import 'tailwindcss';
+
+/* =============================================================================
+   SPONSOR ME
+
+   The palette is lifted straight from imswarnil.com's design system, in OKLCH,
+   so this app is the same colours as the rest of the network even though it is
+   built on Tailwind rather than on that system.
+
+     ink     hue 275 — a cool near-neutral. Everything structural.
+     signal  hue  34 — the brand's orange-red. The primary action, rationed.
+     craft   hue  78 — gold. Reserved almost entirely for FIRST PLACE.
+     iris / teal / mint / azure — the playful ones, one per section, so the
+     page has rhythm instead of six shades of grey.
+
+   The rule that keeps it from becoming a clown car: a colour means a thing.
+   Gold is rank one. Signal is "do this". Everything else is a section's
+   personality and never a control.
+   ========================================================================== */
+
+@theme {
+  --color-ink-0: oklch(99.2% 0.002 275);
+  --color-ink-50: oklch(96.6% 0.004 275);
+  --color-ink-100: oklch(94% 0.005 275);
+  --color-ink-200: oklch(89% 0.007 275);
+  --color-ink-300: oklch(82% 0.009 275);
+  --color-ink-400: oklch(71% 0.013 275);
+  --color-ink-500: oklch(58% 0.018 275);
+  --color-ink-600: oklch(48% 0.02 275);
+  --color-ink-700: oklch(39% 0.02 275);
+  --color-ink-800: oklch(30.5% 0.018 275);
+  --color-ink-900: oklch(23% 0.016 275);
+  --color-ink-950: oklch(17.5% 0.014 275);
+  --color-ink-1000: oklch(12.5% 0.012 275);
+
+  --color-signal-50: oklch(96.5% 0.02 34);
+  --color-signal-100: oklch(92.5% 0.042 34);
+  --color-signal-200: oklch(86% 0.078 34);
+  --color-signal-300: oklch(79% 0.118 34);
+  --color-signal-400: oklch(71% 0.158 34);
+  --color-signal-500: oklch(63% 0.19 34);
+  --color-signal-600: oklch(56% 0.18 34);
+  --color-signal-700: oklch(47% 0.155 34);
+
+  --color-craft-50: oklch(97% 0.025 78);
+  --color-craft-100: oklch(93% 0.05 78);
+  --color-craft-300: oklch(82% 0.1 78);
+  --color-craft-400: oklch(74% 0.118 78);
+  --color-craft-500: oklch(66% 0.11 78);
+  --color-craft-600: oklch(58% 0.1 78);
+
+  --color-iris-50: oklch(96.5% 0.02 285);
+  --color-iris-100: oklch(93% 0.045 285);
+  --color-iris-400: oklch(73% 0.14 285);
+  --color-iris-500: oklch(62% 0.17 285);
+  --color-iris-600: oklch(54% 0.175 285);
+
+  --color-teal-50: oklch(96.5% 0.02 195);
+  --color-teal-100: oklch(93% 0.04 195);
+  --color-teal-400: oklch(74% 0.1 195);
+  --color-teal-500: oklch(65% 0.105 195);
+  --color-teal-600: oklch(56% 0.1 195);
+
+  --color-mint-50: oklch(96.5% 0.022 155);
+  --color-mint-100: oklch(93% 0.05 155);
+  --color-mint-400: oklch(74% 0.125 155);
+  --color-mint-500: oklch(64% 0.13 155);
+  --color-mint-600: oklch(56% 0.118 155);
+
+  --color-azure-50: oklch(96.5% 0.018 240);
+  --color-azure-100: oklch(93% 0.04 240);
+  --color-azure-400: oklch(73% 0.125 240);
+  --color-azure-500: oklch(62% 0.145 240);
+  --color-azure-600: oklch(54% 0.15 240);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  /* Chunky by default. This app is soft-cornered and physical, not sharp. */
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pop: pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(var(--tw-rotate, 0deg)); }
+  50% { transform: translateY(-10px) rotate(var(--tw-rotate, 0deg)); }
+}
+
+@keyframes pop {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* ── Base ──────────────────────────────────────────────────────────────── */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--color-ink-0);
+    color: var(--color-ink-900);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Numbers never reflow the row they sit in. Every figure in this app is a
+     measurement that can change while somebody is looking at it. */
+  .tnum {
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
+  ::selection {
+    background: var(--color-signal-500);
+    color: white;
+  }
+
+  /* One focus ring for the whole app, and it is never removed. */
+  :focus-visible {
+    outline: 3px solid var(--color-signal-500);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@layer components {
+  /* ── The playful frame ───────────────────────────────────────────────────
+     A hard 2px edge and an offset solid shadow instead of a soft blur. It is
+     the single device that makes the whole app read as a sticker book rather
+     than a dashboard, so it is defined once and used everywhere. */
+  .card-pop {
+    @apply rounded-2xl border-2 border-ink-900 bg-white;
+    box-shadow: 4px 4px 0 0 var(--color-ink-900);
+  }
+
+  .card-pop-lg {
+    box-shadow: 6px 6px 0 0 var(--color-ink-900);
+  }
+
+  /* Lifts on hover — the shadow grows as the card moves toward you. */
+  .card-lift {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .card-lift:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 0 var(--color-ink-900);
+  }
+
+  .btn-pop {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border-2 border-ink-900
+           px-5 py-2.5 font-semibold transition;
+    box-shadow: 3px 3px 0 0 var(--color-ink-900);
+  }
+
+  .btn-pop:hover:not(:disabled) {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 0 var(--color-ink-900);
+  }
+
+  .btn-pop:active:not(:disabled) {
+    transform: translate(2px, 2px);
+    box-shadow: 0 0 0 0 var(--color-ink-900);
+  }
+
+  .btn-pop:disabled {
+    @apply cursor-not-allowed opacity-50;
+    box-shadow: none;
+  }
+
+  /* A sticker: a small rotated label. Rotation is the whole joke, so it is
+     baked in rather than left to each use site to remember. */
+  .sticker {
+    @apply inline-block rounded-full border-2 border-ink-900 px-3 py-1 text-xs font-bold uppercase
+           tracking-wide;
+    box-shadow: 2px 2px 0 0 var(--color-ink-900);
+  }
+
+  .field-pop {
+    @apply w-full rounded-xl border-2 border-ink-900 bg-white px-4 py-2.5 text-ink-900
+           placeholder:text-ink-400;
+  }
+
+  .field-pop:focus {
+    outline: none;
+    box-shadow: 3px 3px 0 0 var(--color-signal-500);
+  }
+}
+
+/* Respect the setting. Every animation here is decoration; none carries
+   information, so all of them can simply stop. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,25 +1,16 @@
 import Link from 'next/link';
 
-import { Wordmark } from '@/components/wordmark';
-
 export default function NotFound() {
   return (
-    <div className="section section-loose">
-      <div className="container container-sm text-center">
-        <div className="stack">
-          <Wordmark />
-          <p className="eyebrow">Error 404</p>
-          <h1 className="t-h2">Nothing in this slot</h1>
-          <p className="t-lead t-muted">
-            The page you asked for has been moved, renamed, or never existed.
-          </p>
-          <div className="cluster cluster-center">
-            <Link href="/" className="btn btn-primary">
-              Back to the board
-            </Link>
-          </div>
-        </div>
+    <main className="grid min-h-[100dvh] place-items-center bg-signal-50 px-4 text-center">
+      <div>
+        <p className="text-7xl">🕳️</p>
+        <h1 className="mt-4 text-4xl font-black tracking-tight">Nothing here</h1>
+        <p className="mt-1 text-ink-600">That slot moved, sold, or never existed.</p>
+        <Link href="/" className="btn-pop mt-6 bg-signal-500 text-white">
+          Back home
+        </Link>
       </div>
-    </div>
+    </main>
   );
 }

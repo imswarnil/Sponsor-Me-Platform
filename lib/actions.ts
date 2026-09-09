@@ -2,354 +2,224 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { db } from '@/lib/db/client';
-import { activity, bids, bookings, messages, payments, profiles, slots } from '@/lib/db/schema';
-import { getViewer, requireCreator, requireSponsor, requireViewer } from '@/lib/roles';
+import { ads, payments, profiles, slots } from '@/lib/db/schema';
+import { requireCreator, requireSponsor, requireViewer } from '@/lib/roles';
 import { parseCreative, safeUrl } from '@/lib/creative';
 import { createCheckout, isDodoConfigured } from '@/lib/dodo';
-import { CURRENCY, bidRules, MAX_BOOKING_MONTHS_AHEAD, site } from '@/lib/site';
-import { rupeesToPaise } from '@/lib/money';
-import { minimumToLead, nextAvailableFrom, slotById, windowIsFree } from '@/lib/queries';
+import { CURRENCY, site, termPrice } from '@/lib/site';
+import { adById, askFor, slotById } from '@/lib/queries';
 
 /**
- * EVERY WRITE IN THE APPLICATION.
+ * EVERY WRITE.
  *
- * Three rules, and the first one is the whole security posture:
+ * 1. THE SERVER PRICES EVERYTHING. No amount is read from a form. A fixed
+ *    slot's total is its own row times a whitelisted term; a bid's minimum is
+ *    the live leader plus the step. The browser chooses *what* to buy, never
+ *    *for how much*.
  *
- * 1. THE SERVER PRICES EVERYTHING. No amount is ever read from a form. A bid's
- *    minimum comes from the current leaderboard; a booking's total comes from
- *    the slot's own row times a whitelisted number of months. The browser
- *    chooses *what* to buy, never *for how much*.
- *
- * 2. NOTHING GOES LIVE ON A REDIRECT. Starting a checkout writes a `pending`
+ * 2. NOTHING SERVES ON A REDIRECT. Starting a checkout writes a `pending`
  *    payment and nothing else. The ad activates when the signed webhook lands
- *    (app/api/webhooks/dodo/route.ts) and at no other moment. A browser
- *    arriving at a success URL is not evidence that money moved.
+ *    and at no other moment — a browser arriving at a success URL is not
+ *    evidence that money moved.
  *
- * 3. `db.batch`, NEVER `db.transaction`. The app talks to Neon over HTTP, and
- *    that driver throws "No transactions support in neon-http driver" the
+ * 3. `db.batch`, NEVER `db.transaction`. The neon-http driver throws the
  *    instant a transaction opens. `batch` sends the statements in one request
- *    and Neon commits them together, which is the atomicity these writes need.
- *    The cost is that a batch cannot read mid-way — so every read and every
- *    check happens first, then the writes go in one batch.
+ *    and Neon commits them together. A batch cannot read mid-way, so every
+ *    read and check happens first.
  */
 
 export type ActionState = { error?: string; ok?: string };
 
 const NOT_CONFIGURED =
-  'Payments are not configured on this deployment. Set DODO_PAYMENTS_KEY_TEST_MODE ' +
-  'and DODO_PRODUCT_ID, then restart.';
+  'Payments are not set up on this deployment yet. Set DODO_PAYMENTS_KEY_TEST_MODE and DODO_PRODUCT_ID.';
 
 function origin() {
   return process.env.BASE_URL?.replace(/\/$/, '') || site.self;
 }
 
-/* ── Creative ───────────────────────────────────────────────────────────── */
+/* ── Writing an ad ──────────────────────────────────────────────────────── */
 
 /**
- * Save the creative for the sponsor's leaderboard ad.
+ * Create or update the ad this sponsor wants to run in a slot.
  *
- * Editing always returns the creative to `pending`. A sponsor who could edit
- * an approved ad would have a way to get anything at all in front of the
- * audience: approve something mild, then swap the copy. Re-review is the only
- * safe behaviour, and the amount they have paid is untouched by it — they keep
- * their rank while the new creative is looked at.
+ * Editing a `live` ad sends it back to `pending`. A sponsor who could edit an
+ * approved ad would have a route to putting anything at all in front of the
+ * audience: get something mild approved, then swap the copy. The money already
+ * paid is untouched — they keep their position while it is re-reviewed.
  */
-export async function saveBidCreativeAction(
-  _prev: ActionState,
-  form: FormData
-): Promise<ActionState> {
+export async function saveAdAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   const viewer = await requireSponsor();
+
+  const slotId = z.string().uuid().safeParse(form.get('slotId'));
+  if (!slotId.success) return { error: 'Unknown slot.' };
+
+  const slot = await slotById(slotId.data);
+  if (!slot || !slot.active) return { error: 'That slot is not for sale.' };
+
   const parsed = parseCreative(form);
   if (!parsed.ok) return { error: parsed.error };
 
-  const c = parsed.value;
-  await db
-    .insert(bids)
-    .values({ profileId: viewer.id, ...c, status: 'pending', updatedAt: new Date() })
-    .onConflictDoUpdate({
-      target: bids.profileId,
-      set: { ...c, status: 'pending', reviewNote: null, updatedAt: new Date() }
+  const [existing] = await db
+    .select()
+    .from(ads)
+    .where(and(eq(ads.slotId, slot.id), eq(ads.profileId, viewer.id)))
+    .limit(1);
+
+  if (existing) {
+    await db
+      .update(ads)
+      .set({
+        ...parsed.value,
+        // Paid-for ads go back for review; an unpaid draft stays a draft.
+        status: existing.amountPaise > 0 ? 'pending' : 'draft',
+        reviewNote: null,
+        updatedAt: new Date()
+      })
+      .where(eq(ads.id, existing.id));
+  } else {
+    await db.insert(ads).values({
+      slotId: slot.id,
+      profileId: viewer.id,
+      ...parsed.value,
+      status: 'draft'
     });
+  }
 
-  revalidatePath('/dashboard');
-  return { ok: 'Saved. It goes back for review before it runs again.' };
+  revalidatePath('/me');
+  revalidatePath(`/slot/${slot.publicId}`);
+  return { ok: existing?.amountPaise ? 'Saved — back for review.' : 'Saved.' };
 }
 
-/** The same, for one booking's creative. Ownership is checked, not assumed. */
-export async function saveBookingCreativeAction(
-  _prev: ActionState,
-  form: FormData
-): Promise<ActionState> {
-  const viewer = await requireSponsor();
-  const bookingId = z.string().uuid().safeParse(form.get('bookingId'));
-  if (!bookingId.success) return { error: 'Unknown booking.' };
+/* ── Buying / bidding ───────────────────────────────────────────────────── */
 
-  const parsed = parseCreative(form);
-  if (!parsed.ok) return { error: parsed.error };
-
-  const updated = await db
-    .update(bookings)
-    .set({ ...parsed.value, reviewNote: null })
-    // The profileId predicate is the authorisation check. Without it, a
-    // guessed uuid rewrites somebody else's paid ad.
-    .where(and(eq(bookings.id, bookingId.data), eq(bookings.profileId, viewer.id)))
-    .returning({ id: bookings.id });
-
-  if (!updated[0]) return { error: 'Unknown booking.' };
-  revalidatePath('/dashboard');
-  return { ok: 'Saved.' };
-}
-
-/* ── SponsorBid · placing and raising a bid ─────────────────────────────── */
+const purchase = z.object({
+  slotId: z.string().uuid(),
+  months: z.coerce.number().int().min(1).max(12).optional(),
+  /** Bid slots only: what they typed, in whole rupees. A REQUEST, not a price. */
+  rupees: z.coerce.number().int().positive().max(5_000_000).optional()
+});
 
 /**
- * Start a checkout that adds to this sponsor's lifetime total.
+ * Start a checkout.
  *
- * The amount is bounded on both sides here: at least `minimumToLead` when they
- * asked to lead, never below the floor, never above the ceiling. The figure
- * the browser posted is treated as a *request*, clamped against numbers read
- * from the database in this same call.
+ * One action for both kinds of slot, because the only thing that differs is
+ * how the amount is derived — and both derivations happen here, on the server,
+ * from rows read in this same call.
  */
-export async function startBidCheckoutAction(
+export async function startCheckoutAction(
   _prev: ActionState,
   form: FormData
 ): Promise<ActionState> {
   const viewer = await requireSponsor();
   if (!isDodoConfigured()) return { error: NOT_CONFIGURED };
 
-  const existing = await db.select().from(bids).where(eq(bids.profileId, viewer.id)).limit(1);
-  if (!existing[0] || !existing[0].headline) {
-    return { error: 'Write your ad first — there is nothing to put on the board yet.' };
+  const parsed = purchase.safeParse({
+    slotId: form.get('slotId'),
+    months: form.get('months') || undefined,
+    rupees: form.get('rupees') || undefined
+  });
+  if (!parsed.success) return { error: 'Something was missing. Try again.' };
+
+  const slot = await slotById(parsed.data.slotId);
+  if (!slot || !slot.active) return { error: 'That slot is not for sale.' };
+
+  const [ad] = await db
+    .select()
+    .from(ads)
+    .where(and(eq(ads.slotId, slot.id), eq(ads.profileId, viewer.id)))
+    .limit(1);
+  if (!ad || !ad.brand) return { error: 'Write your ad first — there is nothing to run yet.' };
+
+  /* THE PRICE. Derived here, from the database, in every branch. */
+  let amount: number;
+  let months: number | null = null;
+
+  if (slot.kind === 'bid') {
+    const ask = await askFor(slot);
+    const wanted = (parsed.data.rupees ?? 0) * 100;
+    if (wanted < ask) {
+      return {
+        error: `The top spot needs at least ₹${Math.ceil(ask / 100).toLocaleString('en-IN')} right now.`
+      };
+    }
+    amount = wanted;
+  } else {
+    months = parsed.data.months ?? 1;
+    if (![1, 3, 6].includes(months)) return { error: 'Pick a length.' };
+    amount = termPrice(slot.pricePaise, months);
   }
 
-  const requested = rupeesToPaise(form.get('amount'));
-  if (requested === null) {
-    return { error: 'Enter a whole number of rupees.' };
-  }
-
-  // Read the live board. This — not the form — is what decides the minimum.
-  const minimum = await minimumToLead(viewer.id);
-  const floor = Math.max(bidRules.floor, 0);
-  const amount = requested;
-
-  if (amount < floor) {
-    return { error: `The smallest bid is ₹${Math.round(floor / 100).toLocaleString('en-IN')}.` };
-  }
-  if (amount > bidRules.max) {
-    return { error: `A single payment is capped at ₹${(bidRules.max / 100).toLocaleString('en-IN')}.` };
-  }
-  // Not an error — a sponsor is allowed to pay less than it takes to lead, and
-  // simply lands wherever that amount puts them. `minimum` is a suggestion the
-  // form shows, not a gate. It is read here so the metadata records the board
-  // as it stood when they committed.
-  void minimum;
+  if (amount <= 0) return { error: 'That slot has no price set.' };
 
   const [payment] = await db
     .insert(payments)
     .values({
       profileId: viewer.id,
-      kind: 'bid',
-      refId: existing[0].id,
+      adId: ad.id,
       amountPaise: amount,
       currency: CURRENCY,
       status: 'pending'
     })
     .returning();
 
-  let checkoutUrl: string | null = null;
+  let url: string | null = null;
   try {
     const session = await createCheckout({
       amountMinorUnits: amount,
       currency: CURRENCY,
-      metadata: { kind: 'bid', paymentId: payment.id, profileId: viewer.id },
-      returnUrl: `${origin()}/dashboard?paid=1`,
+      metadata: {
+        kind: slot.kind === 'bid' ? 'bid' : 'booking',
+        paymentId: payment.id,
+        profileId: viewer.id
+      },
+      returnUrl: `${origin()}/me?paid=1`,
       customerEmail: viewer.email ?? '',
       customerName: viewer.brand || viewer.name || 'Sponsor'
     });
-    checkoutUrl = session.checkoutUrl;
+    url = session.checkoutUrl;
     await db
       .update(payments)
       .set({ dodoSessionId: session.sessionId })
       .where(eq(payments.id, payment.id));
+
+    // Remember the term so the webhook can set an end date without re-deriving
+    // it from a request that will not exist by then.
+    if (months) {
+      const endsAt = new Date();
+      endsAt.setMonth(endsAt.getMonth() + months);
+      await db.update(ads).set({ endsAt }).where(eq(ads.id, ad.id));
+    }
   } catch (err) {
     await db.update(payments).set({ status: 'failed' }).where(eq(payments.id, payment.id));
     return { error: err instanceof Error ? err.message : 'Could not start the checkout.' };
   }
 
-  if (!checkoutUrl) return { error: 'The payment provider did not return a checkout link.' };
-  redirect(checkoutUrl);
+  if (!url) return { error: 'The payment provider did not return a checkout link.' };
+  redirect(url);
 }
 
-/* ── Slots · booking a window ───────────────────────────────────────────── */
-
-const bookingRequest = z.object({
-  slotId: z.string().uuid(),
-  months: z.coerce.number().int().min(1).max(MAX_BOOKING_MONTHS_AHEAD)
-});
-
-/**
- * Start a checkout for a window on a slot.
- *
- * The window is computed, not submitted: it always begins at the slot's next
- * free moment and runs for a whitelisted number of months. A sponsor cannot
- * post a start date, so they cannot book a window that has already been sold,
- * cannot back-date one, and cannot reserve the year 2400.
- */
-export async function startBookingCheckoutAction(
-  _prev: ActionState,
-  form: FormData
-): Promise<ActionState> {
-  const viewer = await requireSponsor();
-  if (!isDodoConfigured()) return { error: NOT_CONFIGURED };
-
-  const parsed = bookingRequest.safeParse({
-    slotId: form.get('slotId'),
-    months: form.get('months')
-  });
-  if (!parsed.success) return { error: 'Pick a slot and a length.' };
-
-  const creative = parseCreative(form);
-  if (!creative.ok) return { error: creative.error };
-
-  const slot = await slotById(parsed.data.slotId);
-  if (!slot || !slot.active) return { error: 'That slot is not for sale.' };
-
-  const startsAt = await nextAvailableFrom(slot.id);
-  const endsAt = new Date(startsAt);
-  endsAt.setMonth(endsAt.getMonth() + parsed.data.months);
-
-  if (!(await windowIsFree(slot.id, startsAt, endsAt))) {
-    return { error: 'Somebody just took that window. Reload for the next opening.' };
-  }
-
-  // THE PRICE. From the slot's own row, times months. Never from the form.
-  const amount = slot.pricePaise * parsed.data.months;
-  if (amount <= 0) return { error: 'That slot has no price set yet.' };
-
-  const [booking] = await db
-    .insert(bookings)
-    .values({
-      slotId: slot.id,
-      profileId: viewer.id,
-      startsAt,
-      endsAt,
-      months: parsed.data.months,
-      amountPaise: amount,
-      ...creative.value,
-      status: 'pending'
-    })
-    .returning();
-
-  const [payment] = await db
-    .insert(payments)
-    .values({
-      profileId: viewer.id,
-      kind: 'booking',
-      refId: booking.id,
-      amountPaise: amount,
-      currency: CURRENCY,
-      status: 'pending'
-    })
-    .returning();
-
-  let checkoutUrl: string | null = null;
-  try {
-    const session = await createCheckout({
-      amountMinorUnits: amount,
-      currency: CURRENCY,
-      metadata: { kind: 'booking', paymentId: payment.id, profileId: viewer.id },
-      returnUrl: `${origin()}/dashboard?paid=1`,
-      customerEmail: viewer.email ?? '',
-      customerName: viewer.brand || viewer.name || 'Sponsor'
-    });
-    checkoutUrl = session.checkoutUrl;
-    await db
-      .update(payments)
-      .set({ dodoSessionId: session.sessionId })
-      .where(eq(payments.id, payment.id));
-  } catch (err) {
-    await db.batch([
-      db.update(payments).set({ status: 'failed' }).where(eq(payments.id, payment.id)),
-      db.update(bookings).set({ status: 'cancelled' }).where(eq(bookings.id, booking.id))
-    ]);
-    return { error: err instanceof Error ? err.message : 'Could not start the checkout.' };
-  }
-
-  if (!checkoutUrl) return { error: 'The payment provider did not return a checkout link.' };
-  redirect(checkoutUrl);
-}
-
-/* ── Messages ───────────────────────────────────────────────────────────── */
-
-const messageBody = z.string().trim().min(1, 'Say something first.').max(2000);
-
-export async function sendMessageAction(
-  _prev: ActionState,
-  form: FormData
-): Promise<ActionState> {
-  const viewer = await requireViewer('/dashboard');
-  const parsed = messageBody.safeParse(form.get('body'));
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
-
-  const fromCreator = viewer.role === 'creator';
-  // A sponsor may only ever write into their own thread. The creator names the
-  // thread; a sponsor's is implied by who they are.
-  let threadId = viewer.id;
-  if (fromCreator) {
-    const target = z.string().uuid().safeParse(form.get('profileId'));
-    if (!target.success) return { error: 'Unknown conversation.' };
-    threadId = target.data;
-  }
-
-  await db.insert(messages).values({ profileId: threadId, fromCreator, body: parsed.data });
-
-  revalidatePath(fromCreator ? '/studio' : '/dashboard');
-  return { ok: 'Sent.' };
-}
-
-/** Mark the other side's messages read. Never marks your own. */
-export async function markThreadReadAction(profileId: string): Promise<void> {
-  const viewer = await getViewer();
-  if (!viewer) return;
-  const isCreator = viewer.role === 'creator';
-  const thread = isCreator ? profileId : viewer.id;
-
-  await db
-    .update(messages)
-    .set({ readAt: new Date() })
-    .where(
-      and(
-        eq(messages.profileId, thread),
-        eq(messages.fromCreator, !isCreator),
-        sql`${messages.readAt} is null`
-      )
-    );
-}
-
-/* ── The creator's own writes ───────────────────────────────────────────── */
+/* ── The creator's writes ───────────────────────────────────────────────── */
 
 const slotInput = z.object({
-  name: z.string().trim().min(1, 'Give the slot a name.').max(80),
-  property: z.string().trim().max(40).optional().nullable(),
-  format: z.enum(['rect', 'leader', 'sky', 'inline', 'card']),
-  description: z.string().trim().max(400).default(''),
+  name: z.string().trim().min(1, 'Give it a name.').max(60),
+  blurb: z.string().trim().max(200).default(''),
+  kind: z.enum(['fixed', 'bid']),
+  shape: z.enum(['card', 'banner', 'rail']),
   priceRupees: z.coerce.number().int().min(1, 'Set a price.').max(5_000_000),
-  monthlyViews: z.coerce.number().int().min(0).max(100_000_000).optional().nullable()
+  stepRupees: z.coerce.number().int().min(1).max(100_000).optional()
 });
 
-/** A short, unambiguous public id for the embed snippet. */
-function publicId(name: string) {
+function slugFor(name: string) {
   const base = name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
-    .slice(0, 28);
-  const suffix = Math.random().toString(36).slice(2, 6);
-  return `${base || 'slot'}-${suffix}`;
+    .slice(0, 24);
+  return `${base || 'slot'}-${Math.random().toString(36).slice(2, 6)}`;
 }
 
 export async function createSlotAction(_prev: ActionState, form: FormData): Promise<ActionState> {
@@ -357,32 +227,28 @@ export async function createSlotAction(_prev: ActionState, form: FormData): Prom
 
   const parsed = slotInput.safeParse({
     name: form.get('name'),
-    property: form.get('property') || null,
-    format: form.get('format') ?? 'rect',
-    description: form.get('description') ?? '',
+    blurb: form.get('blurb') ?? '',
+    kind: form.get('kind') ?? 'fixed',
+    shape: form.get('shape') ?? 'card',
     priceRupees: form.get('priceRupees'),
-    monthlyViews: form.get('monthlyViews') || null
+    stepRupees: form.get('stepRupees') || undefined
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const preview = safeUrl(form.get('previewUrl'));
-
   await db.insert(slots).values({
-    publicId: publicId(parsed.data.name),
+    publicId: slugFor(parsed.data.name),
     name: parsed.data.name,
-    property: parsed.data.property || null,
-    format: parsed.data.format,
-    description: parsed.data.description,
-    previewUrl: preview,
+    blurb: parsed.data.blurb,
+    kind: parsed.data.kind,
+    shape: parsed.data.shape,
     pricePaise: parsed.data.priceRupees * 100,
-    // A view count is measured or absent. An empty field means "not measured",
-    // and must never become a zero that reads like a measurement.
-    monthlyViews: parsed.data.monthlyViews ?? null
+    stepPaise: (parsed.data.stepRupees ?? 100) * 100,
+    previewUrl: safeUrl(form.get('previewUrl'))
   });
 
   revalidatePath('/studio');
   revalidatePath('/');
-  return { ok: 'Slot created.' };
+  return { ok: 'Slot created. Copy the tag and paste it in.' };
 }
 
 export async function setSlotActiveAction(slotId: string, active: boolean): Promise<void> {
@@ -400,82 +266,32 @@ export async function deleteSlotAction(slotId: string): Promise<void> {
 }
 
 /**
- * Approve or reject a creative.
+ * Approve or reject an ad.
  *
- * Approving a bid is what actually puts it on the board — money alone never
- * does. That ordering is the creator's editorial control over their own sites,
- * and it is why `rankedBids()` filters on `status = 'approved'`.
+ * Approving is what actually puts it in front of readers — money alone never
+ * does, which is why `contendersFor()` filters on `status = 'live'`.
  */
-export async function reviewBidAction(
-  bidId: string,
-  decision: 'approved' | 'rejected',
-  note?: string
-): Promise<void> {
-  const creator = await requireCreator();
-  const [row] = await db
-    .update(bids)
-    .set({ status: decision, reviewNote: note?.trim() || null, updatedAt: new Date() })
-    .where(eq(bids.id, bidId))
-    .returning();
-
-  if (row) {
-    await db.insert(activity).values({
-      kind: decision === 'approved' ? 'bid.approved' : 'bid.rejected',
-      profileId: row.profileId,
-      actor: row.brand || 'A sponsor',
-      amountPaise: row.amountPaise,
-      // A rejection is between the creator and that sponsor, not a public event.
-      publicFeed: decision === 'approved'
-    });
-    void creator;
-  }
-
-  revalidatePath('/studio');
-  revalidatePath('/');
-}
-
-/**
- * Approve or reject a booking's creative.
- *
- * Approving stamps `approvedAt` and leaves `status` alone — the booking stays
- * `paid`, which is what holds its window under the exclusion constraint.
- * Rejecting moves it out of `paid`, releasing the window, because a brand whose
- * ad will never run should not be occupying inventory.
- */
-export async function reviewBookingAction(
-  bookingId: string,
-  decision: 'approved' | 'rejected',
+export async function reviewAdAction(
+  adId: string,
+  decision: 'live' | 'rejected',
   note?: string
 ): Promise<void> {
   await requireCreator();
-
-  const [row] = await db
-    .update(bookings)
-    .set(
-      decision === 'approved'
-        ? { approvedAt: new Date(), reviewNote: note?.trim() || null }
-        : { status: 'rejected', approvedAt: null, reviewNote: note?.trim() || null }
-    )
-    .where(eq(bookings.id, bookingId))
-    .returning();
-
-  if (row && decision === 'approved') {
-    await db.insert(activity).values({
-      kind: 'booking.live',
-      profileId: row.profileId,
-      actor: row.brand || 'A sponsor',
-      amountPaise: row.amountPaise
-    });
-  }
-
+  await db
+    .update(ads)
+    .set({ status: decision, reviewNote: note?.trim() || null, updatedAt: new Date() })
+    .where(eq(ads.id, adId));
   revalidatePath('/studio');
   revalidatePath('/');
 }
 
 /* ── Profile ────────────────────────────────────────────────────────────── */
 
-export async function saveBrandAction(_prev: ActionState, form: FormData): Promise<ActionState> {
-  const viewer = await requireViewer('/dashboard');
+export async function saveProfileAction(
+  _prev: ActionState,
+  form: FormData
+): Promise<ActionState> {
+  const viewer = await requireViewer('/me');
   const parsed = z
     .object({
       name: z.string().trim().min(1, 'Enter your name.').max(80),
@@ -489,7 +305,12 @@ export async function saveBrandAction(_prev: ActionState, form: FormData): Promi
     .set({ name: parsed.data.name, brand: parsed.data.brand || null })
     .where(eq(profiles.id, viewer.id));
 
-  revalidatePath('/dashboard');
-  revalidatePath('/studio');
+  revalidatePath('/me');
   return { ok: 'Saved.' };
+}
+
+/** Used by the studio to look an ad up before deciding on it. */
+export async function peekAd(adId: string) {
+  await requireCreator();
+  return adById(adId);
 }

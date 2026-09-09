@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { getAuth, isAuthConfigured } from '@/lib/auth/server';
 import { safeNext } from '@/lib/safe-next';
-import { getCurrentUserId } from '@/lib/roles';
+import { getProfile } from '@/lib/roles';
 import { db } from '@/lib/db/client';
 import { profiles } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
@@ -68,13 +68,13 @@ function readableError(message: string | undefined): string {
 /**
  * Where to land after signing in.
  *
- * `/studio` and `/dashboard` both bounce a viewer with the wrong role to the
- * other one (lib/roles.ts), so sending everyone to `/dashboard` is enough —
+ * `/studio` and `/me` both bounce a viewer with the wrong role to the
+ * other one (lib/roles.ts), so sending everyone to `/me` is enough —
  * the creator is redirected on to the studio. That keeps this action free of
  * any role logic of its own, and therefore free of a second definition of who
  * the admin is.
  */
-const AFTER_SIGN_IN = '/dashboard';
+const AFTER_SIGN_IN = '/me';
 
 export async function signInAction(
   _prev: AuthActionState,
@@ -194,7 +194,7 @@ export async function resetPasswordAction(
  * Update the display name, for a signed-in account.
  *
  * Writes both copies: Neon Auth's own `name` (what a future OAuth provider or
- * the admin console would show) and `sb_profile.name` (what this app actually
+ * the admin console would show) and `sm_profile.name` (what this app actually
  * renders everywhere — the header, the board, the ledger). The two
  * are separate rows by design (see schema.ts); nothing keeps them in sync but
  * this action, so it must always write both.
@@ -205,8 +205,9 @@ export async function updateProfileAction(
 ): Promise<AuthActionState> {
   if (!isAuthConfigured()) return { error: NOT_CONFIGURED };
 
-  const userId = await getCurrentUserId();
-  if (!userId) return { error: 'Sign in to update your profile.' };
+  const profile = await getProfile();
+  if (!profile) return { error: 'Sign in to update your profile.' };
+  const userId = profile.id;
 
   const parsed = z
     .object({ name: z.string().trim().min(1, 'Please enter a name.').max(80) })
@@ -217,7 +218,7 @@ export async function updateProfileAction(
   if (error) return { error: readableError(error.message) };
 
   await db.update(profiles).set({ name: parsed.data.name }).where(eq(profiles.id, userId));
-  revalidatePath('/dashboard');
+  revalidatePath('/me');
   return { ok: 'Saved.' };
 }
 

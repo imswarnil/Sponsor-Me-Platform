@@ -1,274 +1,229 @@
-# CLAUDE.md — sponsor.imswarnil.com (SponsorBid)
+# CLAUDE.md — Sponsor Me
 
-> **Rebuilt from scratch on 2026-09-09.** Everything before that commit — a
-> points-economy placements marketplace with channels, offers, memberships and
-> a Tailwind design layer — was deleted, not migrated. The `bms_*` tables are
-> dropped by `npm run db:legacy`. If you find references to points, placements,
-> channels, `lib/proto/`, membership tiers or Tailwind in old commits, they
-> describe the platform this replaced. This file describes what is actually here.
+> **Rebuilt from scratch on 2026-09-09.** Two earlier platforms lived here (a
+> points-economy placements marketplace, then "SponsorBid" on a vendored CSS
+> design system). Both were deleted, not migrated, along with their `bms_*` and
+> `sb_*` tables. If you find references to points, placements, channels,
+> memberships, `lib/proto/`, or the Swarnil Design System in old commits, they
+> describe what this replaced. This file describes what is here.
 
-This file is the rulebook. When code and this file disagree, this file wins.
-When this file and a chat instruction disagree, ask before proceeding.
+When code and this file disagree, this file wins. When this file and a chat
+instruction disagree, ask before proceeding.
 
 ---
 
 ## §0 — What this is
 
-A single-tenant advertising platform for one creator (Swarnil). It sells **two
-things**, and keeping them distinct is the whole architecture:
-
-| | What it is | Priced | Expires? |
-|---|---|---|---|
-| **SponsorBid** | A lifetime leaderboard, outbid-style, syndicated to every site in the network. #1 renders large, #2 and #3 render small beside it. | One payment, added to your lifetime total. Pay more to climb. | **Never.** Held until somebody outbids you. |
-| **Slots** | A named position on one site, bookable for a fixed number of months. | `sb_slot.price_paise` per month. | Yes — and the next brand books the window after yours. |
-
-There is no publisher-side signup and no marketplace: `/studio` is Swarnil's own
-admin, everybody else who signs up is an advertiser. **Never generalise this
+A single-creator ad platform. The creator makes **slots**, pastes a tag on their
+sites, and sponsors buy them. Single-tenant by design — **never generalise it
 multi-tenant.**
 
-### Three rules that are not negotiable
+### The one idea: a slot has a `kind`
 
-1. **A number is real or it is absent.** Nothing in this codebase invents a view
-   count, a reach figure or a placeholder. `sb_slot.monthly_views` is `NULL`
-   when nothing was measured, and a `NULL` renders as *no row at all* — never a
-   zero, which would read as a measurement. The seed script deliberately seeds
-   no bids, no payments and no impressions for the same reason.
-2. **The server prices everything.** No amount is ever read from a form. A bid's
-   minimum comes from the live leaderboard; a booking's total is the slot's own
-   row times a whitelisted month count. The browser chooses *what* to buy, never
-   *for how much*.
-3. **Nothing goes live on a redirect.** A browser arriving at `/dashboard?paid=1`
-   is not evidence money moved. Ads activate in the signed webhook and nowhere
-   else.
+```
+kind = 'fixed'   Somebody buys it. Their ad serves. Done.
+kind = 'bid'     Everybody bids. Highest bid serves; the rest are visible on
+                 the leaderboard, waiting to overtake.
+```
+
+Both kinds are the **same table**, sell the **same ad formats**, and share the
+**same embed**. Only *who gets served* differs, and that is one `ORDER BY` in
+`winnerFor()`. Modelling them as two products would mean two of everything to
+express one branch.
+
+A bid is a **lifetime total**: paying again adds to it, which is how you climb,
+and it means nobody is ever refunded when overtaken.
+
+### Three rules the code keeps
+
+1. **A number is real or it is absent.** Nothing invents a view count or a
+   reach figure. No data renders as *nothing*, never a zero dressed as a
+   measurement. The seed plants no ads, payments or impressions.
+2. **The server prices everything.** No amount is read from a form. A fixed
+   slot's total is its own row times a whitelisted term; a bid's minimum is the
+   live leader plus the slot's step.
+3. **Nothing serves on a redirect.** Ads activate in the signed webhook and
+   nowhere else. A browser at a success URL is not evidence money moved.
 
 ---
 
-## §1 — Architecture
-
-One Next.js App Router app at the repo root. No monorepo, no workspace.
+## §1 — Layout
 
 ```
 app/
-  page.tsx              THE homepage — board, podium, ladder, slots, network,
-                        advantages, activity. Deliberately one page: somebody
-                        deciding whether to sponsor needs all of it in one
-                        scroll, and four routes only add places to leave.
-  signin/ signup/ forgot-password/ reset-password/
-  dashboard/            the advertiser's console — one page
-  studio/               the creator's console — one page (+ messages/[id])
-  slot/[publicId]/      book a window; shows the REAL page in an iframe first
-  embed/board/          the widget that renders on the network
-  api/auth/[...path]/   Neon Auth proxy, so the cookie is same-origin
-  api/webhooks/dodo/    the only place money becomes true
-  api/click/            the click hop: counts, then redirects
-  swarnil-design.css    VENDORED. Never hand-edit — `npm run ds:sync`
-  app.css               app-owned design layer (§4)
+  page.tsx            THE homepage — hero, marquee, bid slots (with the
+                      leaderboard), fixed slots, formats, how-it-works.
+  slot/[slug]/        Buy it or bid on it. Write the ad, then pay.
+  me/                 The sponsor's page: every ad they run, on one screen.
+  studio/             The creator's page: make slots, get tags, approve ads.
+  signin/ signup/
+  embed/[slug]/       What loads in the iframe on the creator's sites.
+  api/auth/[...path]/ Neon Auth proxy, so the cookie is same-origin.
+  api/webhooks/dodo/  The only place money becomes true.
+  api/go/             The click hop: counts, then redirects.
+  globals.css         Tailwind v4 + the theme (§4).
 lib/
-  site.ts               the network, the bid ladder, the ad kinds, the formats
-  money.ts              integer paise ↔ rupees, and nothing else
-  db/{schema,client,neon-auth}.ts
-  roles.ts              who is the creator; every gate
-  queries.ts            every read
-  actions.ts            every write
-  creative.ts           what a sponsor may put in front of the audience
-  track.ts              view/click counting
-  dodo.ts               payments
-components/             flat; no barrel files
-public/sponsorbid.js    the embed script — vanilla, zero deps
-drizzle/manual/         SQL drizzle-kit cannot generate
+  site.ts     slot kinds, shapes, formats, terms — the config
+  db/         schema, client, neon-auth mapping
+  roles.ts    who is the creator; every gate
+  queries.ts  every read; `winnerFor()` decides who serves
+  actions.ts  every write
+  creative.ts what a sponsor may submit; the URL allowlist
+  track.ts    view/click counting
+  money.ts    integer paise ↔ rupees
+components/   flat, no barrels
+public/sponsor.js   the embed script — vanilla, zero deps
 ```
 
 ---
 
-## §2 — Data model
+## §2 — Data
 
-Drizzle owns it (`lib/db/schema.ts`); `npm run db:push` diffs the file against
-Neon directly. Eight tables, all prefixed `sb_`.
-
-**MONEY IS ALWAYS `integer` PAISE.** Never numeric, never a float, never rupees.
-`lib/money.ts` holds the only two functions allowed to convert, and
-`rupeesToPaise` rejects anything that is not a positive whole number.
-
-**RANK IS NEVER STORED.** The leaderboard is
-`ORDER BY amount_paise DESC, first_paid_at ASC`, it lives in `rankedBids()`, and
-nowhere else may have an opinion about ordering. A stored rank is a cache of one
-ORDER BY that four code paths would have to remember to invalidate, and the
-first one that forgets sells the top spot twice.
+Five tables, `sm_*`. **Money is always `integer` paise.** Never a float.
 
 | Table | Purpose |
 |---|---|
-| `sb_profile` | one row per account, FK → `neon_auth.user.id` |
-| `sb_bid` | one row per sponsor on the leaderboard: creative + **lifetime** total |
-| `sb_slot` | a sellable position; `public_id` is what appears in the embed tag |
-| `sb_booking` | one brand holding one slot for one window |
-| `sb_payment` | append-only ledger; `dodo_payment_id` UNIQUE = the idempotency key |
-| `sb_event` | views/clicks rolled up per day per ad — never one row per impression |
-| `sb_message` | one thread per sponsor, with the creator |
-| `sb_activity` | append-only feed: the homepage ticker and the audit trail, one table |
+| `sm_profile` | one row per account, FK → `neon_auth.user.id` |
+| `sm_slot` | what is for sale: `kind`, `shape`, `price_paise`, `step_paise` |
+| `sm_ad` | one ad per sponsor per slot: creative + lifetime `amount_paise` |
+| `sm_payment` | append-only; `dodo_payment_id` UNIQUE = the idempotency key |
+| `sm_stat` | views/clicks per ad per day; UNIQUE(ad, day) so the upsert works |
 
-### `db.batch`, never `db.transaction`
-The app talks to Neon over HTTP and that driver throws
-"No transactions support in neon-http driver" the instant a transaction opens.
-`batch` sends the statements in one request and Neon commits them together. The
-cost: a batch cannot read mid-way, so **every read and check happens first, then
-the writes go in one batch**.
+**Rank is never stored.** `ORDER BY amount_paise DESC, first_paid_at ASC` lives
+in `contendersFor()` and nowhere else may have an opinion about ordering.
 
-### Two constraints Postgres enforces, not the app
-- `drizzle/manual/001` — the `sb_profile → neon_auth.user` FK. drizzle-kit must
-  never reach `neon_auth` (Neon provisions it), so this is applied separately.
-- `drizzle/manual/002` — an **EXCLUSION constraint** stopping two paid bookings
-  overlapping on one slot. `windowIsFree()` checks first to give a sponsor a
-  sentence instead of an error, but two webhooks landing together both pass that
-  check. The database is the only arbiter that cannot lose the race. Scoped to
-  `status = 'paid'`, so an abandoned checkout holds no inventory.
+**`db.batch`, never `db.transaction`** — the neon-http driver throws the instant
+a transaction opens. A batch cannot read mid-way, so every read happens first.
+
+**Two constraints Postgres enforces, not the app** (`drizzle/manual/`, applied
+by `npm run db:fk`):
+- `001` the `neon_auth` FK, which drizzle-kit must never touch.
+- `002` UNIQUE(slot, profile) — one ad per sponsor per slot. The app reads
+  before inserting, and two simultaneous requests both find nothing and both
+  insert; the database is the only arbiter that cannot lose that race. Without
+  it a sponsor splits their own bid across two rows and loses to someone who
+  paid less.
+
+⚠️ **`db:push` creates tables fine and cannot ALTER them.** Its diff emits
+`ALTER TABLE x DROP CONSTRAINT "x_col_not_null"` for every NOT NULL column — a
+Postgres 17 feature this branch lacks — and aborts with 42P16. Changes to
+existing tables go in `drizzle/manual/` and are applied by `npm run db:fk`.
 
 ---
 
 ## §3 — Auth
 
-**Neon Auth** (Better Auth, hosted by Neon, writing into `neon_auth` in our own
-database). Email + password only. There is no Google sign-in.
+Neon Auth (Better Auth, hosted by Neon, writing into `neon_auth` in our own
+database). Email + password only.
 
-- `lib/auth/server.ts` — `getAuth()`, constructed **lazily**. `next build`
-  imports every route to collect page data, so a top-level construction makes
-  the build require credentials. Building needs none; serving does. Same
-  reasoning for `lib/db/client.ts` and `lib/dodo.ts`.
-- `lib/auth/actions.ts` — the only way a client component touches auth.
-- **The creator is whoever matches `CREATOR_EMAIL`**, not a database column, so
-  admin cannot be granted by a stray UPDATE — it takes a deploy. Unset, it falls
-  back to the oldest account **and that fallback grants admin**; the studio says
-  so out loud (`creatorEmailConfigured()`).
-- **Every route that reads the session must be dynamic.** Both console layouts
-  declare `export const dynamic = 'force-dynamic'` and it cascades. Get this
-  wrong and Next prerenders a signed-out page and serves it to everyone.
-- Session reads are memoised per request with React `cache()` — without it one
-  render made five or six identical round-trips to the auth server.
-- A revoked cookie reads as "signed out", never a 500. See the long comment in
+- `getAuth()` and the DB client are **lazy** — `next build` imports every route
+  to collect page data, and a top-level construction would make the build
+  require credentials. Building needs none; serving does.
+- **The creator is whoever matches `CREATOR_EMAIL`**, not a column, so admin
+  cannot be granted by a stray UPDATE. Unset, it falls back to the oldest
+  account **and that grants admin**; the studio says so out loud.
+- **Every route reading the session must be dynamic.** Get it wrong and Next
+  prerenders a signed-out page and serves it to everyone.
+- A revoked cookie reads as "signed out", never a 500 — see the comment in
   `lib/roles.ts` for why that `catch {}` is correct rather than lazy.
 
 ---
 
 ## §4 — Design
 
-**No Tailwind. No PostCSS. No build step for CSS.** Two stylesheets:
+**Tailwind v4**, configured entirely in `app/globals.css` — there is no
+`tailwind.config`. The palette is lifted from imswarnil.com's design system in
+OKLCH, so this app is the same colours as the rest of the network.
 
-| File | What | Rule |
-|---|---|---|
-| `app/swarnil-design.css` | The `@imswarnil/swarnil-design` **framework bundle**, vendored whole (58 KB gzipped). Tokens, elements, components, patterns, sections, and the 12-column grid. | **Never hand-edit.** `npm run ds:sync` re-copies it. |
-| `app/app.css` | The app's own layer: the wordmark, medals, the podium, the bid ladder, the chart, the browser-frame preview. | May only *use* the system's tokens. |
+| Hue | Meaning |
+|---|---|
+| `ink` (275) | everything structural |
+| `signal` (34) | the brand's orange-red. The primary action, rationed. |
+| `craft` (78) | **gold — first place, and almost nothing else** |
+| `teal` / `iris` / `mint` / `azure` | one per section, so the page has rhythm |
 
-`app.css` sits **outside every `@layer`**, which is the design system's stated
-customisation API: an unlayered rule beats all layers with no specificity fight,
-so nothing needs `!important` and nothing can be accidentally out-specified.
+**The rule that stops it being a clown car: a colour means a thing.** Gold is
+rank one. Signal is "do this". The rest is a section's personality, never a
+control.
 
-- **The accent is rationed.** First place gets it. Second and third are
-  deliberately identical to each other — drawing silver and bronze would be
-  three prizes where there is one.
-- **Two faces.** Inter for everything; IBM Plex Mono for code only. A mono badge
-  or a mono price is a bug.
-- **Figures are tabular** (`.live-figure`), so a number that updates does not
-  reflow the row it is in.
-- **Theme** is `:root[data-theme='dark']` plus a `prefers-color-scheme`
-  fallback, set before first paint by the script in `app/layout.tsx`.
-- **No charting library.** The chart is a flex row of divs with a height. A
-  library would ship more bytes to every dashboard than the whole design system.
+The look is built from four component classes in `globals.css` — `.card-pop`,
+`.btn-pop`, `.sticker`, `.field-pop` — all sharing one device: a hard 2px edge
+and an offset **solid** shadow, never a blur. That single decision is what makes
+it read as a sticker book instead of a dashboard.
+
+**A leaderboard is not a grid.** A grid says "here are some things, equally". A
+leaderboard says "these are in an ORDER, and the order is the point". So
+`components/leaderboard.tsx` is one column of rows with three ranking devices:
+a medal, a size difference, and a bar whose width is that bid's share of the
+leader's — so the *gap* is a picture rather than arithmetic.
 
 ---
 
-## §5 — Approved dependencies
+## §5 — Dependencies
 
-Deliberately light. `next`, `react`, `drizzle-orm`, `drizzle-kit`,
-`@neondatabase/auth`, `@neondatabase/serverless`, `dodopayments`,
-`standardwebhooks`, `zod`, `server-only`, `dotenv`.
+`next`, `react`, `drizzle-orm`, `drizzle-kit`, `@neondatabase/auth`,
+`@neondatabase/serverless`, `dodopayments`, `standardwebhooks`, `zod`,
+`server-only`, `dotenv`, `tailwindcss`, `@tailwindcss/postcss`, `postcss`.
 
-That is the whole list. Removed in the rebuild and **not to be re-added without
-a reason**: tailwindcss, postcss, autoprefixer, radix-ui,
-class-variance-authority, clsx, tailwind-merge, tw-animate-css, lucide-react,
-swr, jose, postgres. Icons are inline SVG; there is no icon package.
+That is the list. **This is a pnpm project** — `npm install` corrupts the tree.
+Native builds need `pnpm.onlyBuiltDependencies` in package.json, which is set.
+
+No icon package: icons are emoji or inline SVG. No charting library.
 
 ---
 
 ## §6 — The widget
 
-`public/sponsorbid.js` — one tag, on any site:
-
 ```html
-<script src="https://sponsor.imswarnil.com/sponsorbid.js" data-format="rect" async></script>
+<script src="https://sponsor.imswarnil.com/sponsor.js" data-slot="top-spot" async></script>
 ```
 
-- **An iframe, not injected HTML.** An iframe cannot read the host page's
-  cookies or DOM, and its CSS cannot be broken by the host's stylesheet — which
-  is not a small thing, because injected ad markup inherits whatever the host
-  does to `a` and `img`.
-- **The height is reserved before the frame loads**, from the format, so the
-  host page never shifts. The frame posts its real height back and the script
-  only ever **grows** the iframe; a shrink would pull the page up under the
-  reader's cursor.
-- **`/embed/*` must never read the session.** `frame-ancestors *` lets any site
-  frame it, and a page that is both framable by anyone and aware of who is
-  signed in is a clickjacking surface. That is why the embed has its own layout.
+- **An iframe, not injected HTML.** It cannot read the host's cookies or DOM,
+  and its CSS cannot be broken by the host's stylesheet — injected ad markup
+  inherits whatever the host does to `a` and `img`, and looks broken on exactly
+  the sites paying for it.
+- **The height is reserved before the frame loads**, and the frame only ever
+  *grows*; a shrink pulls the page up under the reader's cursor.
+- **`/embed/*` must never read the session.** `frame-ancestors *` lets anyone
+  frame it, and a framable page that knows who is looking is a clickjacking
+  surface. That is why the embed has its own layout.
 - **Nothing about the reader is collected** — no IP, no user agent, no cookie,
-  no visitor id. `lib/track.ts` increments a per-day counter and that is all the
-  analytics there is. This is also why the widget loads no third-party script.
+  no visitor id. A per-day counter is all a sponsor was sold.
+- **Sponsor HTML never touches this origin's DOM.** `format = 'html'` renders
+  into a `sandbox=""` srcDoc iframe. Injecting it — even "just for trusted
+  sponsors" — would be a stored XSS with a price list attached.
 
 ---
 
 ## §7 — Running it
 
 ```bash
-npm run db:setup    # push schema → apply constraints → seed accounts + slots
-npm run db:fk       # the constraints alone — the one to reach for day to day
-npm run db:legacy   # DESTRUCTIVE: drops the old bms_* tables. Run once.
-npm run dev         # foreground, Ctrl-C to quit
-npm run serve       # background; waits until it actually answers
-npm run stop | restart | status | logs
+pnpm install
+npm run db:setup    # push schema → constraints → seed accounts + slots
+npm run dev         # http://localhost:3500
+npm run serve | stop | restart | status | logs
 ```
 
-⚠️ **`db:push` works on an empty database and FAILS on this one.** Its diff
-emits `ALTER TABLE x DROP CONSTRAINT "x_col_not_null"` for every NOT NULL column
-— a Postgres 17 feature this branch does not have — and aborts with 42P16. So
-`db:setup` only completes against a fresh branch. **Changes to existing tables
-go in `drizzle/manual/` and are applied by `npm run db:fk`**, which is how
-`004_booking_approved_at.sql` was added. TODO.md §3 has the fix to try.
-
-**The port is defined in exactly one place: `PORT` in `scripts/dev.sh` (3500).**
-`package.json` calls the script instead of repeating the number — when it was
-written in both, the two drifted apart twice in one afternoon. Changing it means
-editing that one line plus `BASE_URL` in `.env`.
+**The port lives in exactly one place: `PORT` in `scripts/dev.sh` (3500).**
+`package.json` calls the script rather than repeating the number — when it was
+written in both, the two drifted apart twice in one afternoon.
 
 **Never run `npm run build` while the dev server is up.** Both write `.next`;
-the build clobbers the dev server's client chunks and the page stops hydrating
-with no error anywhere. Stop → build → `rm -rf .next` → start.
-
-Seeded accounts: `CREATOR_EMAIL`/`ADMIN_PASSWORD` → `/studio`,
-`DEMO_EMAIL`/`DEMO_PASSWORD` → `/dashboard`. The demo button on `/signin` signs
-in through a server action, so the password stays in the server environment.
-Leave `DEMO_EMAIL` unset and the button is not rendered at all.
+the build clobbers the dev server's chunks and the page stops hydrating with no
+error anywhere. Stop → build → `rm -rf .next` → start.
 
 ---
 
 ## §8 — Deployment
 
-**Cloudflare Workers via OpenNext**, same as the sibling sites under `~/Swarnil`.
+Cloudflare Workers via OpenNext. `npm run preview` / `npm run cf:deploy`.
 
-```bash
-npm run preview     # build + run the real Worker on workerd (port 8788)
-npm run cf:deploy   # build + ship
-```
-
-- **PPR is off**, with the argument in `next.config.ts`. It flushes a static
-  shell with a 200 before the route's own code runs, so `redirect()` in a gate
-  can no longer set the status: `/studio` answered 307 in dev and 200 on the
-  Worker for the same signed-out request. Every page here reads the session or
-  the database, so the shells were all zero bytes — nothing to gain, a real
-  invariant to lose.
-- A `has: [{ type: 'host' }]` redirect does **not** fire through the adapter.
-  Host canonicalisation belongs in a Cloudflare Redirect Rule on the zone.
-- Secrets via `wrangler secret put`, never in `wrangler.jsonc` (it is committed).
-  Required: `DATABASE_URL`, `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET`,
-  `CREATOR_EMAIL`, `DODO_PAYMENTS_KEY_*`, `DODO_PRODUCT_ID`,
-  `DODO_PAYMENTS_WEBHOOK_KEY`. **`CREATOR_EMAIL` is not optional in
-  production** (§3). Do **not** set `DEMO_EMAIL`/`DEMO_PASSWORD` there.
+- **PPR is off**, with the argument in `next.config.ts`: it flushes a 200 shell
+  before the route runs, so `redirect()` in a gate cannot set the status. Gates
+  answered 307 in dev and 200 on the Worker for the same request.
+- Secrets via `wrangler secret put`, never in `wrangler.jsonc` (it is
+  committed). `CREATOR_EMAIL` is **not optional in production** (§3). Do not set
+  `DEMO_EMAIL`/`DEMO_PASSWORD` there.
 - Neon Auth must be told to trust each origin that signs in.
 - `sponsor.imswarnil.com` does not resolve yet; a Worker Route attaches to an
   existing **proxied** DNS record, so the record comes first.
@@ -277,47 +232,37 @@ npm run cf:deploy   # build + ship
 
 ## §9 — Security
 
-What is already true, and must stay true:
+- **Webhook**: signature verified before the body is believed; the amount comes
+  from *our* payment row, never the payload (a signature proves the sender, not
+  the figure); `status = 'pending'` in the WHERE makes redelivery a no-op; the
+  ad is credited in SQL (`amount + n`) so two payments cannot erase each other.
+- **Click hop**: destination read from the database, never the query string. An
+  open redirect on the creator's domain is a phishing tool with his name on it.
+  A malformed id is a 400, not a 500.
+- **URLs**: parsed and protocol-checked against an http/https allowlist, never
+  pattern-matched — `javascript:` in an href executes on the host's page.
+- **Sponsor HTML**: sandboxed iframe, no scripts, no same-origin (§6).
+- **Authorization is in the WHERE clause**: owner-scoped writes predicate on
+  `profileId`, so a guessed uuid rewrites nothing.
+- **Editing a live ad returns it to `pending`** — otherwise: get something mild
+  approved, then swap the copy.
+- **Sign-out is a POST**, so a prefetch or an `<img>` cannot trigger it.
 
-- **Webhook**: signature verified before the body is believed; the amount is
-  read from **our** payment row, never the payload (a signature proves the
-  sender, not the figure); `dodo_payment_id` UNIQUE makes redelivery a no-op;
-  only a `pending` row can be claimed.
-- **Click hop**: the destination is read from the database, never from the query
-  string. A redirector that forwards to a URL in its own parameters is an open
-  redirect on the creator's own domain. The id is shape-checked so a malformed
-  one is a 400, not a 500.
-- **Creative URLs**: parsed and protocol-checked against an http/https
-  allowlist, never pattern-matched — `javascript:` in an href executes on
-  whatever page the ad is embedded in.
-- **Authorization is in the WHERE clause**: every owner-scoped write predicates
-  on `profileId`, so a guessed uuid rewrites nothing.
-- **Editing an approved creative returns it to `pending`.** Otherwise a sponsor
-  could get anything at all in front of the audience: approve something mild,
-  then swap the copy.
-- **Sign-out is a POST**, so it cannot be triggered by a prefetch or an `<img>`.
-- Security headers in `next.config.ts`; `/embed` is the deliberate exception.
-
-**Still open:** email verification (signup auto-confirms), action-level rate
-limiting (needs Redis/Upstash), a strict `script-src` CSP, and a Dodo webhook
-for refunds/disputes (currently acknowledged and ignored, which is correct but
-incomplete).
+**Still open:** email verification (signup auto-confirms), rate limiting (needs
+Redis/Upstash), a strict `script-src` CSP, and refund/dispute handling (webhook
+acknowledges and ignores them).
 
 ---
 
-## §10 — Current state
+## §10 — State
 
-- Schema pushed to Neon (`sponsor-imswarnil`), both constraints applied, the old
-  `bms_*` tables dropped, creator + demo accounts seeded, four slots seeded.
-- **Verified end to end locally**: gates answer 307 signed-out; the board, the
-  podium and the ladder render; the embed renders and records a view per ad; the
-  click hop 307s to the real destination and records a click; an unsigned or
-  badly-signed webhook is rejected 401.
-- **Not yet exercised with a real checkout.** `startBidCheckoutAction` and
-  `startBookingCheckoutAction` build a Dodo session and redirect, and the
-  webhook handler is written against Dodo's documented payload, but no payment
-  has been put through even in test mode. Do that before trusting the flow: run
-  `npm run dodo:setup`, set `DODO_PRODUCT_ID` and `DODO_PAYMENTS_WEBHOOK_KEY`,
-  and point a webhook at a tunnelled `/api/webhooks/dodo`.
-- The board is **empty on purpose**. No demo sponsors, no seeded payments, no
-  invented impressions (§0, rule 1).
+- Schema pushed, both constraints applied, creator + demo accounts seeded, four
+  slots seeded (one `bid`, three `fixed`). Old `bms_*` and `sb_*` tables dropped.
+- **Verified locally**: gates 307 signed-out; homepage, slot page and studio all
+  render (studio checked with an authenticated smoke test — slots, tag, review
+  queue and sponsor table all present); the embed serves the winning ad and
+  records a view; the click hop 307s to the real destination; a malformed ad id
+  is 400; an unsigned webhook is 401.
+- **No real checkout has been put through, even in test mode.** That is the
+  first item in TODO.md, and it is first for a reason.
+- The board is **empty on purpose** (§0, rule 1).

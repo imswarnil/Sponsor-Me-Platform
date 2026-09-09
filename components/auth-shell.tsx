@@ -1,20 +1,7 @@
 import Link from 'next/link';
 
-import { Wordmark } from '@/components/wordmark';
-import { SponsorBoard } from '@/components/ad-unit';
-import { boardTop, minimumToLead } from '@/lib/queries';
-
-/**
- * The frame around every auth page.
- *
- * The live board sits beside the form, which is not decoration: somebody
- * creating an account here is doing it to get onto that board, and showing the
- * real thing — with the real ranks currently held — is the most honest
- * possible argument for finishing the form.
- *
- * It collapses below `lg`, where a form on a phone should be a form.
- */
-export async function AuthShell({
+/** The frame around both auth pages: one playful card, nothing else. */
+export function AuthShell({
   title,
   lead,
   children
@@ -23,37 +10,33 @@ export async function AuthShell({
   lead?: string;
   children: React.ReactNode;
 }) {
-  const [{ top }, minimum] = await Promise.all([boardTop(), minimumToLead(null)]);
-
   return (
-    <div className="section">
-      <div className="container">
-        <div className="row gy-8 a-center">
-          <div className="col-12 col-lg-5">
-            <div className="stack">
-              <Wordmark />
-              <div>
-                <h1 className="t-h2">{title}</h1>
-                {lead ? <p className="t-lead t-muted">{lead}</p> : null}
-              </div>
-              {children}
-            </div>
-          </div>
+    <main className="relative min-h-[100dvh] overflow-hidden bg-signal-50 px-4 py-16">
+      <span
+        aria-hidden
+        className="absolute -left-10 top-20 h-40 w-40 rotate-12 rounded-3xl border-2 border-ink-900 bg-teal-200 opacity-60"
+      />
+      <span
+        aria-hidden
+        className="absolute -right-12 bottom-24 h-48 w-48 -rotate-12 rounded-full border-2 border-ink-900 bg-iris-200 opacity-60"
+      />
 
-          <div className="col-12 col-lg-7 d-none d-lg-block">
-            <div className="card card-sunken card-roomy">
-              <p className="ad__label mb-3">
-                <span>The board, right now</span>
-                <span className="badge badge-live badge-dot">Live</span>
-              </p>
-              <SponsorBoard top={top} minimum={minimum} showFooter={false} />
-              <p className="t-fine t-faint mt-3 m-0">
-                <Link href="/">See the whole leaderboard →</Link>
-              </p>
-            </div>
-          </div>
+      <div className="relative mx-auto max-w-md">
+        <Link href="/" className="flex items-center gap-2 no-underline">
+          <span className="grid h-9 w-9 place-items-center rounded-xl border-2 border-ink-900 bg-signal-500 text-lg shadow-[3px_3px_0_0_var(--color-ink-900)]">
+            👋
+          </span>
+          <span className="text-lg font-black tracking-tight">
+            Sponsor<span className="text-signal-500">&nbsp;Me</span>
+          </span>
+        </Link>
+
+        <div className="card-pop card-pop-lg mt-6 p-7">
+          <h1 className="text-3xl font-black tracking-tight">{title}</h1>
+          {lead ? <p className="mt-1 text-ink-600">{lead}</p> : null}
+          <div className="mt-6">{children}</div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
