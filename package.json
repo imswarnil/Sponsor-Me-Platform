@@ -2,23 +2,18 @@
   "private": true,
   "scripts": {
     "dev": "bash scripts/dev.sh fg",
-    "build": "next build",
-    "start": "next start --port \"$(bash scripts/dev.sh port)\"",
-    "serve": "bash scripts/dev.sh start",
+    "start": "bash scripts/dev.sh start",
     "stop": "bash scripts/dev.sh stop",
     "restart": "bash scripts/dev.sh restart",
     "status": "bash scripts/dev.sh status",
     "logs": "bash scripts/dev.sh logs",
-    "typecheck": "tsc --noEmit",
-    "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio",
-    "db:fk": "node scripts/apply-sql.mjs drizzle/manual/001_profile_auth_fk.sql drizzle/manual/002_one_ad_per_slot.sql",
-    "db:seed": "node scripts/seed.mjs",
-    "db:setup": "npm run db:push && npm run db:fk && npm run db:seed",
-    "dodo:setup": "node scripts/dodo-setup.mjs",
+    "build": "next build",
+    "check": "tsc --noEmit",
+    "setup": "node scripts/setup.mjs",
+    "db": "drizzle-kit push",
+    "studio": "drizzle-kit studio",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "cf:typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
     "@neondatabase/auth": "0.5.0-beta",
@@ -45,13 +40,5 @@
   "devDependencies": {
     "@opennextjs/cloudflare": "~1.15.1",
     "wrangler": "^4.129.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@tailwindcss/oxide",
-      "esbuild",
-      "sharp",
-      "workerd"
-    ]
   }
 }

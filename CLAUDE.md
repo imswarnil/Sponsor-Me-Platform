@@ -96,7 +96,7 @@ in `contendersFor()` and nowhere else may have an opinion about ordering.
 a transaction opens. A batch cannot read mid-way, so every read happens first.
 
 **Two constraints Postgres enforces, not the app** (`drizzle/manual/`, applied
-by `npm run db:fk`):
+by `npm run setup`):
 - `001` the `neon_auth` FK, which drizzle-kit must never touch.
 - `002` UNIQUE(slot, profile) — one ad per sponsor per slot. The app reads
   before inserting, and two simultaneous requests both find nothing and both
@@ -104,10 +104,10 @@ by `npm run db:fk`):
   it a sponsor splits their own bid across two rows and loses to someone who
   paid less.
 
-⚠️ **`db:push` creates tables fine and cannot ALTER them.** Its diff emits
+⚠️ **`npm run db` creates tables fine and cannot ALTER them.** Its diff emits
 `ALTER TABLE x DROP CONSTRAINT "x_col_not_null"` for every NOT NULL column — a
 Postgres 17 feature this branch lacks — and aborts with 42P16. Changes to
-existing tables go in `drizzle/manual/` and are applied by `npm run db:fk`.
+existing tables go in `drizzle/manual/` and are applied by `npm run setup`.
 
 ---
 
@@ -165,8 +165,18 @@ leader's — so the *gap* is a picture rather than arithmetic.
 `@neondatabase/serverless`, `dodopayments`, `standardwebhooks`, `zod`,
 `server-only`, `dotenv`, `tailwindcss`, `@tailwindcss/postcss`, `postcss`.
 
-That is the list. **This is a pnpm project** — `npm install` corrupts the tree.
-Native builds need `pnpm.onlyBuiltDependencies` in package.json, which is set.
+That is the list.
+
+**This is a pnpm project — `npm install` corrupts the tree.** `npm run <script>`
+is fine; `npm install` is not.
+
+**Postinstall scripts are allowlisted in `pnpm-workspace.yaml`, not in
+package.json.** pnpm 12 stopped reading `pnpm.onlyBuiltDependencies` from
+package.json: leaving it there makes `pnpm install` warn and then fail with
+`ERR_PNPM_IGNORED_BUILDS`. Each entry under `allowBuilds` is an explicit
+yes/no, because "allow everything" is how a dependency's postinstall gets to
+run arbitrary code on your machine. `@tailwindcss/oxide`, `esbuild` and
+`workerd` are on; `sharp` and `core-js` are off and say why.
 
 No icon package: icons are emoji or inline SVG. No charting library.
 
@@ -198,11 +208,20 @@ No icon package: icons are emoji or inline SVG. No charting library.
 ## §7 — Running it
 
 ```bash
-pnpm install
-npm run db:setup    # push schema → constraints → seed accounts + slots
-npm run dev         # http://localhost:3500
-npm run serve | stop | restart | status | logs
+pnpm install        # NOT npm — see §5
+npm run db          # push the schema (drizzle-kit)
+npm run setup       # constraints, accounts, slots. Add `dodo` to also make
+                    # the payment product: `npm run setup dodo`
+npm run dev         # foreground, Ctrl-C to quit
+npm run start | stop | restart | status | logs   # background server
+npm run check       # tsc --noEmit
+npm run build | preview | deploy
 ```
+
+Thirteen scripts, and every one is a verb somebody types. There is one shell
+script (`scripts/dev.sh`, the server) and one node script (`scripts/setup.mjs`,
+the database) — the three separate `apply-sql` / `seed` / `dodo-setup` files
+were three files calling the same two libraries in a fixed order.
 
 **The port lives in exactly one place: `PORT` in `scripts/dev.sh` (3500).**
 `package.json` calls the script rather than repeating the number — when it was
@@ -216,7 +235,7 @@ error anywhere. Stop → build → `rm -rf .next` → start.
 
 ## §8 — Deployment
 
-Cloudflare Workers via OpenNext. `npm run preview` / `npm run cf:deploy`.
+Cloudflare Workers via OpenNext. `npm run preview` / `npm run deploy`.
 
 - **PPR is off**, with the argument in `next.config.ts`: it flushes a 200 shell
   before the route runs, so `redirect()` in a gate cannot set the status. Gates

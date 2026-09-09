@@ -1,6 +1,23 @@
+# pnpm 12 settings.
+#
+# `pnpm.onlyBuiltDependencies` in package.json is NO LONGER READ — pnpm moved
+# every setting here, and leaving it in package.json makes `pnpm install` warn
+# and then fail with ERR_PNPM_IGNORED_BUILDS.
+#
+# Postinstall scripts do not run unless a package is listed here. Each one below
+# is an explicit decision, because "allow everything" is how a dependency's
+# postinstall gets to run arbitrary code on this machine.
 allowBuilds:
-  '@tailwindcss/oxide': set this to true or false
-  core-js: set this to true or false
-  esbuild: set this to true or false
-  sharp: set this to true or false
-  workerd: set this to true or false
+  # Tailwind's native binary. Without it there is no CSS at all.
+  '@tailwindcss/oxide': true
+  # Bundles the Worker for `preview` and `deploy`.
+  esbuild: true
+  # The Cloudflare runtime `npm run preview` runs against.
+  workerd: true
+  # Next's image optimiser. This app renders plain <img> — see components/
+  # ad-render.tsx, where the markup has to work inside an iframe on somebody
+  # else's site, so next/image's loader and origin do not exist. Nothing needs
+  # sharp's native build.
+  sharp: false
+  # A transitive polyfill whose postinstall only prints a funding message.
+  core-js: false

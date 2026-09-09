@@ -35,11 +35,14 @@ Tailwind v4, themed with imswarnil.com's own OKLCH palette.
 ## Running it
 
 ```bash
-pnpm install
+pnpm install           # pnpm, not npm
 cp .env.example .env   # fill it in
-npm run db:setup
+npm run db             # push the schema
+npm run setup          # constraints, accounts, a few slots
 npm run dev            # http://localhost:3500
 ```
+
+`npm run start | stop | restart | status | logs` run it in the background.
 
 `CLAUDE.md` explains how it works. `TODO.md` is what's left.
 

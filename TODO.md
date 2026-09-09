@@ -7,7 +7,7 @@ written against Dodo's documented payload and correctly rejects unsigned
 deliveries (verified, 401). But **no payment has completed even in test mode**,
 so the success path is unexercised.
 
-- [ ] `npm run dodo:setup`, set `DODO_PRODUCT_ID`.
+- [ ] `npm run setup dodo`, set the `DODO_PRODUCT_ID` it prints.
 - [ ] Create a webhook endpoint in Dodo, set `DODO_PAYMENTS_WEBHOOK_KEY`.
       Without this key the webhook rejects every delivery and no ad ever goes
       live — the correct failure, but a silent one.
@@ -26,7 +26,7 @@ so the success path is unexercised.
        pair. `CREATOR_EMAIL` must not be skipped.
 3. [ ] Trust the production origin in Neon Auth, or sign-in fails in production
        while working perfectly on localhost.
-4. [ ] `npm run cf:deploy`, then check the gates answer **307** and not 200.
+4. [ ] `npm run deploy`, then check the gates answer **307** and not 200.
 5. [ ] Point the Dodo webhook at the real URL.
 
 ## 3 · `drizzle-kit push` cannot ALTER this database
@@ -34,7 +34,7 @@ so the success path is unexercised.
 Its diff emits `ALTER TABLE x DROP CONSTRAINT "x_col_not_null"` for every NOT
 NULL column — a Postgres 17 feature this branch lacks — and aborts with 42P16.
 Creating tables works; altering them does not. Until fixed, schema changes go
-in `drizzle/manual/` and are applied by `npm run db:fk`.
+in `drizzle/manual/` and are applied by `npm run setup`.
 
 - [ ] Upgrade `drizzle-kit` (0.31.1 → 0.31.10) with **pnpm**, and re-test
       against a Neon *branch*, not the live database.

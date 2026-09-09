@@ -1,63 +1,29 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Dependencies
+node_modules/
 
-# dependencies
-node_modules
-/.pnp
-.pnp.js
-.yarn/install-state.gz
-
-# testing
-/coverage
-
-# next.js
+# Next.js
 .next/
-/out/
-
-# local dev server pid + log (scripts/dev.sh)
-.dev/
-
-# supabase (local stack; keep config.toml, ignore runtime + secrets)
-supabase/.branches
-supabase/.temp
-supabase/.env
-
-# local-only Claude Code config & skills (project-owned, NOT shared to GitHub)
-.claude/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# local env files
-.env
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
 next-env.d.ts
-.vscode
+*.tsbuildinfo
 
-# Docker
-postgres_data/
-.env*.local
-.env*
-!.env.example
-
-# OpenNext build output (Cloudflare Workers)
+# OpenNext / Cloudflare build output
 .open-next/
 .wrangler/
 cloudflare-env.d.ts
 
-# wrangler local dev vars (secrets — never committed)
+# Secrets. `.env.example` is the template and IS committed.
+.env
+.env.*
+!.env.example
+# What `wrangler dev` reads locally — generated from .env, never committed.
 .dev.vars
 .dev.vars.*
+
+# scripts/dev.sh — the background server's pid and log
+.dev/
+
+# Local-only Claude Code config, project-owned and not shared
+.claude/
+
+# macOS
+.DS_Store
