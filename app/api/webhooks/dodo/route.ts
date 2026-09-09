@@ -1,7 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 
 import { db } from '@/lib/db/client';
-import { ads, payments } from '@/lib/db/schema';
+import { activity, ads, payments, profiles, slots } from '@/lib/db/schema';
 import { verifyDodoWebhook } from '@/lib/dodo';
 
 /**
@@ -85,6 +85,26 @@ export async function POST(request: Request): Promise<Response> {
         updatedAt: new Date()
       })
       .where(eq(ads.id, payment.adId));
+
+    /* The public record. Read once, then written — a batch cannot read
+       mid-way, and the feed must survive the sponsor deleting their account,
+       so the names are denormalised rather than joined at read time. */
+    const [row] = await db
+      .select({ brand: ads.brand, slotName: slots.name, name: profiles.name })
+      .from(ads)
+      .innerJoin(slots, eq(ads.slotId, slots.id))
+      .innerJoin(profiles, eq(ads.profileId, profiles.id))
+      .where(eq(ads.id, payment.adId))
+      .limit(1);
+
+    if (row) {
+      await db.insert(activity).values({
+        kind: 'paid',
+        actor: row.brand || row.name || 'Someone',
+        slotName: row.slotName,
+        amountPaise: payment.amountPaise
+      });
+    }
   }
 
   return Response.json({ ok: true });

@@ -148,7 +148,50 @@ for (const [publicId, name, blurb, kind, shape, price] of SLOTS) {
   console.log(`✓ ${kind === 'bid' ? '🏆' : '✨'} ${name} — ₹${price / 100}`);
 }
 
-/* ── 4 · the Dodo product, on request ────────────────────────────────────── */
+/* ── 4 · house ads ───────────────────────────────────────────────────────── */
+
+/**
+ * The creator's own projects, filling slots nobody has bought yet.
+ *
+ * A house ad pays nothing and is worth nothing: `contendersFor()` sorts it
+ * below every paying ad, so the instant a real sponsor pays they take the spot
+ * and this steps aside. It never appears in earnings, and the unit renders it
+ * labelled "Our own" rather than "Ad" — calling the creator's own project an ad
+ * would be technically true and misleading, because the disclosure exists to
+ * tell a reader who paid, and here nobody did.
+ *
+ * Owned by the creator's own profile, so there is no fake sponsor account.
+ */
+const HOUSE = [
+  {
+    slot: 'top-spot',
+    brand: 'Namaste Salesforce',
+    headline: 'Learn Salesforce from scratch',
+    body: 'Beginner-friendly courses, tutorials and a weekly newsletter.',
+    url: 'https://namastesalesforce.com',
+    cta: 'Start free'
+  }
+];
+
+for (const h of HOUSE) {
+  const [slot] = await sql`SELECT id FROM sm_slot WHERE public_id = ${h.slot} LIMIT 1`;
+  if (!slot) {
+    console.log(`· no slot "${h.slot}" — skipping house ad`);
+    continue;
+  }
+  await sql`
+    INSERT INTO sm_ad (slot_id, profile_id, format, brand, headline, body, url, cta_label,
+                       amount_paise, status, is_house)
+    VALUES (${slot.id}, ${creatorId}, 'card', ${h.brand}, ${h.headline}, ${h.body},
+            ${h.url}, ${h.cta}, 0, 'live', true)
+    ON CONFLICT (slot_id, profile_id) DO UPDATE SET
+      brand = EXCLUDED.brand, headline = EXCLUDED.headline, body = EXCLUDED.body,
+      url = EXCLUDED.url, cta_label = EXCLUDED.cta_label, status = 'live',
+      is_house = true, updated_at = now()`;
+  console.log(`✓ house ad "${h.brand}" in ${h.slot}`);
+}
+
+/* ── 5 · the Dodo product, on request ────────────────────────────────────── */
 
 /**
  * ONE reusable pay-what-you-want product that every checkout charges against.

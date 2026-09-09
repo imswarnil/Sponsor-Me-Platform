@@ -112,7 +112,8 @@ export default async function Studio() {
                           videoUrl: ad.videoUrl,
                           ctaLabel: ad.ctaLabel,
                           html: ad.html,
-                          amountPaise: ad.amountPaise
+                          amountPaise: ad.amountPaise,
+                          isHouse: ad.isHouse
                         }}
                         shape={slot.shape}
                       />

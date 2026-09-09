@@ -2,7 +2,7 @@ import 'server-only';
 import { and, asc, desc, eq, gt, or, sql } from 'drizzle-orm';
 
 import { db } from '@/lib/db/client';
-import { ads, payments, profiles, slots, stats } from '@/lib/db/schema';
+import { activity, ads, payments, profiles, slots, stats } from '@/lib/db/schema';
 
 /**
  * EVERY READ.
@@ -34,6 +34,7 @@ export type LiveAd = {
   ctaLabel: string | null;
   html: string | null;
   amountPaise: number;
+  isHouse: boolean;
 };
 
 function toLive(row: typeof ads.$inferSelect, rank: number): LiveAd {
@@ -51,7 +52,8 @@ function toLive(row: typeof ads.$inferSelect, rank: number): LiveAd {
     videoUrl: row.videoUrl,
     ctaLabel: row.ctaLabel,
     html: row.html,
-    amountPaise: row.amountPaise
+    amountPaise: row.amountPaise,
+    isHouse: row.isHouse
   };
 }
 
@@ -74,7 +76,9 @@ export async function contendersFor(slotId: string, limit = 50): Promise<LiveAd[
       and(
         eq(ads.slotId, slotId),
         eq(ads.status, 'live'),
-        gt(ads.amountPaise, 0),
+        // A house ad has paid nothing and still belongs in the running; a
+        // sponsor's ad has to have paid to be there at all.
+        or(gt(ads.amountPaise, 0), eq(ads.isHouse, true)),
         /**
          * A run that has ended is out.
          *
@@ -90,7 +94,12 @@ export async function contendersFor(slotId: string, limit = 50): Promise<LiveAd[
         or(sql`${ads.endsAt} is null`, gt(ads.endsAt, sql`now()`))
       )
     )
-    .orderBy(desc(ads.amountPaise), asc(ads.firstPaidAt))
+    /**
+     * House ads sort LAST, whatever they are worth — `isHouse` ascending puts
+     * false before true. So a paying sponsor always outranks the creator's own
+     * filler, and on an empty slot the house ad is simply what is left.
+     */
+    .orderBy(asc(ads.isHouse), desc(ads.amountPaise), asc(ads.firstPaidAt))
     .limit(limit);
   return rows.map(toLive);
 }
@@ -135,25 +144,34 @@ export async function slotsWithState(activeOnly = true) {
         slot,
         winner: contenders[0] ?? null,
         contenders,
-        /**
-         * What it costs to take this slot right now.
-         *   fixed: the asking price — nothing to outbid.
-         *   bid:   beat the leader by the step, or the floor if it is empty.
-         */
-        askPaise:
-          slot.kind === 'bid' && contenders[0]
-            ? contenders[0].amountPaise + slot.stepPaise
-            : slot.pricePaise
+        // Via askFor, never inline. This used to derive the price itself and
+        // drifted from askFor the moment house ads existed: it read the house
+        // ad as the leader and quoted step-above-zero instead of the floor.
+        askPaise: askPrice(slot, contenders)
       };
     })
   );
 }
 
-/** The ask for one slot, computed server-side. Never trust a form for this. */
+/**
+ * WHAT IT COSTS TO TAKE THIS SLOT, and the only place that decides.
+ *
+ *   fixed: the asking price. There is nothing to outbid.
+ *   bid:   beat the leader by the step — or the floor, if the only thing in
+ *          the slot is a house ad. A house ad is not something you outbid; it
+ *          is unsold inventory wearing the creator's own project, and quoting
+ *          "the leader plus a step" against it would price the slot off zero.
+ */
+function askPrice(slot: typeof slots.$inferSelect, contenders: LiveAd[]): number {
+  if (slot.kind !== 'bid') return slot.pricePaise;
+  const leader = contenders.find((c) => !c.isHouse);
+  return leader ? leader.amountPaise + slot.stepPaise : slot.pricePaise;
+}
+
+/** The ask for one slot. Never trust a form for this. */
 export async function askFor(slot: typeof slots.$inferSelect): Promise<number> {
   if (slot.kind !== 'bid') return slot.pricePaise;
-  const [leader] = await contendersFor(slot.id, 1);
-  return leader ? leader.amountPaise + slot.stepPaise : slot.pricePaise;
+  return askPrice(slot, await contendersFor(slot.id, 20));
 }
 
 /* ── A sponsor's own things ─────────────────────────────────────────────── */
@@ -187,7 +205,8 @@ export async function standingFor(adId: string) {
   const rank = contenders.findIndex((c) => c.id === adId) + 1;
   if (rank === 0) return null;
 
-  const leader = contenders[0];
+  // Only paying ads count as competition for "what would it take to lead".
+  const leader = contenders.find((c) => !c.isHouse) ?? contenders[0];
   return {
     rank,
     total: contenders.length,
@@ -264,6 +283,12 @@ export async function myPayments(profileId: string) {
     .limit(30);
 }
 
+/* ── Activity ───────────────────────────────────────────────────────────── */
+
+export async function recentActivity(limit = 8) {
+  return db.select().from(activity).orderBy(desc(activity.createdAt)).limit(limit);
+}
+
 /* ── The creator's view ─────────────────────────────────────────────────── */
 
 /** Paid, waiting on a decision. Nothing serves until this queue is cleared. */
@@ -273,7 +298,7 @@ export async function pendingReview() {
     .from(ads)
     .innerJoin(slots, eq(ads.slotId, slots.id))
     .innerJoin(profiles, eq(ads.profileId, profiles.id))
-    .where(and(eq(ads.status, 'pending'), gt(ads.amountPaise, 0)))
+    .where(and(eq(ads.status, 'pending'), gt(ads.amountPaise, 0), eq(ads.isHouse, false)))
     .orderBy(asc(ads.updatedAt));
 }
 

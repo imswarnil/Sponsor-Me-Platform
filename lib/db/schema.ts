@@ -121,6 +121,17 @@ export const ads = pgTable(
     amountPaise: integer('amount_paise').notNull().default(0),
 
     /**
+     * A HOUSE AD — the creator's own work, filling inventory nobody has bought.
+     *
+     * It costs nothing and is worth nothing: it never appears in earnings, and
+     * `contendersFor()` sorts it BELOW every paying ad, so the instant a real
+     * sponsor pays, they take the spot and the house ad steps aside. An empty
+     * slot showing the creator's own project is better than an empty slot; a
+     * house ad that outranked a paying customer would be fraud.
+     */
+    isHouse: boolean('is_house').notNull().default(false),
+
+    /**
      * draft    — being written, never served
      * pending  — paid, waiting for the creator to approve it
      * live     — approved; serves if it wins its slot
@@ -208,8 +219,34 @@ export const stats = pgTable(
   ]
 );
 
+/* ── Activity ───────────────────────────────────────────────────────────── */
+
+/**
+ * The public record of what has happened: somebody bid, somebody's ad went
+ * live. Append-only and never edited — it is the homepage's ticker and the
+ * studio's audit trail at once, and those two only agree because there is one
+ * table rather than two.
+ *
+ * `actor` is denormalised on purpose: the feed must still read correctly after
+ * a sponsor deletes their account and the join goes null.
+ */
+export const activity = pgTable(
+  'sm_activity',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** 'paid' | 'live' | 'outbid' */
+    kind: text('kind').notNull(),
+    actor: text('actor').notNull().default(''),
+    slotName: text('slot_name').notNull().default(''),
+    amountPaise: integer('amount_paise'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => [index('sm_activity_recent_idx').on(t.createdAt.desc())]
+);
+
 export type Profile = typeof profiles.$inferSelect;
 export type Slot = typeof slots.$inferSelect;
 export type Ad = typeof ads.$inferSelect;
 export type Payment = typeof payments.$inferSelect;
 export type Stat = typeof stats.$inferSelect;
+export type Activity = typeof activity.$inferSelect;

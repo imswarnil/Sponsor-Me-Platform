@@ -30,8 +30,15 @@ export function AdRender({
 
   return (
     <div className="group relative h-full">
-      <span className="absolute -top-2 left-3 z-10 rounded-full border-2 border-ink-900 bg-craft-300 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ink-900">
-        Ad
+      {/* A house ad says so. Labelling the creator's own project as "Ad" would
+          be technically true and misleading — the disclosure exists to tell a
+          reader who paid, and here nobody did. */}
+      <span
+        className={`absolute -top-2 left-3 z-10 rounded-full border-2 border-ink-900 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ink-900 ${
+          ad.isHouse ? 'bg-mint-300' : 'bg-craft-300'
+        }`}
+      >
+        {ad.isHouse ? 'Our own' : 'Ad'}
       </span>
 
       <a

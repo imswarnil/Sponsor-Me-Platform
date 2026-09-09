@@ -94,13 +94,18 @@ export function Leaderboard({
                 className={`truncate font-black leading-tight ${i === 0 ? 'text-lg' : 'text-sm'}`}
               >
                 {row.brand}
+                {row.isHouse ? (
+                  <span className="ml-2 align-middle text-[10px] font-bold uppercase tracking-wide text-mint-600">
+                    our own
+                  </span>
+                ) : null}
               </p>
               <p className="truncate text-xs text-ink-600">{row.headline}</p>
             </div>
 
             <div className="relative z-10 shrink-0 text-right">
               <p className={`tnum font-black ${i === 0 ? 'text-xl' : 'text-sm'}`}>
-                {formatPaise(row.amountPaise)}
+                {row.isHouse ? '—' : formatPaise(row.amountPaise)}
               </p>
               {mine ? (
                 <p className="text-[10px] font-bold uppercase tracking-wide text-signal-600">

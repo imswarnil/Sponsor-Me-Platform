@@ -3,9 +3,10 @@ import Link from 'next/link';
 import { Footer, Header } from '@/components/chrome';
 import { AdEmpty, AdRender } from '@/components/ad-render';
 import { Leaderboard } from '@/components/leaderboard';
+import { ActivityFeed } from '@/components/activity';
 import { formatPaise } from '@/lib/money';
 import { FORMATS, SHAPES, site } from '@/lib/site';
-import { slotsWithState, statsOverall } from '@/lib/queries';
+import { recentActivity, slotsWithState, statsOverall } from '@/lib/queries';
 
 /**
  * THE HOMEPAGE — the whole public product, in sections.
@@ -18,7 +19,11 @@ import { slotsWithState, statsOverall } from '@/lib/queries';
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  const [slots, stats] = await Promise.all([slotsWithState(true), statsOverall()]);
+  const [slots, stats, activity] = await Promise.all([
+    slotsWithState(true),
+    statsOverall(),
+    recentActivity(6)
+  ]);
 
   const bidSlots = slots.filter((s) => s.slot.kind === 'bid');
   const fixedSlots = slots.filter((s) => s.slot.kind === 'fixed');
@@ -258,6 +263,21 @@ export default async function Home() {
                 <p className="text-sm text-ink-600">{f.note}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ ACTIVITY ═══════════════════════════════════════════════════ */}
+      <section className="border-b-2 border-ink-900 bg-azure-50 px-4 py-16">
+        <div className="mx-auto max-w-3xl">
+          <SectionHead
+            sticker="📻 Live"
+            stickerTone="bg-azure-300"
+            title="What's happening"
+            lead="Every bid and every ad that went up."
+          />
+          <div className="mt-10">
+            <ActivityFeed rows={activity} />
           </div>
         </div>
       </section>

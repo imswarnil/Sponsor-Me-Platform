@@ -6,7 +6,7 @@ import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { db } from '@/lib/db/client';
-import { ads, payments, profiles, slots } from '@/lib/db/schema';
+import { activity, ads, payments, profiles, slots } from '@/lib/db/schema';
 import { requireCreator, requireSponsor, requireViewer } from '@/lib/roles';
 import { parseCreative, safeUrl } from '@/lib/creative';
 import { createCheckout, isDodoConfigured } from '@/lib/dodo';
@@ -277,10 +277,28 @@ export async function reviewAdAction(
   note?: string
 ): Promise<void> {
   await requireCreator();
-  await db
+
+  const [row] = await db
     .update(ads)
     .set({ status: decision, reviewNote: note?.trim() || null, updatedAt: new Date() })
-    .where(eq(ads.id, adId));
+    .where(eq(ads.id, adId))
+    .returning();
+
+  // Going live is public; a rejection is between the creator and that sponsor.
+  if (row && decision === 'live' && !row.isHouse) {
+    const [slot] = await db
+      .select({ name: slots.name })
+      .from(slots)
+      .where(eq(slots.id, row.slotId))
+      .limit(1);
+    await db.insert(activity).values({
+      kind: 'live',
+      actor: row.brand || 'A sponsor',
+      slotName: slot?.name ?? '',
+      amountPaise: row.amountPaise
+    });
+  }
+
   revalidatePath('/studio');
   revalidatePath('/');
 }
