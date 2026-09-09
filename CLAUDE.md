@@ -251,6 +251,15 @@ script (`scripts/dev.sh`, the server) and one node script (`scripts/setup.mjs`,
 the database) — the three separate `apply-sql` / `seed` / `dodo-setup` files
 were three files calling the same two libraries in a fixed order.
 
+**`npm run demo` is FAKE and says so.** Eight invented sponsors, so the board
+can be looked at. It stays honest about itself in two ways: every row is
+self-identifying (`demo-*@example.com` accounts, `demo_` payment ids) so
+`npm run demo clean` removes all of it, and each bid gets a matching
+`sm_payment` so the studio's "collected" agrees with the board. A demo where
+the leaderboard says ₹12,000 and the studio says ₹0 is not a demo, it is a bug
+report. **Run `npm run demo clean` before this is shown to anyone who might
+read it as real revenue.**
+
 **`npm run verify` is the one that matters before a deploy.** It creates a
 throwaway slot and a deliberately awkward field of ads — a TIE on amount, a
 house ad, a paid-but-unapproved ad, an expired one, a zero-amount draft — then

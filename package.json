@@ -11,6 +11,7 @@
     "check": "tsc --noEmit",
     "verify": "node scripts/verify.mjs",
     "setup": "node scripts/setup.mjs",
+    "demo": "node scripts/demo.mjs",
     "db": "drizzle-kit push",
     "studio": "drizzle-kit studio",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
