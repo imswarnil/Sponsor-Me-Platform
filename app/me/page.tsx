@@ -132,6 +132,7 @@ export default async function MyAds({
                             format: ad.format,
                             brand: ad.brand,
                             tag: ad.tag,
+                            logoUrl: ad.logoUrl,
                             headline: ad.headline,
                             body: ad.body,
                             url: ad.url,

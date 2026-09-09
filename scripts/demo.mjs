@@ -35,6 +35,12 @@ const MARK = 'demo-';
  * near-equal bids draws as a solid block and teaches nothing about the gap.
  *
  * [ handle, brand, tag, site, headline, cta, rupees, days since first paid ]
+ *
+ * Logos come from DuckDuckGo's public icon service, derived from the site — no
+ * key, no account, and it answers 200 with a real image directly rather than
+ * redirecting, which is what Google's equivalent does. Real sponsors supply
+ * their own through the `logoUrl` field; the board falls back to an initial
+ * on a tinted tile when there is none.
  */
 const FIELD = [
   ['linear',   'Linear',    'Issue tracker',  'https://linear.app',      'Ship without the standup',        'Try it',    12000, 34],
@@ -104,13 +110,16 @@ for (const [handle, brand, tag, site, headline, cta, rupees, days] of FIELD) {
     VALUES (${id}, ${MARK + handle + '@example.com'}, ${brand}, ${brand})
     ON CONFLICT (id) DO UPDATE SET brand = EXCLUDED.brand`;
 
+  const domain = new URL(site).hostname;
+  const logo = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+
   const [ad] = await sql`
-    INSERT INTO sm_ad (slot_id, profile_id, format, brand, tag, headline, body, url,
+    INSERT INTO sm_ad (slot_id, profile_id, format, brand, tag, logo_url, headline, body, url,
                        cta_label, amount_paise, status, first_paid_at)
-    VALUES (${slot.id}, ${id}, 'card', ${brand}, ${tag}, ${headline}, '', ${site},
+    VALUES (${slot.id}, ${id}, 'card', ${brand}, ${tag}, ${logo}, ${headline}, '', ${site},
             ${cta}, ${paise}, 'live', now() - (${days} || ' days')::interval)
     ON CONFLICT (slot_id, profile_id) DO UPDATE SET
-      amount_paise = EXCLUDED.amount_paise, tag = EXCLUDED.tag,
+      amount_paise = EXCLUDED.amount_paise, tag = EXCLUDED.tag, logo_url = EXCLUDED.logo_url,
       headline = EXCLUDED.headline, url = EXCLUDED.url, status = 'live',
       first_paid_at = EXCLUDED.first_paid_at
     RETURNING id`;

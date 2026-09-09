@@ -107,6 +107,10 @@ export const ads = pgTable(
      *  The leaderboard shows it beside the site, so a reader can tell what a
      *  name is before clicking it. */
     tag: text('tag'),
+    /** A square brand mark for the leaderboard. Distinct from `imageUrl`,
+     *  which is the ad's own artwork: a wide screenshot makes a poor avatar
+     *  and a logo makes a poor banner, so they are two fields. */
+    logoUrl: text('logo_url'),
     headline: text('headline').notNull().default(''),
     body: text('body').notNull().default(''),
     url: text('url'),

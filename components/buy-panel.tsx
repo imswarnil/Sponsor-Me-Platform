@@ -155,6 +155,16 @@ function AdForm({ slotId, existing }: { slotId: string; existing: Ad | null }) {
           />
         </div>
 
+        {/* The square mark on the leaderboard. Separate from the ad's own
+            artwork below — a wide screenshot makes a poor avatar. */}
+        <Field
+          label="Logo"
+          name="logoUrl"
+          type="url"
+          defaultValue={existing?.logoUrl ?? ''}
+          placeholder="https://…/logo.png"
+        />
+
         {format !== 'html' ? (
           <>
             <Field

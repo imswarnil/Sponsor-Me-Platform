@@ -1,11 +1,12 @@
 import { notFound } from 'next/navigation';
 
 import { AdEmpty, AdRender } from '@/components/ad-render';
+import { Board } from '@/components/leaderboard';
 import { EmbedHeight } from '@/components/embed-height';
 import { formatPaise } from '@/lib/money';
 import { site } from '@/lib/site';
-import { askFor, slotByPublicId, winnerFor } from '@/lib/queries';
-import { recordView } from '@/lib/track';
+import { askFor, contendersFor, slotByPublicId, winnerFor } from '@/lib/queries';
+import { recordView, recordViews } from '@/lib/track';
 
 /**
  * THE EMBEDDED UNIT — what loads inside the iframe on somebody else's site.
@@ -23,10 +24,43 @@ export const dynamic = 'force-dynamic';
 /** Never indexed: this is a fragment of the host's page, not a page. */
 export const metadata = { robots: { index: false, follow: false } };
 
-export default async function Embed({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+export default async function Embed({
+  params,
+  searchParams
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ view?: string }>;
+}) {
+  const [{ slug }, { view }] = await Promise.all([params, searchParams]);
   const slot = await slotByPublicId(slug);
   if (!slot || !slot.active) notFound();
+
+  /**
+   * TWO THINGS CAN BE EMBEDDED, and they are different products.
+   *
+   *   default      the winning ad — one unit, the thing the slot sells.
+   *   ?view=board  the whole leaderboard, so a host page can show the race.
+   *
+   * The board counts a view for EVERY brand on it, because every brand is
+   * genuinely on screen. The single unit counts one, for the one that served.
+   */
+  if (view === 'board' || view === 'leaderboard') {
+    const rows = await contendersFor(slot.id, 25);
+    if (rows.length) {
+      try {
+        await recordViews(rows.map((r) => r.id));
+      } catch {
+        /* the board renders either way */
+      }
+    }
+    const ask = await askFor(slot);
+    return (
+      <div className="embed-root p-2">
+        <Board rows={rows} base={site.self} ask={ask} view="list" />
+        <EmbedHeight slot={slot.publicId} />
+      </div>
+    );
+  }
 
   const [winner, ask] = await Promise.all([winnerFor(slot.id), askFor(slot)]);
 

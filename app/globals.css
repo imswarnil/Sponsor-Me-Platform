@@ -97,6 +97,19 @@
 }
 
 @layer base {
+  /* ONE gutter, shared by the rig and the content column. If these two ever
+     use different numbers, components stop landing on the grid lines — which
+     is the single thing this whole design depends on. */
+  :root { --gutter: 1.5rem; }
+
+  @media (min-width: 48rem) {
+    :root { --gutter: 3rem; }
+  }
+
+  @media (min-width: 80rem) {
+    :root { --gutter: 4.5rem; }
+  }
+
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
@@ -139,7 +152,7 @@
   .rig__inner {
     inline-size: 100%;
     max-inline-size: var(--page, 80rem);
-    padding-inline: 1.5rem;
+    padding-inline: var(--gutter, 1.5rem);
     display: grid;
     grid-template-columns: repeat(4, 1fr);
   }
@@ -162,15 +175,16 @@
     border-inline-end: 1px solid var(--color-ink-100);
   }
 
-  /* The content column. Same width and padding as the rig, so anything in
-     here lands on a line. */
+  /* The content column. Its gutter is a variable so the rig behind it uses
+     the SAME number — if these two ever drift, components stop landing on the
+     lines, which is the one thing the whole design depends on. */
   .bay {
     position: relative;
     z-index: 1;
     inline-size: 100%;
     max-inline-size: var(--page, 80rem);
     margin-inline: auto;
-    padding-inline: 1.5rem;
+    padding-inline: var(--gutter, 1.5rem);
   }
 
   /* A band: a full-width horizontal rule across the page, which is how a

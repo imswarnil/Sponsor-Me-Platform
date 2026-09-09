@@ -43,3 +43,24 @@ export async function recordView(adId: string) {
     console.error('[track] view not recorded:', err instanceof Error ? err.message : err);
   }
 }
+
+/**
+ * Several at once — the leaderboard embed puts every brand on screen, so every
+ * brand has genuinely been seen. One statement, so concurrent impressions
+ * cannot lose each other's increment.
+ */
+export async function recordViews(adIds: string[]) {
+  if (!adIds.length) return;
+  const day = today();
+  try {
+    await db
+      .insert(stats)
+      .values(adIds.map((adId) => ({ adId, day, views: 1, clicks: 0 })))
+      .onConflictDoUpdate({
+        target: [stats.adId, stats.day],
+        set: { views: sql`${stats.views} + 1` }
+      });
+  } catch (err) {
+    console.error('[track] views not recorded:', err instanceof Error ? err.message : err);
+  }
+}

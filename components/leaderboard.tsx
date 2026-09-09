@@ -1,22 +1,29 @@
+'use client';
+
+import { useState } from 'react';
+
 import { formatPaise } from '@/lib/money';
 import type { LiveAd } from '@/lib/queries';
 
 /**
- * THE RACE.
+ * THE BOARD — where a brand promotes itself.
  *
- * Two halves, and they say the same thing twice on purpose:
+ * Every entry is an ADVERT, not a table row: a logo, the brand, what they do,
+ * and a button that goes somewhere. The rank and the amount are context around
+ * that, not the subject. A sponsor is paying to be seen, so the entry has to
+ * be worth being seen in.
  *
- *   THE PODIUM — first, second, third, drawn at three physical heights. The
- *   height difference is the whole point: it says "there is a gap, and roughly
- *   this big" before a single figure has been read. Second is on the left and
- *   third on the right, the way a podium actually stands.
+ * TWO VIEWS, and the reader picks:
  *
- *   THE FIELD — everybody, in order, with a bar whose width is their share of
- *   the leader's. The gap becomes a picture instead of arithmetic.
+ *   PODIUM  first, second and third at three physical heights, so the gap is
+ *           visible before a figure is read. The showcase view.
+ *   LIST    everybody at equal weight, compact, for comparing.
  *
- * Each entry carries what a reader actually needs to decide whether to click:
- * the brand, its WEBSITE, and a TAG saying what it does. "Linear" means
- * nothing on its own; "linear.app · Issue tracker" means something.
+ * RESPONSIVE BY CONTAINER, NOT VIEWPORT. This renders inside an iframe that
+ * might be 300px in a sidebar or 900px in an article, and the viewport inside
+ * an iframe is the iframe — but the same component also renders on this site's
+ * own wide pages. `@container` queries make it respond to the box it is
+ * actually in, which is the only thing that is true in both places.
  */
 
 /** The site, without the noise. `linear.app`, not `https://linear.app/`. */
@@ -29,79 +36,178 @@ function host(url: string | null): string | null {
   }
 }
 
-/* Podium heights. First is tallest; second and third are deliberately close to
-   each other, because the interesting gap is between first and the rest. */
-const STEP = [
-  {
-    h: 'h-40',
-    order: 'md:order-2',
-    ring: 'border-craft-400 bg-craft-100',
-    badge: 'bg-craft-400 text-ink-900',
-    numeral: 'text-craft-600',
-    medal: '1st'
-  },
-  {
-    h: 'h-28',
-    order: 'md:order-1',
-    ring: 'border-ink-300 bg-ink-100',
-    badge: 'bg-ink-300 text-ink-900',
-    numeral: 'text-ink-400',
-    medal: '2nd'
-  },
-  {
-    h: 'h-24',
-    order: 'md:order-3',
-    ring: 'border-ink-200 bg-ink-50',
-    badge: 'bg-ink-200 text-ink-700',
-    numeral: 'text-ink-300',
-    medal: '3rd'
-  }
-];
+function clickHref(ad: LiveAd, base: string) {
+  return `${base}/api/go?ad=${encodeURIComponent(ad.id)}`;
+}
 
-export function Podium({ rows }: { rows: LiveAd[] }) {
-  if (!rows.length) return null;
-  const top = rows.slice(0, 3);
+/* ── Pieces ───────────────────────────────────────────────────────────────── */
+
+/**
+ * The brand mark. A supplied logo, or the initial on a tinted tile — never an
+ * empty square, which reads as a broken image rather than as "no logo".
+ */
+function Logo({ ad, size = 'md' }: { ad: LiveAd; size?: 'sm' | 'md' | 'lg' }) {
+  const px = size === 'lg' ? 'h-14 w-14' : size === 'sm' ? 'h-9 w-9' : 'h-11 w-11';
+  const text = size === 'lg' ? 'text-xl' : size === 'sm' ? 'text-sm' : 'text-base';
 
   return (
-    <div className="grid grid-cols-1 gap-px border border-ink-200 bg-ink-200 md:grid-cols-3">
-      {top.map((row, i) => {
-        const step = STEP[i];
-        const site = host(row.url);
+    <span
+      className={`${px} relative grid shrink-0 place-items-center overflow-hidden border border-ink-200 bg-ink-50`}
+    >
+      <span className={`${text} font-semibold text-ink-400`}>
+        {(ad.brand || '?').slice(0, 1).toUpperCase()}
+      </span>
+      {ad.logoUrl ? (
+        /* Sits on top of the initial. `onError` REMOVES it rather than leaving
+           it transparent: it carries `bg-white`, so a logo that 404s would
+           otherwise paint a blank square over the fallback — which is exactly
+           what a missing logo looked like before this line existed. */
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={ad.logoUrl}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+          }}
+          className="absolute inset-0 h-full w-full bg-white object-contain p-1"
+        />
+      ) : null}
+    </span>
+  );
+}
 
+function Rank({ n, big }: { n: number; big?: boolean }) {
+  const gold = n === 1;
+  return (
+    <span
+      className={`grid shrink-0 place-items-center border font-semibold tabular-nums ${
+        big ? 'h-8 w-8 text-sm' : 'h-6 w-6 text-xs'
+      } ${
+        gold
+          ? 'border-craft-400 bg-craft-100 text-craft-600'
+          : n === 2
+            ? 'border-ink-300 bg-ink-100 text-ink-600'
+            : n === 3
+              ? 'border-craft-200 bg-craft-50 text-craft-600'
+              : 'border-ink-200 bg-white text-ink-400'
+      }`}
+    >
+      {n}
+    </span>
+  );
+}
+
+/** What they do, with a small mark so it reads as a category not a label. */
+function Tag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="tag text-ink-500">
+      <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+        <path d="M20.6 13.4 12 4.8H4.8V12l8.6 8.6z" strokeLinejoin="round" />
+        <circle cx="8.5" cy="8.5" r="1.2" fill="currentColor" stroke="none" />
+      </svg>
+      {children}
+    </span>
+  );
+}
+
+function Site({ url }: { url: string | null }) {
+  const h = host(url);
+  if (!h) return null;
+  return (
+    <span className="inline-flex items-center gap-1 font-mono text-xs text-ink-500">
+      <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18" />
+      </svg>
+      {h}
+    </span>
+  );
+}
+
+/* ── Podium ───────────────────────────────────────────────────────────────── */
+
+/**
+ * Podium steps are sized by the ACTUAL amount, not by three fixed heights.
+ *
+ * Fixed heights made every board look identical — a runaway leader and three
+ * near-equal bids drew exactly the same picture, which is the one thing the
+ * podium exists to distinguish. Now the tallest step is the leader and the
+ * others are their true fraction of it, so the shape of the race is the shape
+ * on screen.
+ *
+ * `MIN` keeps third place visible when it is a rounding error of first.
+ */
+const STEP_MAX = 200;
+const STEP_MIN = 34;
+
+const STEP = [
+  { order: '@2xl:order-2', tint: 'border-craft-400 bg-craft-100', numeral: 'text-craft-500' },
+  { order: '@2xl:order-1', tint: 'border-ink-300 bg-ink-100', numeral: 'text-ink-400' },
+  { order: '@2xl:order-3', tint: 'border-ink-200 bg-ink-50', numeral: 'text-ink-300' }
+];
+
+function Podium({ rows, base }: { rows: LiveAd[]; base: string }) {
+  const top = Math.max(rows[0]?.amountPaise ?? 1, 1);
+
+  return (
+    <div className="grid grid-cols-1 gap-px bg-ink-200 @2xl:grid-cols-3">
+      {rows.slice(0, 3).map((ad, i) => {
+        const step = STEP[i];
+        const height = Math.max(STEP_MIN, Math.round((ad.amountPaise / top) * STEP_MAX));
         return (
           <div
-            key={row.id}
-            className={`flex flex-col justify-end bg-white p-5 ${step.order}`}
+            key={ad.id}
+            className={`flex flex-col justify-between bg-white p-6 @lg:p-7 ${step.order}`}
           >
-            <div className="flex items-center gap-2">
-              <span className={`label px-1.5 py-0.5 text-ink-900 ${step.badge}`}>
-                {step.medal}
+            <div className="flex items-center gap-3">
+              <Rank n={i + 1} big />
+              {ad.isHouse ? <span className="label">house</span> : null}
+              <span className="tnum ml-auto text-sm font-semibold text-ink-700">
+                {ad.isHouse ? '—' : formatPaise(ad.amountPaise)}
               </span>
-              {row.isHouse ? <span className="label">house</span> : null}
             </div>
 
-            <p className="mt-3 truncate text-xl font-semibold tracking-tight">{row.brand}</p>
-
-            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-              {site ? <span className="font-mono text-xs text-ink-500">{site}</span> : null}
-              {row.tag ? <span className="tag text-ink-500">{row.tag}</span> : null}
+            {/* The logo sits ABOVE the name rather than beside it. Three
+                podium columns inside a deliberately narrow board are ~250px
+                each, and a side-by-side logo leaves the brand two words wide.
+                Stacking makes the column taller and the name legible, which is
+                the trade this board wants. */}
+            <div className="mt-5">
+              <Logo ad={ad} size="lg" />
+              <p className="mt-3 truncate text-lg font-semibold tracking-tight @lg:text-xl">
+                {ad.brand}
+              </p>
+              <div className="mt-1.5 flex flex-col items-start gap-1.5">
+                <Site url={ad.url} />
+                {ad.tag ? <Tag>{ad.tag}</Tag> : null}
+              </div>
             </div>
 
-            <p className="tnum mt-4 text-2xl font-semibold">
-              {row.isHouse ? '—' : formatPaise(row.amountPaise)}
-            </p>
+            {ad.headline ? (
+              <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-ink-600">
+                {ad.headline}
+              </p>
+            ) : null}
 
-            {/* The step itself, carrying its own numeral. Without the figure
-                inside it, a bare tinted rectangle reads as a broken image
-                rather than as a place on a podium. Scaled from the bottom, so
-                it grows out of the floor instead of dropping in. */}
-            <div
-              className={`mt-4 flex origin-bottom items-end justify-center border ${step.h} ${step.ring} animate-grow`}
-              style={{ animationDelay: `${i * 90}ms` }}
+            <a
+              href={clickHref(ad, base)}
+              target="_blank"
+              rel="nofollow sponsored noopener"
+              className={`btn mt-5 w-full no-underline ${i === 0 ? 'btn-primary' : 'btn-quiet'}`}
             >
-              <span className={`tnum pb-2 text-4xl font-semibold ${step.numeral}`}>
-                {i + 1}
-              </span>
+              {ad.ctaLabel || 'Visit'}
+            </a>
+
+            {/* The step. Its height IS the amount — see the note on STEP_MAX.
+                The three are bottom-aligned by the grid, so the difference
+                reads as a podium rather than as three unrelated blocks. */}
+            <div
+              className={`mt-6 flex origin-bottom items-end justify-center border ${step.tint} animate-grow`}
+              style={{ height, animationDelay: `${i * 90}ms` }}
+            >
+              <span className={`tnum pb-2 text-4xl font-semibold ${step.numeral}`}>{i + 1}</span>
             </div>
           </div>
         );
@@ -110,80 +216,151 @@ export function Podium({ rows }: { rows: LiveAd[] }) {
   );
 }
 
-/** Everybody, in order, with the gap drawn to scale. */
-export function Field({
-  rows,
-  mineId,
-  from = 0
-}: {
-  rows: LiveAd[];
-  mineId?: string | null;
-  from?: number;
-}) {
-  const shown = rows.slice(from);
-  if (!shown.length) return null;
+/* ── Rows ─────────────────────────────────────────────────────────────────── */
 
-  // The leader sets the scale, even when the list starts further down.
-  const top = Math.max(rows[0]?.amountPaise ?? 1, 1);
+function Row({
+  ad,
+  rank,
+  top,
+  mine,
+  base
+}: {
+  ad: LiveAd;
+  rank: number;
+  top: number;
+  mine: boolean;
+  base: string;
+}) {
+  const share = Math.max(3, (ad.amountPaise / top) * 100);
 
   return (
-    <ol className="border-x border-t border-ink-200">
-      {shown.map((row, i) => {
-        const rank = from + i + 1;
-        const mine = row.profileId === mineId;
-        const site = host(row.url);
-        const share = Math.max(3, (row.amountPaise / top) * 100);
+    <li
+      className={`relative border-b border-ink-200 ${mine ? 'bg-signal-50' : 'bg-white'}`}
+    >
+      <span
+        aria-hidden
+        className="absolute inset-y-0 left-0 bg-ink-50"
+        style={{ width: `${share}%` }}
+      />
 
-        return (
-          <li
-            key={row.id}
-            className={`relative flex items-center gap-4 border-b border-ink-200 px-4 py-3 ${
-              mine ? 'bg-signal-50' : 'bg-white'
-            }`}
-          >
-            <span
-              aria-hidden
-              className="absolute inset-y-0 left-0 bg-ink-50"
-              style={{ width: `${share}%` }}
-            />
+      {/* Generous padding so a row is a place to look, not a table cell. */}
+      <div className="relative z-10 flex items-center gap-4 px-5 py-5 @lg:gap-5 @lg:px-7 @lg:py-6">
+        <Rank n={rank} />
+        <Logo ad={ad} />
 
-            <span className="tnum relative z-10 w-6 shrink-0 font-mono text-sm text-ink-400">
-              {rank}
-            </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold">
+            {ad.brand}
+            {ad.isHouse ? <span className="label ml-2">house</span> : null}
+          </p>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <Site url={ad.url} />
+            {ad.tag ? <Tag>{ad.tag}</Tag> : null}
+          </div>
+        </div>
 
-            <div className="relative z-10 min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold">
-                {row.brand}
-                {row.isHouse ? <span className="label ml-2">house</span> : null}
-              </p>
-              <div className="flex flex-wrap items-center gap-x-2">
-                {site ? <span className="font-mono text-xs text-ink-500">{site}</span> : null}
-                {row.tag ? <span className="text-xs text-ink-400">· {row.tag}</span> : null}
-              </div>
-            </div>
+        {/* The amount hides first when the box is narrow: in a 300px sidebar
+            the brand and the button are what matter, not the ledger. */}
+        <span className="tnum hidden shrink-0 text-sm font-semibold @md:block">
+          {ad.isHouse ? '—' : formatPaise(ad.amountPaise)}
+        </span>
 
-            <span className="tnum relative z-10 shrink-0 text-sm font-semibold">
-              {row.isHouse ? '—' : formatPaise(row.amountPaise)}
-            </span>
-          </li>
-        );
-      })}
-    </ol>
+        <a
+          href={clickHref(ad, base)}
+          target="_blank"
+          rel="nofollow sponsored noopener"
+          className="btn btn-quiet btn-sm hidden shrink-0 no-underline @sm:inline-flex"
+        >
+          {ad.ctaLabel || 'Visit'}
+        </a>
+      </div>
+    </li>
   );
 }
 
-/** Nothing on the board yet. */
-export function EmptyBoard({ ask }: { ask?: number }) {
+/* ── The board ────────────────────────────────────────────────────────────── */
+
+export function Board({
+  rows,
+  mineId,
+  base = '',
+  view: initial = 'podium',
+  showToggle = true,
+  ask
+}: {
+  rows: LiveAd[];
+  mineId?: string | null;
+  base?: string;
+  view?: 'podium' | 'list';
+  showToggle?: boolean;
+  ask?: number;
+}) {
+  const [view, setView] = useState<'podium' | 'list'>(initial);
+
+  if (!rows.length) {
+    return (
+      <div className="panel p-10 text-center">
+        <p className="label">The board is open</p>
+        <p className="mt-3 text-lg font-semibold">Nobody is racing yet</p>
+        {ask ? (
+          <p className="mt-1 text-sm text-ink-600">
+            First bid takes first place — from{' '}
+            <strong className="text-ink-900">{formatPaise(ask)}</strong>.
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  const top = Math.max(rows[0].amountPaise, 1);
+  const rest = view === 'podium' ? rows.slice(3) : rows;
+
   return (
-    <div className="panel p-10 text-center">
-      <p className="label">The board is open</p>
-      <p className="mt-3 text-lg font-semibold">Nobody is racing yet</p>
-      {ask ? (
-        <p className="mt-1 text-sm text-ink-600">
-          First bid takes first place — from{' '}
-          <strong className="text-ink-900">{formatPaise(ask)}</strong>.
-        </p>
+    /* `@container` is what makes this work in a 300px sidebar and on a wide
+       page from the same markup — every size step below is `@`-prefixed, so it
+       reads the box it is in rather than the viewport. */
+    <div className="@container mx-auto w-full max-w-3xl">
+      {showToggle ? (
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <p className="label">
+            {rows.length} {rows.length === 1 ? 'sponsor' : 'sponsors'}
+          </p>
+          <div className="flex border border-ink-200" role="group" aria-label="Board view">
+            {(['podium', 'list'] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setView(v)}
+                aria-pressed={view === v}
+                className={`label px-3 py-1.5 transition ${
+                  view === v ? 'bg-ink-900 text-white' : 'bg-white hover:bg-ink-50'
+                }`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+        </div>
       ) : null}
+
+      <div className="border border-ink-200">
+        {view === 'podium' ? <Podium rows={rows} base={base} /> : null}
+
+        {rest.length ? (
+          <ul className={view === 'podium' ? 'border-t border-ink-200' : ''}>
+            {rest.map((ad, i) => (
+              <Row
+                key={ad.id}
+                ad={ad}
+                rank={view === 'podium' ? i + 4 : i + 1}
+                top={top}
+                mine={ad.profileId === mineId}
+                base={base}
+              />
+            ))}
+          </ul>
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Footer, Header } from '@/components/chrome';
 import { Bay, Band, Head, Rig } from '@/components/rig';
 import { AdEmpty, AdRender } from '@/components/ad-render';
-import { EmptyBoard, Field, Podium } from '@/components/leaderboard';
+import { Board } from '@/components/leaderboard';
 import { ActivityFeed } from '@/components/activity';
 import { formatPaise } from '@/lib/money';
 import { FORMATS, SHAPES, site } from '@/lib/site';
@@ -103,19 +103,7 @@ export default async function Home() {
               }
             />
 
-            {contenders.length ? (
-              <>
-                <Podium rows={contenders} />
-                {contenders.length > 3 ? (
-                  <div className="mt-10">
-                    <p className="label pb-3">The field</p>
-                    <Field rows={contenders} from={3} />
-                  </div>
-                ) : null}
-              </>
-            ) : (
-              <EmptyBoard ask={askPaise} />
-            )}
+            <Board rows={contenders} ask={askPaise} />
 
             {/* What is actually serving, exactly as a reader sees it. */}
             <div className="mt-12 grid gap-6 lg:grid-cols-12">

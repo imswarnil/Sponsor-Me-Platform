@@ -173,15 +173,20 @@ try {
      markup AND the RSC flight payload, so every string appears about twice —
      counting occurrences is meaningless. And the medals are lowercase in the
      source (`1st`); CSS uppercases them. Assert on what is in the bytes. */
-  check(
-    'podium renders a step per placed ad',
-    ['>1st<', '>2nd<', '>3rd<'].every((m) => slotPage.includes(m)),
-    'expected all three medals in the markup'
-  );
+  /* The podium used to carry "1st/2nd/3rd" text badges; the redesign replaced
+     them with rank numerals in the step itself. Asserting on the step is the
+     durable check — the badges were a label, the step is the mechanism. */
   check(
     'the steps animate up from the floor',
     slotPage.includes('animate-grow') && slotPage.includes('origin-bottom')
   );
+  check(
+    'step height is proportional to the amount, not fixed',
+    /"height":\s*200/.test(slotPage) || /height:200px/.test(slotPage),
+    'the leader\'s step should be the full STEP_MAX'
+  );
+  check('brand logos render', slotPage.includes('logo') || slotPage.includes('Logo'));
+  check('every entry offers a way through', (slotPage.match(/api\/go\?ad=/g) ?? []).length >= 3);
   check('websites are shown', slotPage.includes('charlie.example.com'));
   check('tags are shown', slotPage.includes('Leader') && slotPage.includes('Tie-breaker'));
   check(

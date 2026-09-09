@@ -135,8 +135,14 @@ export function NewSlot() {
 export function SlotTag({ slot }: { slot: Slot }) {
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);
+  /* Two things can be embedded from one slot: the winning ad, or the whole
+     board. They are different products, so the creator picks which tag. */
+  const [view, setView] = useState<'ad' | 'board'>('ad');
   const shape = SHAPES[slot.shape as keyof typeof SHAPES];
-  const tag = `<script src="${site.self}/sponsor.js" data-slot="${slot.publicId}" async></script>`;
+  const tag =
+    view === 'board'
+      ? `<script src="${site.self}/sponsor.js" data-slot="${slot.publicId}" data-view="board" async></script>`
+      : `<script src="${site.self}/sponsor.js" data-slot="${slot.publicId}" async></script>`;
 
   return (
     <div>
@@ -145,10 +151,26 @@ export function SlotTag({ slot }: { slot: Slot }) {
           Paste this where it should appear
         </p>
         <div className="flex gap-2">
+          {/* Which of the two embeddable things this tag is for. */}
+          <div className="flex border border-ink-200" role="group" aria-label="What to embed">
+            {(['ad', 'board'] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setView(v)}
+                aria-pressed={view === v}
+                className={`label px-2 py-1 transition ${
+                  view === v ? 'bg-ink-900 text-white' : 'bg-white hover:bg-ink-50'
+                }`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="rounded-full border border-ink-200 bg-white px-3 py-1 text-xs font-bold"
+            className="label border border-ink-200 px-2 py-1 hover:border-ink-900"
           >
             {open ? 'Hide' : 'Preview'}
           </button>
@@ -163,7 +185,7 @@ export function SlotTag({ slot }: { slot: Slot }) {
                 /* clipboard blocked; the code is selectable anyway */
               }
             }}
-            className="rounded-full border border-ink-200 bg-craft-200 px-3 py-1 text-xs font-bold"
+            className="label border border-ink-900 bg-ink-900 px-2 py-1 text-white"
           >
             {copied ? 'Copied!' : 'Copy'}
           </button>
@@ -188,11 +210,17 @@ export function SlotTag({ slot }: { slot: Slot }) {
           </div>
           <div className="bg-white p-4">
             {/* The real widget, live, at the real width. */}
+            {/* Previewed at the width it will really occupy — a board in a
+                300px rail and a board in a 900px column are different layouts,
+                and the point of the preview is to see which one you get. */}
             <iframe
-              src={`/embed/${slot.publicId}`}
+              src={`/embed/${slot.publicId}${view === 'board' ? '?view=board' : ''}`}
               title={`${slot.name} preview`}
               className="mx-auto block w-full border-0"
-              style={{ maxWidth: shape?.w ?? 320, height: (shape?.h ?? 300) + 30 }}
+              style={{
+                maxWidth: view === 'board' ? '100%' : (shape?.w ?? 320),
+                height: view === 'board' ? 560 : (shape?.h ?? 300) + 30
+              }}
               loading="lazy"
             />
           </div>

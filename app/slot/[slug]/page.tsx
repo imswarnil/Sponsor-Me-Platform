@@ -4,7 +4,7 @@ import { and, eq } from 'drizzle-orm';
 
 import { Footer, Header } from '@/components/chrome';
 import { AdEmpty, AdRender } from '@/components/ad-render';
-import { EmptyBoard, Field, Podium } from '@/components/leaderboard';
+import { Board } from '@/components/leaderboard';
 import { Bay, Rig } from '@/components/rig';
 import { BuyPanel } from '@/components/buy-panel';
 import { db } from '@/lib/db/client';
@@ -85,19 +85,7 @@ export default async function SlotPage({ params }: { params: Promise<{ slug: str
 
               {isBid ? (
                 <div className="mt-8">
-                  <p className="label pb-3">The race ({contenders.length})</p>
-                  {contenders.length ? (
-                    <>
-                      <Podium rows={contenders} />
-                      {contenders.length > 3 ? (
-                        <div className="mt-6">
-                          <Field rows={contenders} from={3} mineId={viewer?.id} />
-                        </div>
-                      ) : null}
-                    </>
-                  ) : (
-                    <EmptyBoard ask={ask} />
-                  )}
+                  <Board rows={contenders} mineId={viewer?.id} ask={ask} />
                 </div>
               ) : null}
             </div>

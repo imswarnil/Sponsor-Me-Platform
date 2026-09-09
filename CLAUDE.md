@@ -174,9 +174,27 @@ leaderboard says "these are in an ORDER, and the order is the point".
 - **`Field`** — everybody in order, each row backed by a bar whose width is
   their share of the leader's, so the gap is a picture rather than arithmetic.
 
-Both show the **website** and a **tag** (`sm_ad.tag`) beside the brand.
-"Linear" means nothing on its own; "linear.app · Issue tracker" means
-something, and that is what decides whether a reader clicks.
+**Podium step heights are computed from the amount, not fixed.** Three fixed
+heights made every board draw the same picture — a runaway leader and three
+near-equal bids looked identical, which is the one thing a podium exists to
+tell apart. `STEP_MAX`/`STEP_MIN` scale the real ratio.
+
+**An entry is an ADVERT, not a table row**: logo (`sm_ad.logoUrl`), brand,
+website, a tag saying what they do (`sm_ad.tag`), and a CTA that goes
+somewhere. "Linear" means nothing alone; "linear.app · Issue tracker · Try it"
+does. A missing logo falls back to the initial on a tinted tile — and the `img`
+carries `onError` to REMOVE itself, because it has a white background and a
+404 would otherwise paint a blank square over that fallback.
+
+**The board is responsive to its CONTAINER, not the viewport** (`@container`).
+It renders in a 300px sidebar, a wide article, and this site's own pages from
+one component — and inside an iframe the viewport IS the iframe, so a viewport
+query would be wrong in the one place that matters most. Narrow drops the
+amount and the CTA; the brand and the logo never go.
+
+**One gutter, `--gutter`, shared by the rig and the bay.** If those two ever
+use different numbers, components stop landing on the grid lines, which is the
+single thing this design depends on.
 
 ---
 

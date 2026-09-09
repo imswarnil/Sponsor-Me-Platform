@@ -4,6 +4,11 @@
  *   <script src="https://sponsor.imswarnil.com/sponsor.js"
  *           data-slot="blog-sidebar-x1a2" async></script>
  *
+ * Add data-view="board" for the whole leaderboard instead of the single
+ * winning ad. The board is responsive to the box you put it in — a 300px
+ * sidebar and a 900px article get different layouts from the same tag — so
+ * there is nothing to configure beyond the width of the element it lands in.
+ *
  * Or, to place it somewhere specific rather than where the tag sits:
  *
  *   <div id="my-ad"></div>
@@ -40,9 +45,11 @@
   // than hardcoded, so a staging deploy embeds itself and not production.
   var origin = new URL(script.src, window.location.href).origin;
   var target = script.getAttribute('data-target');
+  var view = script.getAttribute('data-view');
 
   var frame = document.createElement('iframe');
-  frame.src = origin + '/embed/' + encodeURIComponent(slot);
+  frame.src =
+    origin + '/embed/' + encodeURIComponent(slot) + (view ? '?view=' + encodeURIComponent(view) : '');
   frame.title = 'Sponsored';
   frame.loading = 'lazy';
   frame.setAttribute('scrolling', 'no');
@@ -50,8 +57,13 @@
   // It may run its own scripts and open links, and nothing else. No
   // same-origin, so it cannot reach back into the host page.
   frame.setAttribute('sandbox', 'allow-scripts allow-popups allow-popups-to-escape-sandbox');
+  /* A board is taller than a single unit, so it starts taller — the frame
+     posts its real height back and the script grows to it, but the reserved
+     height is what stops the host page shifting before that happens. */
   frame.style.cssText =
-    'display:block;width:100%;border:0;height:300px;color-scheme:normal;background:transparent;';
+    'display:block;width:100%;border:0;height:' +
+    (view ? 520 : 300) +
+    'px;color-scheme:normal;background:transparent;';
 
   var mount = target ? document.querySelector(target) : null;
   if (mount) mount.appendChild(frame);

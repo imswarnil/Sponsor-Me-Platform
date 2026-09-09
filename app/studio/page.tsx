@@ -108,6 +108,7 @@ export default async function Studio() {
                           format: ad.format,
                           brand: ad.brand,
                           tag: ad.tag,
+                          logoUrl: ad.logoUrl,
                           headline: ad.headline,
                           body: ad.body,
                           url: ad.url,
