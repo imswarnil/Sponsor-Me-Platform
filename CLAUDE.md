@@ -251,6 +251,14 @@ script (`scripts/dev.sh`, the server) and one node script (`scripts/setup.mjs`,
 the database) — the three separate `apply-sql` / `seed` / `dodo-setup` files
 were three files calling the same two libraries in a fixed order.
 
+**`npm run verify` is the one that matters before a deploy.** It creates a
+throwaway slot and a deliberately awkward field of ads — a TIE on amount, a
+house ad, a paid-but-unapproved ad, an expired one, a zero-amount draft — then
+drives the real pages over HTTP and asserts what came back, cleaning up in a
+`finally`. A happy-path test passes on all five of those while the product is
+broken, which is why they are the cases. It runs against production too, and
+should.
+
 **The port lives in exactly one place: `PORT` in `scripts/dev.sh` (3500).**
 `package.json` calls the script rather than repeating the number — when it was
 written in both, the two drifted apart twice in one afternoon.

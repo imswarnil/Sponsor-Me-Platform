@@ -9,6 +9,7 @@
     "logs": "bash scripts/dev.sh logs",
     "build": "next build",
     "check": "tsc --noEmit",
+    "verify": "node scripts/verify.mjs",
     "setup": "node scripts/setup.mjs",
     "db": "drizzle-kit push",
     "studio": "drizzle-kit studio",
@@ -40,5 +41,5 @@
   "devDependencies": {
     "@opennextjs/cloudflare": "~1.15.1",
     "wrangler": "^4.129.0"
-   }
+  }
 }

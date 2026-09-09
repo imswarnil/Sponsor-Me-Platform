@@ -213,6 +213,14 @@ const slotInput = z.object({
   stepRupees: z.coerce.number().int().min(1).max(100_000).optional()
 });
 
+/**
+ * The public id that goes in the embed tag.
+ *
+ * Readable, because a creator reads it back when pasting a tag, plus four
+ * random characters so two slots called "Sidebar" do not collide. The suffix
+ * is not a secret — `public_id` is meant to leave the building — it only has
+ * to be unique.
+ */
 function slugFor(name: string) {
   const base = name
     .toLowerCase()
@@ -235,8 +243,7 @@ export async function createSlotAction(_prev: ActionState, form: FormData): Prom
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  await db.insert(slots).values({
-    publicId: slugFor(parsed.data.name),
+  const values = {
     name: parsed.data.name,
     blurb: parsed.data.blurb,
     kind: parsed.data.kind,
@@ -244,11 +251,38 @@ export async function createSlotAction(_prev: ActionState, form: FormData): Prom
     pricePaise: parsed.data.priceRupees * 100,
     stepPaise: (parsed.data.stepRupees ?? 100) * 100,
     previewUrl: safeUrl(form.get('previewUrl'))
-  });
+  };
+
+  /**
+   * `public_id` is UNIQUE, so a slug collision is a database error — and an
+   * unhandled one in a server action is a crash with no message rather than
+   * "that didn't work, try again".
+   *
+   * `onConflictDoNothing().returning()` turns the collision into an empty
+   * result instead of a throw, so a retry is just another turn of the loop.
+   * Three attempts: at four base-36 characters a second collision is already
+   * absurd, and a third means something other than chance is wrong.
+   */
+  let created: { publicId: string } | undefined;
+  try {
+    for (let attempt = 0; attempt < 3 && !created; attempt++) {
+      const rows = await db
+        .insert(slots)
+        .values({ ...values, publicId: slugFor(parsed.data.name) })
+        .onConflictDoNothing()
+        .returning({ publicId: slots.publicId });
+      created = rows[0];
+    }
+  } catch (err) {
+    console.error('[createSlot]', err);
+    return { error: 'Could not save that slot. Try again.' };
+  }
+
+  if (!created) return { error: 'Could not find a free id for that name. Try a different one.' };
 
   revalidatePath('/studio');
   revalidatePath('/');
-  return { ok: 'Slot created. Copy the tag and paste it in.' };
+  return { ok: `Slot created — ${created.publicId}. Copy the tag and paste it in.` };
 }
 
 export async function setSlotActiveAction(slotId: string, active: boolean): Promise<void> {
