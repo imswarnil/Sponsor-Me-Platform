@@ -4,7 +4,8 @@ import { and, eq } from 'drizzle-orm';
 
 import { Footer, Header } from '@/components/chrome';
 import { AdEmpty, AdRender } from '@/components/ad-render';
-import { Leaderboard } from '@/components/leaderboard';
+import { EmptyBoard, Field, Podium } from '@/components/leaderboard';
+import { Bay, Rig } from '@/components/rig';
 import { BuyPanel } from '@/components/buy-panel';
 import { db } from '@/lib/db/client';
 import { ads } from '@/lib/db/schema';
@@ -49,28 +50,29 @@ export default async function SlotPage({ params }: { params: Promise<{ slug: str
 
   return (
     <>
+      <Rig />
       <Header />
 
-      <main className={isBid ? 'bg-craft-50' : 'bg-teal-50'}>
-        <div className="mx-auto max-w-6xl px-4 py-12">
+      <main className="relative z-10">
+        <Bay className="py-12">
           <Link href="/" className="text-sm font-bold text-ink-600 hover:text-ink-900">
             ← All slots
           </Link>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <span className={`sticker -rotate-1 ${isBid ? 'bg-craft-300' : 'bg-teal-300'}`}>
+            <span className={"label"}>
               {isBid ? '🏆 Bid slot' : '✨ Buy it'}
             </span>
-            <span className="sticker rotate-1 bg-white">{shape?.label ?? slot.shape}</span>
+            <span className="label">{shape?.label ?? slot.shape}</span>
           </div>
 
-          <h1 className="mt-4 text-4xl font-black tracking-tight sm:text-5xl">{slot.name}</h1>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">{slot.name}</h1>
           {slot.blurb ? <p className="mt-2 max-w-xl text-lg text-ink-700">{slot.blurb}</p> : null}
           <p className="mt-1 text-sm text-ink-600">{SLOT_KINDS[isBid ? 'bid' : 'fixed'].tagline}</p>
 
           <div className="mt-10 grid gap-8 lg:grid-cols-[1.1fr_1fr]">
             <div>
-              <p className="mb-3 text-sm font-black uppercase tracking-wide text-ink-600">
+              <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-600">
                 {winner ? 'Serving right now' : 'Nothing here yet'}
               </p>
               <div style={{ minHeight: 260 }}>
@@ -83,10 +85,19 @@ export default async function SlotPage({ params }: { params: Promise<{ slug: str
 
               {isBid ? (
                 <div className="mt-8">
-                  <p className="mb-3 text-sm font-black uppercase tracking-wide text-ink-600">
-                    The board ({contenders.length})
-                  </p>
-                  <Leaderboard rows={contenders} mineId={viewer?.id} askPaise={ask} />
+                  <p className="label pb-3">The race ({contenders.length})</p>
+                  {contenders.length ? (
+                    <>
+                      <Podium rows={contenders} />
+                      {contenders.length > 3 ? (
+                        <div className="mt-6">
+                          <Field rows={contenders} from={3} mineId={viewer?.id} />
+                        </div>
+                      ) : null}
+                    </>
+                  ) : (
+                    <EmptyBoard ask={ask} />
+                  )}
                 </div>
               ) : null}
             </div>
@@ -102,7 +113,7 @@ export default async function SlotPage({ params }: { params: Promise<{ slug: str
               existing={mine}
             />
           </div>
-        </div>
+        </Bay>
       </main>
 
       <Footer />

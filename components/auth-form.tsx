@@ -26,13 +26,13 @@ export function AuthForm({ mode, next }: { mode: 'signin' | 'signup'; next?: str
       {mode === 'signup' ? (
         <label className="block">
           <span className="text-sm font-bold">Your name</span>
-          <input name="name" required maxLength={80} autoComplete="name" className="field-pop mt-1" />
+          <input name="name" required maxLength={80} autoComplete="name" className="field mt-1" />
         </label>
       ) : null}
 
       <label className="block">
         <span className="text-sm font-bold">Email</span>
-        <input name="email" type="email" required autoComplete="email" className="field-pop mt-1" />
+        <input name="email" type="email" required autoComplete="email" className="field mt-1" />
       </label>
 
       <label className="block">
@@ -43,13 +43,13 @@ export function AuthForm({ mode, next }: { mode: 'signin' | 'signup'; next?: str
           required
           minLength={8}
           autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-          className="field-pop mt-1"
+          className="field mt-1"
         />
         <span className="mt-1 block text-xs text-ink-500">At least 8 characters.</span>
       </label>
 
       {state.error ? (
-        <p className="rounded-xl border-2 border-signal-500 bg-signal-50 p-3 text-sm font-semibold text-signal-700">
+        <p className=" border-l-2 border-signal-500 bg-signal-50 py-2 pl-3 text-sm font-semibold text-signal-700">
           {state.error}
         </p>
       ) : null}
@@ -74,7 +74,7 @@ export function AuthForm({ mode, next }: { mode: 'signin' | 'signup'; next?: str
 function Submit({ label }: { label: string }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" className="btn-pop w-full bg-signal-500 text-white" disabled={pending}>
+    <button type="submit" className="btn w-full bg-signal-500 text-white" disabled={pending}>
       {pending ? 'Working…' : label}
     </button>
   );

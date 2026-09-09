@@ -103,6 +103,10 @@ export const ads = pgTable(
     format: text('format').notNull().default('card'),
 
     brand: text('brand').notNull().default(''),
+    /** What they do, in a word or two — "Design tool", "Course", "Newsletter".
+     *  The leaderboard shows it beside the site, so a reader can tell what a
+     *  name is before clicking it. */
+    tag: text('tag'),
     headline: text('headline').notNull().default(''),
     body: text('body').notNull().default(''),
     url: text('url'),

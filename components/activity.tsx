@@ -12,43 +12,44 @@ import type { Activity } from '@/lib/db/schema';
  * cached. Anything inside an hour reads as "just now" for the same reason.
  */
 
-const COPY: Record<string, { verb: string; emoji: string }> = {
-  paid: { verb: 'paid for', emoji: '💸' },
-  live: { verb: 'went live on', emoji: '🚀' },
-  outbid: { verb: 'took the top of', emoji: '🏆' }
+const COPY: Record<string, { verb: string; short: string }> = {
+  paid: { verb: 'paid for', short: 'paid' },
+  live: { verb: 'went live on', short: 'live' },
+  outbid: { verb: 'took the top of', short: 'outbid' }
 };
 
 export function ActivityFeed({ rows }: { rows: Activity[] }) {
   if (!rows.length) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-ink-300 bg-white p-8 text-center">
-        <p className="text-3xl">🌱</p>
-        <p className="mt-2 font-black">Nothing yet</p>
+      <div className="border border-dashed border-ink-300 p-8 text-center">
+        <p className="label">Feed</p>
+        <p className="mt-2 font-semibold">Nothing yet</p>
         <p className="text-sm text-ink-600">
-          The first thing that happens here will be somebody buying a slot.
+          The first thing here will be somebody taking a slot.
         </p>
       </div>
     );
   }
 
   return (
-    <ul className="flex flex-col gap-2">
+    <ul className="border-t border-ink-200">
       {rows.map((row) => {
-        const copy = COPY[row.kind] ?? { verb: row.kind, emoji: '•' };
+        const copy = COPY[row.kind] ?? { verb: row.kind, short: row.kind };
         return (
-          <li key={row.id} className="card-pop flex items-center gap-3 p-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border-2 border-ink-900 bg-ink-50 text-base">
-              {copy.emoji}
-            </span>
+          <li
+            key={row.id}
+            className="flex items-center gap-4 border-b border-ink-200 py-3"
+          >
+            <span className="label w-16 shrink-0">{copy.short}</span>
 
             <p className="min-w-0 flex-1 truncate text-sm">
-              <strong className="font-black">{row.actor || 'Someone'}</strong>{' '}
-              <span className="text-ink-600">{copy.verb}</span>{' '}
-              <strong className="font-bold">{row.slotName || 'a slot'}</strong>
+              <strong className="font-semibold">{row.actor || 'Someone'}</strong>{' '}
+              <span className="text-ink-500">{copy.verb}</span>{' '}
+              <span className="text-ink-700">{row.slotName || 'a slot'}</span>
             </p>
 
             {row.amountPaise ? (
-              <span className="tnum shrink-0 text-sm font-black">
+              <span className="tnum shrink-0 text-sm font-semibold">
                 {formatPaise(row.amountPaise)}
               </span>
             ) : null}
@@ -72,7 +73,7 @@ function Ago({ date }: { date: Date | string }) {
   else label = then.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
 
   return (
-    <time dateTime={then.toISOString()} className="shrink-0 text-xs text-ink-400">
+    <time dateTime={then.toISOString()} className="label shrink-0">
       {label}
     </time>
   );

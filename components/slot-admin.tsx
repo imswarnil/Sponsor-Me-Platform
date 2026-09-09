@@ -20,8 +20,8 @@ export function NewSlot() {
   const [kind, setKind] = useState<'fixed' | 'bid'>('fixed');
 
   return (
-    <form action={action} className="card-pop card-pop-lg p-6">
-      <p className="text-lg font-black">New slot</p>
+    <form action={action} className="panel p-6">
+      <p className="text-lg font-semibold">New slot</p>
 
       {/* The kind is the biggest decision on this form, so it is the biggest
           control — two chunky cards, not a dropdown. */}
@@ -34,9 +34,9 @@ export function NewSlot() {
         ).map((o) => (
           <label
             key={o.k}
-            className={`cursor-pointer rounded-xl border-2 p-3 transition ${
+            className={`cursor-pointer  border p-3 transition ${
               kind === o.k
-                ? `border-ink-900 ${o.tone} shadow-[3px_3px_0_0_var(--color-ink-900)]`
+                ? `border-ink-900 ${o.tone} `
                 : 'border-ink-200 bg-white hover:border-ink-400'
             }`}
           >
@@ -49,7 +49,7 @@ export function NewSlot() {
               className="sr-only"
             />
             <span className="text-xl">{o.emoji}</span>
-            <span className="block text-sm font-black">{o.t}</span>
+            <span className="block text-sm font-semibold">{o.t}</span>
             <span className="block text-[11px] leading-tight text-ink-500">{o.d}</span>
           </label>
         ))}
@@ -57,16 +57,16 @@ export function NewSlot() {
 
       <div className="mt-4 flex flex-col gap-3">
         <L label="Name">
-          <input name="name" required maxLength={60} className="field-pop" placeholder="Blog sidebar" />
+          <input name="name" required maxLength={60} className="field" placeholder="Blog sidebar" />
         </L>
 
         <L label="One line about it">
-          <input name="blurb" maxLength={200} className="field-pop" placeholder="Beside every post" />
+          <input name="blurb" maxLength={200} className="field" placeholder="Beside every post" />
         </L>
 
         <div className="grid grid-cols-2 gap-3">
           <L label="Shape">
-            <select name="shape" className="field-pop" defaultValue="card">
+            <select name="shape" className="field" defaultValue="card">
               {Object.entries(SHAPES).map(([k, s]) => (
                 <option key={k} value={k}>
                   {s.label} · {s.w}×{s.h}
@@ -81,7 +81,7 @@ export function NewSlot() {
               type="number"
               min={1}
               required
-              className="field-pop"
+              className="field"
               placeholder="2500"
             />
           </L>
@@ -94,7 +94,7 @@ export function NewSlot() {
               type="number"
               min={1}
               defaultValue={100}
-              className="field-pop"
+              className="field"
             />
             <span className="mt-1 block text-[11px] text-ink-500">
               How much someone must beat the leader by. Stops one-rupee wars.
@@ -103,22 +103,22 @@ export function NewSlot() {
         ) : null}
 
         <L label="Preview URL (optional)">
-          <input name="previewUrl" type="url" className="field-pop" placeholder="https://…" />
+          <input name="previewUrl" type="url" className="field" placeholder="https://…" />
         </L>
       </div>
 
       {state.error ? (
-        <p className="mt-4 rounded-xl border-2 border-signal-500 bg-signal-50 p-3 text-sm font-semibold">
+        <p className="mt-4  border-l-2 border-signal-500 bg-signal-50 py-2 pl-3 text-sm font-semibold">
           {state.error}
         </p>
       ) : null}
       {state.ok ? (
-        <p className="mt-4 rounded-xl border-2 border-mint-500 bg-mint-50 p-3 text-sm font-semibold">
+        <p className="mt-4  border-l-2 border-mint-500 bg-mint-50 py-2 pl-3 text-sm font-semibold">
           {state.ok}
         </p>
       ) : null}
 
-      <Submit label="Create slot" className="btn-pop mt-4 w-full bg-signal-500 text-white" />
+      <Submit label="Create slot" className="btn mt-4 w-full bg-signal-500 text-white" />
     </form>
   );
 }
@@ -141,14 +141,14 @@ export function SlotTag({ slot }: { slot: Slot }) {
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-black uppercase tracking-wide text-ink-500">
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
           Paste this where it should appear
         </p>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="rounded-full border-2 border-ink-900 bg-white px-3 py-1 text-xs font-bold"
+            className="rounded-full border border-ink-200 bg-white px-3 py-1 text-xs font-bold"
           >
             {open ? 'Hide' : 'Preview'}
           </button>
@@ -163,20 +163,20 @@ export function SlotTag({ slot }: { slot: Slot }) {
                 /* clipboard blocked; the code is selectable anyway */
               }
             }}
-            className="rounded-full border-2 border-ink-900 bg-craft-200 px-3 py-1 text-xs font-bold"
+            className="rounded-full border border-ink-200 bg-craft-200 px-3 py-1 text-xs font-bold"
           >
             {copied ? 'Copied!' : 'Copy'}
           </button>
         </div>
       </div>
 
-      <pre className="mt-2 overflow-x-auto rounded-xl border-2 border-ink-900 bg-ink-900 p-3 font-mono text-[11px] leading-relaxed text-mint-400">
+      <pre className="mt-2 overflow-x-auto  border border-ink-200 bg-ink-900 p-3 font-mono text-[11px] leading-relaxed text-mint-400">
         {tag}
       </pre>
 
       {open ? (
-        <div className="mt-3 overflow-hidden rounded-xl border-2 border-ink-900">
-          <div className="flex items-center gap-2 border-b-2 border-ink-900 bg-ink-100 px-3 py-1.5">
+        <div className="mt-3 overflow-hidden  border border-ink-200">
+          <div className="flex items-center gap-2 border-b border-ink-200 bg-ink-100 px-3 py-1.5">
             <span className="flex gap-1" aria-hidden>
               <i className="h-2 w-2 rounded-full bg-ink-400" />
               <i className="h-2 w-2 rounded-full bg-ink-400" />
@@ -218,14 +218,14 @@ export function SlotControls({ slotId, active }: { slotId: string; active: boole
           type="button"
           disabled={pending}
           onClick={() => start(() => void deleteSlotAction(slotId))}
-          className="rounded-full border-2 border-ink-900 bg-signal-500 px-3 py-1 text-xs font-bold text-white"
+          className="rounded-full border border-ink-200 bg-signal-500 px-3 py-1 text-xs font-bold text-white"
         >
           Yes, delete
         </button>
         <button
           type="button"
           onClick={() => setConfirming(false)}
-          className="rounded-full border-2 border-ink-900 bg-white px-3 py-1 text-xs font-bold"
+          className="rounded-full border border-ink-200 bg-white px-3 py-1 text-xs font-bold"
         >
           Keep
         </button>
@@ -239,14 +239,14 @@ export function SlotControls({ slotId, active }: { slotId: string; active: boole
         type="button"
         disabled={pending}
         onClick={() => start(() => void setSlotActiveAction(slotId, !active))}
-        className="rounded-full border-2 border-ink-900 bg-white px-3 py-1 text-xs font-bold"
+        className="rounded-full border border-ink-200 bg-white px-3 py-1 text-xs font-bold"
       >
         {active ? 'Pause' : 'Resume'}
       </button>
       <button
         type="button"
         onClick={() => setConfirming(true)}
-        className="rounded-full border-2 border-ink-200 px-3 py-1 text-xs font-bold text-ink-500 hover:border-ink-900 hover:text-ink-900"
+        className="rounded-full border border-ink-200 px-3 py-1 text-xs font-bold text-ink-500 hover:border-ink-900 hover:text-ink-900"
       >
         Delete
       </button>
@@ -266,14 +266,14 @@ export function ReviewControls({ adId }: { adId: string }) {
         value={note}
         onChange={(e) => setNote(e.target.value)}
         placeholder="Note (shown if you reject)"
-        className="field-pop text-sm"
+        className="field text-sm"
       />
       <div className="flex gap-2">
         <button
           type="button"
           disabled={pending}
           onClick={() => start(() => void reviewAdAction(adId, 'live', note))}
-          className="btn-pop flex-1 bg-mint-400 text-sm"
+          className="btn btn-primary btn-sm flex-1"
         >
           Approve
         </button>
@@ -281,7 +281,7 @@ export function ReviewControls({ adId }: { adId: string }) {
           type="button"
           disabled={pending}
           onClick={() => start(() => void reviewAdAction(adId, 'rejected', note))}
-          className="btn-pop flex-1 bg-white text-sm"
+          className="btn btn-quiet btn-sm flex-1"
         >
           Reject
         </button>

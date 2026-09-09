@@ -39,11 +39,11 @@ export function BuyPanel({
   if (isCreator) {
     return (
       <Panel>
-        <p className="text-lg font-black">This one&rsquo;s yours</p>
+        <p className="text-lg font-semibold">This one&rsquo;s yours</p>
         <p className="mt-1 text-sm text-ink-600">
           Manage it, and grab the embed tag, in the studio.
         </p>
-        <Link href="/studio" className="btn-pop mt-4 w-full bg-white">
+        <Link href="/studio" className="btn btn-quiet mt-4 w-full">
           Open studio
         </Link>
       </Panel>
@@ -53,22 +53,20 @@ export function BuyPanel({
   if (!signedIn) {
     return (
       <Panel>
-        <p className="text-sm font-bold uppercase tracking-wide text-ink-500">
-          {kind === 'bid' ? 'To take the crown' : 'Price'}
-        </p>
-        <p className="tnum mt-1 text-5xl font-black">{formatPaise(askPaise)}</p>
+        <p className="label">{kind === 'bid' ? 'To take first' : 'Price'}</p>
+        <p className="tnum mt-1 text-5xl font-semibold">{formatPaise(askPaise)}</p>
         <p className="mt-1 text-sm text-ink-600">
           {kind === 'bid' ? 'or bid whatever you like' : 'per month'}
         </p>
         <Link
           href={`/signup?next=${encodeURIComponent(`/slot/${slug}`)}`}
-          className="btn-pop mt-6 w-full bg-signal-500 text-white"
+          className="btn btn-primary mt-6 w-full"
         >
           Make an account →
         </Link>
         <Link
           href={`/signin?next=${encodeURIComponent(`/slot/${slug}`)}`}
-          className="mt-3 block text-center text-sm font-bold text-ink-600 hover:text-ink-900"
+          className="mt-3 block text-center text-sm text-ink-600 hover:text-ink-900"
         >
           I already have one
         </Link>
@@ -99,7 +97,7 @@ export function BuyPanel({
 }
 
 function Panel({ children }: { children: React.ReactNode }) {
-  return <div className="card-pop card-pop-lg h-fit p-6">{children}</div>;
+  return <div className="panel h-fit p-6">{children}</div>;
 }
 
 /* ── The creative ───────────────────────────────────────────────────────── */
@@ -109,26 +107,24 @@ function AdForm({ slotId, existing }: { slotId: string; existing: Ad | null }) {
   const [format, setFormat] = useState(existing?.format ?? 'card');
 
   return (
-    <form action={action} className="card-pop card-pop-lg p-6">
+    <form action={action} className="panel p-6">
       <input type="hidden" name="slotId" value={slotId} />
 
-      <p className="text-lg font-black">Your ad</p>
+      <p className="text-lg font-semibold">Your ad</p>
       {existing?.status === 'rejected' && existing.reviewNote ? (
         <p className="mt-2 rounded-xl border-2 border-signal-500 bg-signal-50 p-3 text-sm">
           Not approved: {existing.reviewNote}
         </p>
       ) : null}
 
-      {/* Format picker: chunky toggles, because there are only four and each
-          needs a word of explanation. */}
-      <div className="mt-4 grid grid-cols-2 gap-2">
+      {/* Four formats, four cells on a hairline grid — the same rig the page
+          is drawn on, so the control looks like part of the page. */}
+      <div className="mt-4 grid grid-cols-2 gap-px border border-ink-200 bg-ink-200">
         {Object.entries(FORMATS).map(([key, f]) => (
           <label
             key={key}
-            className={`cursor-pointer rounded-xl border-2 p-3 transition ${
-              format === key
-                ? 'border-ink-900 bg-craft-100 shadow-[3px_3px_0_0_var(--color-ink-900)]'
-                : 'border-ink-200 bg-white hover:border-ink-400'
+            className={`cursor-pointer p-3 transition ${
+              format === key ? 'bg-signal-50 ring-1 ring-inset ring-signal-500' : 'bg-white hover:bg-ink-50'
             }`}
           >
             <input
@@ -139,15 +135,25 @@ function AdForm({ slotId, existing }: { slotId: string; existing: Ad | null }) {
               onChange={() => setFormat(key)}
               className="sr-only"
             />
-            <span className="text-xl">{f.emoji}</span>
-            <span className="block text-sm font-black">{f.label}</span>
+            <span className="block text-sm font-semibold">{f.label}</span>
             <span className="block text-[11px] leading-tight text-ink-500">{f.note}</span>
           </label>
         ))}
       </div>
 
       <div className="mt-4 flex flex-col gap-3">
-        <Field label="Brand" name="brand" defaultValue={existing?.brand} required maxLength={40} />
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Brand" name="brand" defaultValue={existing?.brand} required maxLength={40} />
+          {/* Shown on the leaderboard beside the website, so a reader can tell
+              what a name IS before deciding whether to click it. */}
+          <Field
+            label="What you do"
+            name="tag"
+            defaultValue={existing?.tag ?? ''}
+            maxLength={24}
+            placeholder="Issue tracker"
+          />
+        </div>
 
         {format !== 'html' ? (
           <>
@@ -199,13 +205,13 @@ function AdForm({ slotId, existing }: { slotId: string; existing: Ad | null }) {
 
         {format === 'html' ? (
           <label className="block">
-            <span className="text-sm font-bold">Your HTML</span>
+            <span className="text-sm font-medium">Your HTML</span>
             <textarea
               name="html"
               rows={6}
               maxLength={8000}
               defaultValue={existing?.html ?? ''}
-              className="field-pop mt-1 font-mono text-xs"
+              className="field mt-1 font-mono text-xs"
               placeholder="<div>…</div>"
             />
             {/* Said out loud, because a sponsor pasting a script needs to know
@@ -228,7 +234,7 @@ function AdForm({ slotId, existing }: { slotId: string; existing: Ad | null }) {
       </div>
 
       <Message state={state} />
-      <Submit label={existing ? 'Save ad' : 'Save ad'} className="btn-pop mt-4 w-full bg-white" />
+      <Submit label={existing ? 'Save ad' : 'Save ad'} className="btn btn-quiet mt-4 w-full" />
     </form>
   );
 }
@@ -255,14 +261,14 @@ function PayForm({
   const total = kind === 'bid' ? rupees * 100 : termPrice(pricePaise, months);
 
   return (
-    <form action={action} className="card-pop card-pop-lg h-fit p-6">
+    <form action={action} className="panel h-fit p-6">
       <input type="hidden" name="slotId" value={slotId} />
 
       {kind === 'bid' ? (
         <>
-          <p className="text-sm font-bold uppercase tracking-wide text-ink-500">Your bid</p>
-          <div className="mt-2 flex items-center gap-2 rounded-xl border-2 border-ink-900 bg-white px-4 py-3">
-            <span className="text-2xl font-black text-ink-400">₹</span>
+          <p className="label">Your bid</p>
+          <div className="mt-2 flex items-center gap-2 border border-ink-300 bg-white px-4 py-3 focus-within:border-signal-500">
+            <span className="text-2xl font-normal text-ink-400">₹</span>
             <input
               name="rupees"
               type="number"
@@ -271,7 +277,7 @@ function PayForm({
               step={1}
               value={rupees}
               onChange={(e) => setRupees(Number(e.target.value))}
-              className="tnum w-full bg-transparent text-3xl font-black outline-none"
+              className="tnum w-full bg-transparent text-3xl font-semibold outline-none"
             />
           </div>
           <p className="mt-2 text-sm text-ink-600">
@@ -287,7 +293,7 @@ function PayForm({
                   key={mult}
                   type="button"
                   onClick={() => setRupees(v)}
-                  className="rounded-full border-2 border-ink-900 bg-white px-3 py-1 text-xs font-bold hover:bg-craft-100"
+                  className="label border border-ink-200 px-2 py-1 hover:border-ink-900 hover:text-ink-900"
                 >
                   ₹{v.toLocaleString('en-IN')}
                 </button>
@@ -297,21 +303,21 @@ function PayForm({
         </>
       ) : (
         <>
-          <p className="text-sm font-bold uppercase tracking-wide text-ink-500">How long?</p>
-          <div className="mt-2 grid grid-cols-3 gap-2">
+          <p className="label">How long?</p>
+          <div className="mt-2 grid grid-cols-3 gap-px border border-ink-200 bg-ink-200">
             {TERMS.map((t) => (
               <button
                 key={t.months}
                 type="button"
                 onClick={() => setMonths(t.months)}
                 aria-pressed={months === t.months}
-                className={`rounded-xl border-2 p-3 text-center transition ${
+                className={`p-3 text-center transition ${
                   months === t.months
-                    ? 'border-ink-900 bg-teal-200 shadow-[3px_3px_0_0_var(--color-ink-900)]'
-                    : 'border-ink-200 bg-white hover:border-ink-400'
+                    ? 'bg-signal-50 ring-1 ring-inset ring-signal-500'
+                    : 'bg-white hover:bg-ink-50'
                 }`}
               >
-                <span className="block text-sm font-black">{t.months}mo</span>
+                <span className="block text-sm font-semibold">{t.months}mo</span>
                 {t.off ? (
                   <span className="block text-[10px] font-bold text-mint-600">{t.off}</span>
                 ) : null}
@@ -322,9 +328,9 @@ function PayForm({
         </>
       )}
 
-      <div className="mt-5 flex items-end justify-between border-t-2 border-dashed border-ink-200 pt-4">
-        <span className="text-sm font-bold uppercase tracking-wide text-ink-500">Total</span>
-        <span className="tnum text-3xl font-black">{formatPaise(total)}</span>
+      <div className="mt-5 flex items-end justify-between border-t border-ink-200 pt-4">
+        <span className="label">Total</span>
+        <span className="tnum text-3xl font-semibold">{formatPaise(total)}</span>
       </div>
 
       <Message state={state} />
@@ -332,7 +338,7 @@ function PayForm({
       <Submit
         label={kind === 'bid' ? 'Place bid →' : 'Buy this slot →'}
         pendingLabel="Opening checkout…"
-        className="btn-pop mt-4 w-full bg-signal-500 text-white"
+        className="btn mt-4 w-full bg-signal-500 text-white"
       />
 
       <p className="mt-3 text-[11px] leading-snug text-ink-500">
@@ -357,8 +363,8 @@ function Field({
 } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <label className="block">
-      <span className="text-sm font-bold">{label}</span>
-      <input name={name} defaultValue={defaultValue ?? ''} className="field-pop mt-1" {...rest} />
+      <span className="text-sm font-medium text-ink-700">{label}</span>
+      <input name={name} defaultValue={defaultValue ?? ''} className="field mt-1.5" {...rest} />
     </label>
   );
 }
@@ -367,7 +373,7 @@ function Message({ state }: { state: ActionState }) {
   if (!state.error && !state.ok) return null;
   return (
     <p
-      className={`mt-4 rounded-xl border-2 p-3 text-sm font-semibold ${
+      className={`mt-4 border-l-2 py-2 pl-3 text-sm ${
         state.error
           ? 'border-signal-500 bg-signal-50 text-signal-700'
           : 'border-mint-500 bg-mint-50 text-mint-600'

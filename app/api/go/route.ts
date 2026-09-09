@@ -46,9 +46,11 @@ export async function GET(request: Request): Promise<Response> {
         target: [stats.adId, stats.day],
         set: { clicks: sql`${stats.clicks} + 1` }
       });
-  } catch {
+  } catch (err) {
     // Counting is best-effort; the destination is not. A lost tally is a
-    // smaller failure than a dead link.
+    // smaller failure than a dead link — but it is logged, because silence
+    // here once hid a missing UNIQUE constraint for an entire deploy.
+    console.error('[go] click not recorded:', err instanceof Error ? err.message : err);
   }
 
   redirect(destination);

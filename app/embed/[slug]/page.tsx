@@ -41,7 +41,7 @@ export default async function Embed({ params }: { params: Promise<{ slug: string
   }
 
   return (
-    <div className="h-full p-1">
+    <div className="flex flex-1 flex-col p-1">
       {winner ? (
         <AdRender ad={winner} base={site.self} shape={slot.shape} />
       ) : (

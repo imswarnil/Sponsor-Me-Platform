@@ -2,124 +2,188 @@ import { formatPaise } from '@/lib/money';
 import type { LiveAd } from '@/lib/queries';
 
 /**
- * THE LEADERBOARD — a ranked list, not a grid.
+ * THE RACE.
  *
- * A grid says "here are some things, all equally". A leaderboard says "these
- * are in an ORDER, and the order is the point". So this is one column of rows,
- * top to bottom, and three devices carry the ranking:
+ * Two halves, and they say the same thing twice on purpose:
  *
- *   1. A medal. Gold, silver, bronze — literal, because everybody already
- *      knows how to read one, and the whole page is trying to feel like a
- *      game rather than a spreadsheet.
- *   2. Size. First place is physically bigger than second, second than third.
- *   3. A bar. Each row's fill is its share of the leader's amount, so the GAP
- *      is a picture instead of arithmetic the reader has to do.
+ *   THE PODIUM — first, second, third, drawn at three physical heights. The
+ *   height difference is the whole point: it says "there is a gap, and roughly
+ *   this big" before a single figure has been read. Second is on the left and
+ *   third on the right, the way a podium actually stands.
+ *
+ *   THE FIELD — everybody, in order, with a bar whose width is their share of
+ *   the leader's. The gap becomes a picture instead of arithmetic.
+ *
+ * Each entry carries what a reader actually needs to decide whether to click:
+ * the brand, its WEBSITE, and a TAG saying what it does. "Linear" means
+ * nothing on its own; "linear.app · Issue tracker" means something.
  */
 
-const MEDALS = [
-  // Gold: the brand's own craft hue. Only rank one ever gets it.
-  { ring: 'bg-craft-300 border-ink-900', emoji: '🥇', label: 'Leading' },
-  { ring: 'bg-ink-200 border-ink-900', emoji: '🥈', label: '2nd' },
-  { ring: 'bg-craft-100 border-ink-900', emoji: '🥉', label: '3rd' }
+/** The site, without the noise. `linear.app`, not `https://linear.app/`. */
+function host(url: string | null): string | null {
+  if (!url) return null;
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return null;
+  }
+}
+
+/* Podium heights. First is tallest; second and third are deliberately close to
+   each other, because the interesting gap is between first and the rest. */
+const STEP = [
+  {
+    h: 'h-40',
+    order: 'md:order-2',
+    ring: 'border-craft-400 bg-craft-100',
+    badge: 'bg-craft-400 text-ink-900',
+    numeral: 'text-craft-600',
+    medal: '1st'
+  },
+  {
+    h: 'h-28',
+    order: 'md:order-1',
+    ring: 'border-ink-300 bg-ink-100',
+    badge: 'bg-ink-300 text-ink-900',
+    numeral: 'text-ink-400',
+    medal: '2nd'
+  },
+  {
+    h: 'h-24',
+    order: 'md:order-3',
+    ring: 'border-ink-200 bg-ink-50',
+    badge: 'bg-ink-200 text-ink-700',
+    numeral: 'text-ink-300',
+    medal: '3rd'
+  }
 ];
 
-export function Leaderboard({
+export function Podium({ rows }: { rows: LiveAd[] }) {
+  if (!rows.length) return null;
+  const top = rows.slice(0, 3);
+
+  return (
+    <div className="grid grid-cols-1 gap-px border border-ink-200 bg-ink-200 md:grid-cols-3">
+      {top.map((row, i) => {
+        const step = STEP[i];
+        const site = host(row.url);
+
+        return (
+          <div
+            key={row.id}
+            className={`flex flex-col justify-end bg-white p-5 ${step.order}`}
+          >
+            <div className="flex items-center gap-2">
+              <span className={`label px-1.5 py-0.5 text-ink-900 ${step.badge}`}>
+                {step.medal}
+              </span>
+              {row.isHouse ? <span className="label">house</span> : null}
+            </div>
+
+            <p className="mt-3 truncate text-xl font-semibold tracking-tight">{row.brand}</p>
+
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+              {site ? <span className="font-mono text-xs text-ink-500">{site}</span> : null}
+              {row.tag ? <span className="tag text-ink-500">{row.tag}</span> : null}
+            </div>
+
+            <p className="tnum mt-4 text-2xl font-semibold">
+              {row.isHouse ? '—' : formatPaise(row.amountPaise)}
+            </p>
+
+            {/* The step itself, carrying its own numeral. Without the figure
+                inside it, a bare tinted rectangle reads as a broken image
+                rather than as a place on a podium. Scaled from the bottom, so
+                it grows out of the floor instead of dropping in. */}
+            <div
+              className={`mt-4 flex origin-bottom items-end justify-center border ${step.h} ${step.ring} animate-grow`}
+              style={{ animationDelay: `${i * 90}ms` }}
+            >
+              <span className={`tnum pb-2 text-4xl font-semibold ${step.numeral}`}>
+                {i + 1}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Everybody, in order, with the gap drawn to scale. */
+export function Field({
   rows,
   mineId,
-  askPaise
+  from = 0
 }: {
   rows: LiveAd[];
   mineId?: string | null;
-  askPaise?: number;
+  from?: number;
 }) {
-  if (!rows.length) {
-    return (
-      <div className="rounded-2xl border-2 border-dashed border-ink-300 bg-white p-10 text-center">
-        <p className="text-4xl">🏆</p>
-        <p className="mt-3 text-lg font-black">Nobody has bid yet</p>
-        <p className="text-sm text-ink-600">
-          {askPaise ? (
-            <>
-              First bid takes the crown — from{' '}
-              <strong className="text-ink-900">{formatPaise(askPaise)}</strong>.
-            </>
-          ) : (
-            'First bid takes the crown.'
-          )}
-        </p>
-      </div>
-    );
-  }
+  const shown = rows.slice(from);
+  if (!shown.length) return null;
 
-  const top = Math.max(rows[0].amountPaise, 1);
+  // The leader sets the scale, even when the list starts further down.
+  const top = Math.max(rows[0]?.amountPaise ?? 1, 1);
 
   return (
-    <ol className="flex flex-col gap-2">
-      {rows.map((row, i) => {
-        const medal = MEDALS[i];
+    <ol className="border-x border-t border-ink-200">
+      {shown.map((row, i) => {
+        const rank = from + i + 1;
         const mine = row.profileId === mineId;
-        const share = Math.max(6, (row.amountPaise / top) * 100);
+        const site = host(row.url);
+        const share = Math.max(3, (row.amountPaise / top) * 100);
 
         return (
           <li
             key={row.id}
-            className={[
-              'relative flex items-center gap-3 overflow-hidden rounded-2xl border-2 border-ink-900 bg-white',
-              i === 0 ? 'p-4 shadow-[5px_5px_0_0_var(--color-ink-900)]' : 'p-3',
-              i === 1 ? 'shadow-[3px_3px_0_0_var(--color-ink-900)]' : '',
-              i > 1 ? 'shadow-[2px_2px_0_0_var(--color-ink-900)]' : '',
-              mine ? 'ring-4 ring-signal-200' : ''
-            ].join(' ')}
+            className={`relative flex items-center gap-4 border-b border-ink-200 px-4 py-3 ${
+              mine ? 'bg-signal-50' : 'bg-white'
+            }`}
           >
-            {/* The gap, drawn. Behind everything, and quiet enough that it is
-                never louder than the text on top of it. */}
             <span
               aria-hidden
-              className={`absolute inset-y-0 left-0 ${i === 0 ? 'bg-craft-100' : 'bg-ink-50'}`}
+              className="absolute inset-y-0 left-0 bg-ink-50"
               style={{ width: `${share}%` }}
             />
 
-            <span
-              className={[
-                'relative z-10 grid shrink-0 place-items-center rounded-xl border-2 font-black',
-                i === 0 ? 'h-12 w-12 text-2xl' : 'h-9 w-9 text-lg',
-                medal ? medal.ring : 'border-ink-300 bg-white text-sm text-ink-500'
-              ].join(' ')}
-            >
-              {medal ? medal.emoji : i + 1}
+            <span className="tnum relative z-10 w-6 shrink-0 font-mono text-sm text-ink-400">
+              {rank}
             </span>
 
             <div className="relative z-10 min-w-0 flex-1">
-              <p
-                className={`truncate font-black leading-tight ${i === 0 ? 'text-lg' : 'text-sm'}`}
-              >
+              <p className="truncate text-sm font-semibold">
                 {row.brand}
-                {row.isHouse ? (
-                  <span className="ml-2 align-middle text-[10px] font-bold uppercase tracking-wide text-mint-600">
-                    our own
-                  </span>
-                ) : null}
+                {row.isHouse ? <span className="label ml-2">house</span> : null}
               </p>
-              <p className="truncate text-xs text-ink-600">{row.headline}</p>
+              <div className="flex flex-wrap items-center gap-x-2">
+                {site ? <span className="font-mono text-xs text-ink-500">{site}</span> : null}
+                {row.tag ? <span className="text-xs text-ink-400">· {row.tag}</span> : null}
+              </div>
             </div>
 
-            <div className="relative z-10 shrink-0 text-right">
-              <p className={`tnum font-black ${i === 0 ? 'text-xl' : 'text-sm'}`}>
-                {row.isHouse ? '—' : formatPaise(row.amountPaise)}
-              </p>
-              {mine ? (
-                <p className="text-[10px] font-bold uppercase tracking-wide text-signal-600">
-                  You
-                </p>
-              ) : i === 0 ? (
-                <p className="text-[10px] font-bold uppercase tracking-wide text-craft-600">
-                  Serving
-                </p>
-              ) : null}
-            </div>
+            <span className="tnum relative z-10 shrink-0 text-sm font-semibold">
+              {row.isHouse ? '—' : formatPaise(row.amountPaise)}
+            </span>
           </li>
         );
       })}
     </ol>
+  );
+}
+
+/** Nothing on the board yet. */
+export function EmptyBoard({ ask }: { ask?: number }) {
+  return (
+    <div className="panel p-10 text-center">
+      <p className="label">The board is open</p>
+      <p className="mt-3 text-lg font-semibold">Nobody is racing yet</p>
+      {ask ? (
+        <p className="mt-1 text-sm text-ink-600">
+          First bid takes first place — from{' '}
+          <strong className="text-ink-900">{formatPaise(ask)}</strong>.
+        </p>
+      ) : null}
+    </div>
   );
 }

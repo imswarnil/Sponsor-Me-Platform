@@ -26,6 +26,7 @@ export type LiveAd = {
   rank: number;
   format: string;
   brand: string;
+  tag: string | null;
   headline: string;
   body: string;
   url: string | null;
@@ -45,6 +46,7 @@ function toLive(row: typeof ads.$inferSelect, rank: number): LiveAd {
     rank,
     format: row.format,
     brand: row.brand,
+    tag: row.tag,
     headline: row.headline,
     body: row.body,
     url: row.url,

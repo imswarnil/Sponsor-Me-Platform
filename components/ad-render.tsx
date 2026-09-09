@@ -33,19 +33,15 @@ export function AdRender({
       {/* A house ad says so. Labelling the creator's own project as "Ad" would
           be technically true and misleading — the disclosure exists to tell a
           reader who paid, and here nobody did. */}
-      <span
-        className={`absolute -top-2 left-3 z-10 rounded-full border-2 border-ink-900 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ink-900 ${
-          ad.isHouse ? 'bg-mint-300' : 'bg-craft-300'
-        }`}
-      >
-        {ad.isHouse ? 'Our own' : 'Ad'}
+      <span className="label absolute right-2 top-2 z-10 bg-white px-1">
+        {ad.isHouse ? 'House' : 'Ad'}
       </span>
 
       <a
         href={href}
         target="_blank"
         rel="nofollow sponsored noopener"
-        className="card-pop card-lift block h-full overflow-hidden no-underline"
+        className="panel panel-hover block h-full overflow-hidden no-underline"
       >
         <Body ad={ad} banner={banner} />
       </a>
@@ -84,7 +80,7 @@ function Body({ ad, banner }: { ad: LiveAd; banner: boolean }) {
           decoding="async"
           className="h-full w-full flex-1 object-cover"
         />
-        <p className="border-t-2 border-ink-900 bg-ink-50 px-3 py-1.5 text-xs font-semibold text-ink-700">
+        <p className="border-t border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700">
           {ad.brand}
         </p>
       </div>
@@ -110,12 +106,12 @@ function Body({ ad, banner }: { ad: LiveAd; banner: boolean }) {
               every page of the network would be a tracking surface and a
               performance cost the creator did not agree to sell. */}
           <span className="absolute inset-0 grid place-items-center">
-            <span className="grid h-12 w-12 place-items-center rounded-full border-2 border-ink-900 bg-white text-lg shadow-[3px_3px_0_0_var(--color-ink-900)]">
+            <span className="grid h-12 w-12 place-items-center rounded-full bg-white/90 text-lg text-ink-900">
               ▶
             </span>
           </span>
         </div>
-        <div className="border-t-2 border-ink-900 px-3 py-2">
+        <div className="border-t border-ink-200 px-3 py-2">
           <p className="line-clamp-2 text-sm font-bold leading-snug">{ad.headline}</p>
           <p className="text-xs text-ink-600">{ad.brand}</p>
         </div>
@@ -135,26 +131,27 @@ function Body({ ad, banner }: { ad: LiveAd; banner: boolean }) {
           decoding="async"
           className={
             banner
-              ? 'h-14 w-14 shrink-0 rounded-xl border-2 border-ink-900 object-cover'
-              : 'h-24 w-full rounded-xl border-2 border-ink-900 object-cover'
+              ? 'h-14 w-14 shrink-0 border border-ink-200 object-cover'
+              : 'h-24 w-full border border-ink-200 object-cover'
           }
         />
       ) : null}
 
       <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-[15px] font-bold leading-snug text-ink-900">
+        <p className="line-clamp-2 text-[15px] font-semibold leading-snug text-ink-900">
           {ad.headline}
         </p>
         {ad.body && !banner ? (
           <p className="mt-1 line-clamp-2 text-sm text-ink-600">{ad.body}</p>
         ) : null}
-        <p className="mt-1 truncate text-xs font-semibold text-ink-500">{ad.brand}</p>
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-2">
+          <span className="truncate text-xs font-semibold text-ink-700">{ad.brand}</span>
+          {ad.tag ? <span className="text-xs text-ink-400">· {ad.tag}</span> : null}
+        </div>
       </div>
 
       {ad.ctaLabel ? (
-        <span
-          className={`btn-pop shrink-0 bg-signal-500 text-sm text-white ${banner ? '' : 'w-full'}`}
-        >
+        <span className={`btn btn-primary btn-sm shrink-0 ${banner ? '' : 'w-full'}`}>
           {ad.ctaLabel}
         </span>
       ) : null}
@@ -185,13 +182,11 @@ export function AdEmpty({
       target="_blank"
       rel="noopener"
       className="group flex h-full min-h-[180px] flex-col items-center justify-center gap-2
-                 rounded-2xl border-2 border-dashed border-ink-300 bg-ink-50 p-4 text-center
-                 no-underline transition hover:border-ink-900 hover:bg-craft-50"
+                 border border-dashed border-ink-300 p-4 text-center no-underline
+                 transition hover:border-signal-500 hover:bg-signal-50"
     >
-      <span className="text-2xl">{kind === 'bid' ? '🏆' : '✨'}</span>
-      <p className="text-sm font-bold text-ink-900">
-        {kind === 'bid' ? 'Top spot is open' : 'This spot is open'}
-      </p>
+      <p className="label">{kind === 'bid' ? 'First place' : 'This spot'}</p>
+      <p className="text-sm font-semibold text-ink-900">Open</p>
       <p className="text-xs text-ink-600">
         <strong className="text-ink-900">{ask}</strong> takes it
       </p>

@@ -1,4 +1,5 @@
 import { Footer, Header } from '@/components/chrome';
+import { Bay, Rig } from '@/components/rig';
 import { AdRender } from '@/components/ad-render';
 import { SignOut } from '@/components/sign-out';
 import { NewSlot, ReviewControls, SlotControls, SlotTag } from '@/components/slot-admin';
@@ -28,14 +29,15 @@ export default async function Studio() {
 
   return (
     <>
+      <Rig />
       <Header />
 
-      <main className="min-h-[60vh] bg-mint-50 px-4 py-12">
-        <div className="mx-auto max-w-6xl">
+      <main className="relative z-10 min-h-[60vh] py-12">
+        <Bay>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <span className="sticker -rotate-1 bg-mint-300">Studio</span>
-              <h1 className="mt-3 text-4xl font-black tracking-tight">
+              <span className="label">Studio</span>
+              <h1 className="mt-3 text-4xl font-semibold tracking-tight">
                 {viewer.name || 'Your slots'}
               </h1>
               <p className="text-sm text-ink-600">{viewer.email}</p>
@@ -49,8 +51,8 @@ export default async function Studio() {
             loud rather than left to be discovered.
           */}
           {!creatorEmailConfigured() ? (
-            <div className="card-pop mt-6 bg-craft-100 p-5">
-              <p className="font-black">⚠️ CREATOR_EMAIL is not set</p>
+            <div className="panel mt-6 bg-craft-100 p-5">
+              <p className="font-semibold">⚠️ CREATOR_EMAIL is not set</p>
               <p className="text-sm text-ink-700">
                 Admin is currently granted to the oldest account in the database — this one by
                 accident, not by configuration. Set it before this is public.
@@ -73,7 +75,7 @@ export default async function Studio() {
 
           {/* ── Waiting on you ────────────────────────────────────────── */}
           <section className="mt-12">
-            <h2 className="text-2xl font-black tracking-tight">
+            <h2 className="text-2xl font-semibold tracking-tight">
               Waiting on you {queue.length ? `(${queue.length})` : ''}
             </h2>
             <p className="text-sm text-ink-600">
@@ -83,10 +85,10 @@ export default async function Studio() {
             {queue.length ? (
               <div className="mt-5 grid gap-5 lg:grid-cols-2">
                 {queue.map(({ ad, slot, profile }) => (
-                  <div key={ad.id} className="card-pop card-pop-lg p-5">
+                  <div key={ad.id} className="panel p-5">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-black">{slot.name}</p>
-                      <span className="tnum text-sm font-black text-craft-600">
+                      <p className="text-sm font-semibold">{slot.name}</p>
+                      <span className="tnum text-sm font-semibold text-craft-600">
                         {formatPaise(ad.amountPaise)}
                       </span>
                     </div>
@@ -105,6 +107,7 @@ export default async function Studio() {
                           rank: 1,
                           format: ad.format,
                           brand: ad.brand,
+                          tag: ad.tag,
                           headline: ad.headline,
                           body: ad.body,
                           url: ad.url,
@@ -140,9 +143,9 @@ export default async function Studio() {
                 ))}
               </div>
             ) : (
-              <div className="card-pop mt-5 p-10 text-center">
+              <div className="panel mt-5 p-10 text-center">
                 <p className="text-4xl">✅</p>
-                <p className="mt-2 font-black">All clear</p>
+                <p className="mt-2 font-semibold">All clear</p>
                 <p className="text-sm text-ink-600">Nothing is waiting.</p>
               </div>
             )}
@@ -151,7 +154,7 @@ export default async function Studio() {
           {/* ── Slots ─────────────────────────────────────────────────── */}
           <section className="mt-14 grid gap-8 lg:grid-cols-[1.3fr_1fr]">
             <div>
-              <h2 className="text-2xl font-black tracking-tight">Your slots</h2>
+              <h2 className="text-2xl font-semibold tracking-tight">Your slots</h2>
               <p className="text-sm text-ink-600">
                 Make one, paste the tag, and it starts selling itself.
               </p>
@@ -159,26 +162,22 @@ export default async function Studio() {
               {slots.length ? (
                 <div className="mt-5 flex flex-col gap-5">
                   {slots.map(({ slot, winner, contenders, askPaise }) => (
-                    <div key={slot.id} className="card-pop p-5">
+                    <div key={slot.id} className="panel p-5">
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
                             <span
-                              className={`sticker text-[10px] ${
-                                slot.kind === 'bid' ? 'bg-craft-300' : 'bg-teal-300'
-                              }`}
+                              className={"label"}
                             >
                               {slot.kind === 'bid' ? '🏆 Bid' : '✨ Buy'}
                             </span>
                             <span
-                              className={`sticker text-[10px] ${
-                                slot.active ? 'bg-mint-200' : 'bg-ink-100'
-                              }`}
+                              className={"label"}
                             >
                               {slot.active ? 'Live' : 'Paused'}
                             </span>
                           </div>
-                          <p className="mt-2 text-lg font-black">{slot.name}</p>
+                          <p className="mt-2 text-lg font-semibold">{slot.name}</p>
                           <p className="text-xs text-ink-500">
                             {SHAPES[slot.shape as keyof typeof SHAPES]?.label ?? slot.shape} ·{' '}
                             {formatPaise(askPaise)}
@@ -202,9 +201,9 @@ export default async function Studio() {
                   ))}
                 </div>
               ) : (
-                <div className="card-pop mt-5 p-10 text-center">
+                <div className="panel mt-5 p-10 text-center">
                   <p className="text-4xl">🪧</p>
-                  <p className="mt-2 font-black">No slots yet</p>
+                  <p className="mt-2 font-semibold">No slots yet</p>
                   <p className="text-sm text-ink-600">Make your first one →</p>
                 </div>
               )}
@@ -216,19 +215,19 @@ export default async function Studio() {
           {/* ── Sponsors ──────────────────────────────────────────────── */}
           {sponsors.length ? (
             <section className="mt-14">
-              <h2 className="text-2xl font-black tracking-tight">Sponsors</h2>
-              <div className="card-pop mt-5 overflow-x-auto">
+              <h2 className="text-2xl font-semibold tracking-tight">Sponsors</h2>
+              <div className="panel mt-5 overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="border-b-2 border-ink-900 bg-ink-50">
+                  <thead className="border-b border-ink-200 bg-ink-50">
                     <tr>
-                      <th className="p-3 text-left font-black">Who</th>
-                      <th className="p-3 text-left font-black">Ads</th>
-                      <th className="p-3 text-right font-black">Paid</th>
+                      <th className="p-3 text-left font-semibold">Who</th>
+                      <th className="p-3 text-left font-semibold">Ads</th>
+                      <th className="p-3 text-right font-semibold">Paid</th>
                     </tr>
                   </thead>
                   <tbody>
                     {sponsors.map(({ profile, paid, adCount }) => (
-                      <tr key={profile.id} className="border-b-2 border-dashed border-ink-100">
+                      <tr key={profile.id} className="border-b border-ink-200">
                         <td className="p-3">
                           <span className="font-bold">
                             {profile.brand || profile.name || '—'}
@@ -237,7 +236,7 @@ export default async function Studio() {
                           <span className="text-xs text-ink-500">{profile.email}</span>
                         </td>
                         <td className="p-3">{adCount}</td>
-                        <td className="tnum p-3 text-right font-black">{formatPaise(paid)}</td>
+                        <td className="tnum p-3 text-right font-semibold">{formatPaise(paid)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -245,7 +244,7 @@ export default async function Studio() {
               </div>
             </section>
           ) : null}
-        </div>
+        </Bay>
       </main>
 
       <Footer />
@@ -263,8 +262,8 @@ function Chip({
   tone: string;
 }) {
   return (
-    <div className={`card-pop px-5 py-3 ${tone}`}>
-      <p className="tnum text-2xl font-black leading-none">{value}</p>
+    <div className={`panel px-5 py-3 ${tone}`}>
+      <p className="tnum text-2xl font-semibold leading-none">{value}</p>
       <p className="text-[11px] font-bold uppercase tracking-wide text-ink-500">{label}</p>
     </div>
   );

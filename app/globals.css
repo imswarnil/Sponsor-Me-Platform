@@ -3,19 +3,25 @@
 /* =============================================================================
    SPONSOR ME
 
-   The palette is lifted straight from imswarnil.com's design system, in OKLCH,
-   so this app is the same colours as the rest of the network even though it is
-   built on Tailwind rather than on that system.
+   THE IDEA: THE GRID IS VISIBLE.
+
+   Twelve hairline columns run the height of the page, and every component
+   snaps to them. The lines are not decoration — they are the reason the page
+   feels engineered rather than assembled: a card that starts on column 4 and
+   ends on column 9 is obviously deliberate, and you can see that it is.
+
+   So: no shadows, no chunky outlines, no rounded blobs. One hairline weight,
+   one accent, a lot of air, and structure doing the work that decoration was
+   doing before. Playfulness comes from motion, from the accent, and from the
+   race — not from borders.
+
+   The palette is lifted from imswarnil.com's design system in OKLCH, so this
+   is the same colour as the rest of the network.
 
      ink     hue 275 — a cool near-neutral. Everything structural.
-     signal  hue  34 — the brand's orange-red. The primary action, rationed.
-     craft   hue  78 — gold. Reserved almost entirely for FIRST PLACE.
-     iris / teal / mint / azure — the playful ones, one per section, so the
-     page has rhythm instead of six shades of grey.
-
-   The rule that keeps it from becoming a clown car: a colour means a thing.
-   Gold is rank one. Signal is "do this". Everything else is a section's
-   personality and never a control.
+     signal  hue  34 — the brand's orange-red. One thing at a time.
+     craft   hue  78 — gold. First place, and almost nothing else.
+     teal / iris / mint — a tag's category colour. Never a control.
    ========================================================================== */
 
 @theme {
@@ -44,6 +50,7 @@
 
   --color-craft-50: oklch(97% 0.025 78);
   --color-craft-100: oklch(93% 0.05 78);
+  --color-craft-200: oklch(88% 0.075 78);
   --color-craft-300: oklch(82% 0.1 78);
   --color-craft-400: oklch(74% 0.118 78);
   --color-craft-500: oklch(66% 0.11 78);
@@ -51,39 +58,25 @@
 
   --color-iris-50: oklch(96.5% 0.02 285);
   --color-iris-100: oklch(93% 0.045 285);
-  --color-iris-400: oklch(73% 0.14 285);
   --color-iris-500: oklch(62% 0.17 285);
   --color-iris-600: oklch(54% 0.175 285);
 
   --color-teal-50: oklch(96.5% 0.02 195);
   --color-teal-100: oklch(93% 0.04 195);
-  --color-teal-400: oklch(74% 0.1 195);
   --color-teal-500: oklch(65% 0.105 195);
   --color-teal-600: oklch(56% 0.1 195);
 
   --color-mint-50: oklch(96.5% 0.022 155);
   --color-mint-100: oklch(93% 0.05 155);
-  --color-mint-400: oklch(74% 0.125 155);
   --color-mint-500: oklch(64% 0.13 155);
   --color-mint-600: oklch(56% 0.118 155);
-
-  --color-azure-50: oklch(96.5% 0.018 240);
-  --color-azure-100: oklch(93% 0.04 240);
-  --color-azure-400: oklch(73% 0.125 240);
-  --color-azure-500: oklch(62% 0.145 240);
-  --color-azure-600: oklch(54% 0.15 240);
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 
-  /* Chunky by default. This app is soft-cornered and physical, not sharp. */
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
-  --radius-3xl: 2rem;
-
-  --animate-marquee: marquee 40s linear infinite;
-  --animate-float: float 6s ease-in-out infinite;
-  --animate-pop: pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-marquee: marquee 44s linear infinite;
+  --animate-rise: rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-grow: grow 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 @keyframes marquee {
@@ -91,17 +84,17 @@
   to { transform: translateX(-50%); }
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0) rotate(var(--tw-rotate, 0deg)); }
-  50% { transform: translateY(-10px) rotate(var(--tw-rotate, 0deg)); }
+/* Content arriving on the grid, not sliding in from off-page. */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
 }
 
-@keyframes pop {
-  from { transform: scale(0.92); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+/* A podium step growing to its height — the race, resolving. */
+@keyframes grow {
+  from { transform: scaleY(0.35); }
+  to { transform: scaleY(1); }
 }
-
-/* ── Base ──────────────────────────────────────────────────────────────── */
 
 @layer base {
   html {
@@ -116,91 +109,191 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Numbers never reflow the row they sit in. Every figure in this app is a
-     measurement that can change while somebody is looking at it. */
-  .tnum {
-    font-variant-numeric: tabular-nums lining-nums;
-  }
+  /* Every figure in this app is a measurement that can change while somebody
+     is looking at it, so no figure is ever allowed to reflow its row. */
+  .tnum { font-variant-numeric: tabular-nums lining-nums; }
 
-  ::selection {
-    background: var(--color-signal-500);
-    color: white;
-  }
+  ::selection { background: var(--color-signal-500); color: white; }
 
-  /* One focus ring for the whole app, and it is never removed. */
   :focus-visible {
-    outline: 3px solid var(--color-signal-500);
+    outline: 2px solid var(--color-signal-500);
     outline-offset: 2px;
-    border-radius: 4px;
   }
 }
 
 @layer components {
-  /* ── The playful frame ───────────────────────────────────────────────────
-     A hard 2px edge and an offset solid shadow instead of a soft blur. It is
-     the single device that makes the whole app read as a sticker book rather
-     than a dashboard, so it is defined once and used everywhere. */
-  .card-pop {
-    @apply rounded-2xl border-2 border-ink-900 bg-white;
-    box-shadow: 4px 4px 0 0 var(--color-ink-900);
+  /* ── THE GRID ────────────────────────────────────────────────────────────
+     Twelve columns of hairline, fixed behind everything, at exactly the
+     content's width. Fixed rather than scrolling: the lines are the page's
+     rig, and a rig does not move. Components align to them because they
+     share the same container and the same twelve columns. */
+  .rig {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    display: flex;
+    justify-content: center;
   }
 
-  .card-pop-lg {
-    box-shadow: 6px 6px 0 0 var(--color-ink-900);
+  .rig__inner {
+    inline-size: 100%;
+    max-inline-size: var(--page, 80rem);
+    padding-inline: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
   }
 
-  /* Lifts on hover — the shadow grows as the card moves toward you. */
-  .card-lift {
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  @media (min-width: 48rem) {
+    .rig__inner { grid-template-columns: repeat(8, 1fr); }
   }
 
-  .card-lift:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0 0 var(--color-ink-900);
+  @media (min-width: 64rem) {
+    .rig__inner { grid-template-columns: repeat(12, 1fr); }
   }
 
-  .btn-pop {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border-2 border-ink-900
-           px-5 py-2.5 font-semibold transition;
-    box-shadow: 3px 3px 0 0 var(--color-ink-900);
+  /* One line per column edge. The last cell carries the closing line too, so
+     the rig reads as a closed frame rather than trailing off. */
+  .rig__col {
+    border-inline-start: 1px solid var(--color-ink-100);
   }
 
-  .btn-pop:hover:not(:disabled) {
-    transform: translate(-1px, -1px);
-    box-shadow: 4px 4px 0 0 var(--color-ink-900);
+  .rig__col:last-child {
+    border-inline-end: 1px solid var(--color-ink-100);
   }
 
-  .btn-pop:active:not(:disabled) {
-    transform: translate(2px, 2px);
-    box-shadow: 0 0 0 0 var(--color-ink-900);
+  /* The content column. Same width and padding as the rig, so anything in
+     here lands on a line. */
+  .bay {
+    position: relative;
+    z-index: 1;
+    inline-size: 100%;
+    max-inline-size: var(--page, 80rem);
+    margin-inline: auto;
+    padding-inline: 1.5rem;
   }
 
-  .btn-pop:disabled {
-    @apply cursor-not-allowed opacity-50;
-    box-shadow: none;
+  /* A band: a full-width horizontal rule across the page, which is how a
+     section starts. Paired with .bay it makes the grid read in both axes. */
+  .band {
+    border-block-start: 1px solid var(--color-ink-100);
   }
 
-  /* A sticker: a small rotated label. Rotation is the whole joke, so it is
-     baked in rather than left to each use site to remember. */
-  .sticker {
-    @apply inline-block rounded-full border-2 border-ink-900 px-3 py-1 text-xs font-bold uppercase
-           tracking-wide;
-    box-shadow: 2px 2px 0 0 var(--color-ink-900);
+  /* ── Flat surfaces ───────────────────────────────────────────────────────
+     One hairline, no shadow, no radius beyond a hint. A panel is defined by
+     where it sits on the grid, not by how heavy its edge is. */
+  .panel {
+    border: 1px solid var(--color-ink-200);
+    background: white;
   }
 
-  .field-pop {
-    @apply w-full rounded-xl border-2 border-ink-900 bg-white px-4 py-2.5 text-ink-900
-           placeholder:text-ink-400;
+  .panel-hover {
+    transition: border-color 0.15s ease, background-color 0.15s ease;
   }
 
-  .field-pop:focus {
+  .panel-hover:hover {
+    border-color: var(--color-ink-400);
+    background: var(--color-ink-50);
+  }
+
+  /* ── Type roles ──────────────────────────────────────────────────────────
+     A label is mono, small, uppercase and tracked out — it reads as an
+     annotation on a drawing, which is exactly what the grid wants. */
+  .label {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-ink-500);
+  }
+
+  .label-accent { color: var(--color-signal-600); }
+
+  /* ── Controls ────────────────────────────────────────────────────────────
+     Square, hairline, no shadow. The primary one is solid signal; everything
+     else is an outline, because a page with two primary buttons has none. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.125rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1;
+    border: 1px solid var(--color-ink-900);
+    background: white;
+    color: var(--color-ink-900);
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    cursor: pointer;
+  }
+
+  .btn:hover:not(:disabled) { background: var(--color-ink-900); color: white; }
+
+  .btn-primary {
+    background: var(--color-signal-500);
+    border-color: var(--color-signal-500);
+    color: white;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-signal-600);
+    border-color: var(--color-signal-600);
+    color: white;
+  }
+
+  .btn-quiet {
+    border-color: var(--color-ink-200);
+    color: var(--color-ink-700);
+  }
+
+  .btn-quiet:hover:not(:disabled) {
+    background: var(--color-ink-50);
+    border-color: var(--color-ink-400);
+    color: var(--color-ink-900);
+  }
+
+  .btn-sm { padding: 0.4375rem 0.75rem; font-size: 0.8125rem; }
+
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* ── Tag ─────────────────────────────────────────────────────────────────
+     What a sponsor *does*, in one word. Colour is a category, never a state,
+     and never clickable — a tag that looks like a button is a button. */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.1875rem 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    border: 1px solid currentColor;
+    color: var(--color-ink-500);
+    white-space: nowrap;
+  }
+
+  /* ── Field ───────────────────────────────────────────────────────────────*/
+  .field {
+    inline-size: 100%;
+    padding: 0.625rem 0.75rem;
+    font-size: 0.875rem;
+    border: 1px solid var(--color-ink-200);
+    background: white;
+    color: var(--color-ink-900);
+  }
+
+  .field::placeholder { color: var(--color-ink-400); }
+
+  .field:focus {
     outline: none;
-    box-shadow: 3px 3px 0 0 var(--color-signal-500);
+    border-color: var(--color-signal-500);
+    box-shadow: inset 0 -2px 0 0 var(--color-signal-500);
   }
 }
 
-/* Respect the setting. Every animation here is decoration; none carries
-   information, so all of them can simply stop. */
+/* Every animation here is decoration; none carries information, so all of
+   them can simply stop. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

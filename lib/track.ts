@@ -19,16 +19,27 @@ import { stats } from '@/lib/db/schema';
  * WHAT IS DELIBERATELY NOT COLLECTED: no IP, no user agent, no cookie, no
  * visitor id of any kind. The creator's readers did not agree to be profiled
  * because somebody bought an ad, and a counter is all a sponsor was sold.
+ *
+ * COUNTING IS BEST-EFFORT AND LOUD. A counter that throws must never stop an
+ * ad rendering on somebody else's site, so the caller swallows the error — but
+ * it is LOGGED, because the alternative is what already happened once: the
+ * UNIQUE constraint this upsert conflicts against was missing, every write
+ * threw, and the silence was indistinguishable from "nobody looked".
  */
 
 const today = () => new Date().toISOString().slice(0, 10);
 
 export async function recordView(adId: string) {
-  await db
-    .insert(stats)
-    .values({ adId, day: today(), views: 1, clicks: 0 })
-    .onConflictDoUpdate({
-      target: [stats.adId, stats.day],
-      set: { views: sql`${stats.views} + 1` }
-    });
+  try {
+    await db
+      .insert(stats)
+      .values({ adId, day: today(), views: 1, clicks: 0 })
+      .onConflictDoUpdate({
+        target: [stats.adId, stats.day],
+        set: { views: sql`${stats.views} + 1` }
+      });
+  } catch (err) {
+    // Swallowed so the ad still renders — but never silently.
+    console.error('[track] view not recorded:', err instanceof Error ? err.message : err);
+  }
 }

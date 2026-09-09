@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { Footer, Header } from '@/components/chrome';
+import { Bay, Rig } from '@/components/rig';
 import { AdRender } from '@/components/ad-render';
 import { SignOut } from '@/components/sign-out';
 import { formatPaise } from '@/lib/money';
@@ -42,14 +43,15 @@ export default async function MyAds({
 
   return (
     <>
+      <Rig />
       <Header />
 
-      <main className="min-h-[60vh] bg-iris-50 px-4 py-12">
-        <div className="mx-auto max-w-5xl">
+      <main className="relative z-10 min-h-[60vh] py-12">
+        <Bay>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <span className="sticker -rotate-1 bg-iris-300">Your stuff</span>
-              <h1 className="mt-3 text-4xl font-black tracking-tight">
+              <span className="label">Your stuff</span>
+              <h1 className="mt-3 text-4xl font-semibold tracking-tight">
                 {viewer.brand || viewer.name || 'My ads'}
               </h1>
               <p className="text-sm text-ink-600">{viewer.email}</p>
@@ -63,8 +65,8 @@ export default async function MyAds({
             happened by the time this page renders. So this says what is true.
           */}
           {paid ? (
-            <div className="card-pop mt-6 bg-mint-100 p-5">
-              <p className="font-black">Checkout finished 🎉</p>
+            <div className="panel mt-6 bg-mint-100 p-5">
+              <p className="font-semibold">Checkout finished 🎉</p>
               <p className="text-sm text-ink-700">
                 The payment is being confirmed. Your ad updates the moment it lands — reload in a
                 few seconds.
@@ -90,36 +92,34 @@ export default async function MyAds({
           {detailed.length ? (
             <div className="mt-10 flex flex-col gap-6">
               {detailed.map(({ ad, slot, standing, stats }) => (
-                <div key={ad.id} className="card-pop card-pop-lg p-6">
+                <div key={ad.id} className="panel p-6">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <span
-                          className={`sticker text-[10px] ${
-                            slot.kind === 'bid' ? 'bg-craft-300' : 'bg-teal-300'
-                          }`}
+                          className={"label"}
                         >
                           {slot.kind === 'bid' ? '🏆 Bid' : '✨ Bought'}
                         </span>
                         <StatusPill status={ad.status} />
                       </div>
-                      <p className="mt-2 text-xl font-black">{slot.name}</p>
+                      <p className="mt-2 text-xl font-semibold">{slot.name}</p>
                     </div>
 
-                    <Link href={`/slot/${slot.publicId}`} className="btn-pop bg-white text-sm">
+                    <Link href={`/slot/${slot.publicId}`} className="btn btn-quiet text-sm">
                       {slot.kind === 'bid' ? 'Bid more' : 'Manage'}
                     </Link>
                   </div>
 
                   {ad.reviewNote && ad.status === 'rejected' ? (
-                    <p className="mt-4 rounded-xl border-2 border-signal-500 bg-signal-50 p-3 text-sm">
+                    <p className="mt-4  border-l-2 border-signal-500 bg-signal-50 py-2 pl-3 text-sm">
                       <strong>Not approved:</strong> {ad.reviewNote}
                     </p>
                   ) : null}
 
                   <div className="mt-5 grid gap-5 md:grid-cols-[1fr_1.2fr]">
                     <div>
-                      <p className="mb-2 text-xs font-black uppercase tracking-wide text-ink-500">
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-500">
                         How it looks
                       </p>
                       <div style={{ minHeight: 200 }}>
@@ -131,6 +131,7 @@ export default async function MyAds({
                             rank: 1,
                             format: ad.format,
                             brand: ad.brand,
+                            tag: ad.tag,
                             headline: ad.headline,
                             body: ad.body,
                             url: ad.url,
@@ -190,20 +191,20 @@ export default async function MyAds({
               ))}
             </div>
           ) : (
-            <div className="card-pop mt-10 p-12 text-center">
+            <div className="panel mt-10 p-12 text-center">
               <p className="text-5xl">🪄</p>
-              <p className="mt-3 text-2xl font-black">No ads yet</p>
+              <p className="mt-3 text-2xl font-semibold">No ads yet</p>
               <p className="text-ink-600">Pick a slot and write one.</p>
-              <Link href="/#slots" className="btn-pop mt-6 bg-signal-500 text-white">
+              <Link href="/#slots" className="btn btn-primary mt-6">
                 Browse slots →
               </Link>
             </div>
           )}
 
           {payments.length ? (
-            <div className="card-pop mt-8 p-6">
-              <p className="text-lg font-black">Payments</p>
-              <ul className="mt-3 flex flex-col divide-y-2 divide-dashed divide-ink-100">
+            <div className="panel mt-8 p-6">
+              <p className="text-lg font-semibold">Payments</p>
+              <ul className="mt-3 flex flex-col divide-y divide-ink-200">
                 {payments.map((p) => (
                   <li key={p.id} className="flex items-center justify-between gap-3 py-2 text-sm">
                     <span className="text-ink-600">
@@ -213,23 +214,17 @@ export default async function MyAds({
                       })}
                     </span>
                     <span
-                      className={`sticker text-[10px] ${
-                        p.status === 'paid'
-                          ? 'bg-mint-200'
-                          : p.status === 'failed'
-                            ? 'bg-signal-200'
-                            : 'bg-ink-100'
-                      }`}
+                      className={"label"}
                     >
                       {p.status}
                     </span>
-                    <span className="tnum font-black">{formatPaise(p.amountPaise)}</span>
+                    <span className="tnum font-semibold">{formatPaise(p.amountPaise)}</span>
                   </li>
                 ))}
               </ul>
             </div>
           ) : null}
-        </div>
+        </Bay>
       </main>
 
       <Footer />
@@ -239,17 +234,17 @@ export default async function MyAds({
 
 function Row({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 border-b-2 border-dashed border-ink-100 pb-2">
+    <div className="flex items-baseline justify-between gap-3 border-b border-ink-200 pb-2">
       <span className="text-sm text-ink-600">{label}</span>
-      <span className={`tnum font-black ${accent ? 'text-craft-600' : ''}`}>{value}</span>
+      <span className={`tnum font-semibold ${accent ? 'text-craft-600' : ''}`}>{value}</span>
     </div>
   );
 }
 
 function Chip({ value, label, tone }: { value: string; label: string; tone: string }) {
   return (
-    <div className={`card-pop px-4 py-2 ${tone}`}>
-      <p className="tnum text-xl font-black leading-none">{value}</p>
+    <div className={`panel px-4 py-2 ${tone}`}>
+      <p className="tnum text-xl font-semibold leading-none">{value}</p>
       <p className="text-[11px] font-bold uppercase tracking-wide text-ink-500">{label}</p>
     </div>
   );
@@ -272,5 +267,5 @@ function StatusPill({ status }: { status: string }) {
         : status === 'rejected'
           ? 'Rejected'
           : 'Draft';
-  return <span className={`sticker text-[10px] ${tone}`}>{label}</span>;
+  return <span className={"label"}>{label}</span>;
 }

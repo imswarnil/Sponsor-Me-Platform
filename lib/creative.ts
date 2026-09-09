@@ -55,6 +55,7 @@ const requiredUrl = z
 export const creativeSchema = z.object({
   format: z.enum(['card', 'image', 'video', 'html']),
   brand: z.string().trim().min(1, 'Who is this for?').max(40),
+  tag: z.string().trim().max(24).optional().nullable(),
   headline: z.string().trim().max(80).default(''),
   body: z.string().trim().max(140).default(''),
   url: requiredUrl,
@@ -72,6 +73,7 @@ export function parseCreative(
   const parsed = creativeSchema.safeParse({
     format: form.get('format') ?? 'card',
     brand: form.get('brand') ?? '',
+    tag: form.get('tag') || null,
     headline: form.get('headline') ?? '',
     body: form.get('body') ?? '',
     url: form.get('url') ?? '',

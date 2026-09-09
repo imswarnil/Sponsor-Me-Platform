@@ -9,5 +9,8 @@
  * permissive `frame-ancestors *` policy safe.
  */
 export default function EmbedLayout({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-full bg-transparent">{children}</div>;
+  /* `min-h-screen` inside an iframe means "the height the host reserved", so
+     the unit fills the space it was given instead of leaving a dead gap under
+     itself. The flex column is what lets the ad stretch to it. */
+  return <div className="flex min-h-screen flex-col bg-transparent">{children}</div>;
 }

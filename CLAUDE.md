@@ -135,6 +135,18 @@ database). Email + password only.
 `tailwind.config`. The palette is lifted from imswarnil.com's design system in
 OKLCH, so this app is the same colours as the rest of the network.
 
+**THE IDEA: THE GRID IS VISIBLE.** Twelve hairline columns (`components/rig.tsx`)
+sit fixed behind the whole page at exactly the content width, and every
+component sits in a `.bay` that shares that width and padding — so a panel
+spanning columns 4–9 visibly starts and ends on a line. `.band` adds the
+horizontal rule that starts a section, so the grid reads in both axes.
+
+That structure is doing the work decoration used to. So: **no shadows, no
+chunky outlines, one hairline weight.** An earlier pass on this app was
+neo-brutalist — 2px borders and offset solid shadows — and it read as a toy.
+If you find `.card-pop`, `.btn-pop` or `.sticker` anywhere, they are from that
+pass and should go.
+
 | Hue | Meaning |
 |---|---|
 | `ink` (275) | everything structural |
@@ -152,10 +164,19 @@ and an offset **solid** shadow, never a blur. That single decision is what makes
 it read as a sticker book instead of a dashboard.
 
 **A leaderboard is not a grid.** A grid says "here are some things, equally". A
-leaderboard says "these are in an ORDER, and the order is the point". So
-`components/leaderboard.tsx` is one column of rows with three ranking devices:
-a medal, a size difference, and a bar whose width is that bid's share of the
-leader's — so the *gap* is a picture rather than arithmetic.
+leaderboard says "these are in an ORDER, and the order is the point".
+`components/leaderboard.tsx` says it twice on purpose:
+
+- **`Podium`** — 2nd, 1st, 3rd, laid out the way a podium actually stands, at
+  three physical heights. The height difference says "there is a gap, and
+  roughly this big" before a figure has been read. Each step carries its own
+  numeral: a bare tinted rectangle reads as a broken image.
+- **`Field`** — everybody in order, each row backed by a bar whose width is
+  their share of the leader's, so the gap is a picture rather than arithmetic.
+
+Both show the **website** and a **tag** (`sm_ad.tag`) beside the brand.
+"Linear" means nothing on its own; "linear.app · Issue tracker" means
+something, and that is what decides whether a reader clicks.
 
 ---
 
