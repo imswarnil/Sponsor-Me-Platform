@@ -32,16 +32,3 @@ export async function recordView(adId: string) {
       set: { views: sql`${stats.views} + 1` }
     });
 }
-
-/** Several at once — a page can carry more than one slot. */
-export async function recordViews(adIds: string[]) {
-  if (!adIds.length) return;
-  const day = today();
-  await db
-    .insert(stats)
-    .values(adIds.map((adId) => ({ adId, day, views: 1, clicks: 0 })))
-    .onConflictDoUpdate({
-      target: [stats.adId, stats.day],
-      set: { views: sql`${stats.views} + 1` }
-    });
-}

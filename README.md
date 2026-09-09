@@ -44,7 +44,7 @@ npm run dev            # http://localhost:3500
 
 `npm run start | stop | restart | status | logs` run it in the background.
 
-`CLAUDE.md` explains how it works. `TODO.md` is what's left.
+`CLAUDE.md` explains how it works, and what is left to do.
 
 ## Three rules the code keeps
 

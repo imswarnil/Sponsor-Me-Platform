@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { getViewer, homeFor } from '@/lib/roles';
+import { isDodoConfigured, isLiveMode } from '@/lib/dodo';
 import { site } from '@/lib/site';
 
 /**
@@ -54,9 +55,29 @@ export async function Header() {
   );
 }
 
+/**
+ * THE TEST-MODE NOTICE.
+ *
+ * While payments run against a test key, every page that can take money says
+ * so, in plain words, where somebody about to pay will see it. Saying nothing
+ * would be taking a card number under a false impression — and the notice
+ * disappearing on its own is how anyone can tell the platform went live.
+ */
 export function Footer() {
+  const testMode = isDodoConfigured() && !isLiveMode();
+
   return (
     <footer className="border-t-2 border-ink-900 bg-ink-900 px-4 py-10 text-ink-200">
+      {testMode ? (
+        <div className="mx-auto mb-8 max-w-6xl rounded-2xl border-2 border-craft-400 bg-craft-500/15 p-4">
+          <p className="font-black text-craft-300">🧪 Test mode — no money moves</p>
+          <p className="mt-1 text-sm text-ink-300">
+            Checkouts complete and slots update, but no card is charged and nothing is owed.
+            This notice disappears when the platform goes live.
+          </p>
+        </div>
+      ) : null}
+
       <div className="mx-auto flex max-w-6xl flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-2xl font-black text-white">

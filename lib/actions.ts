@@ -7,11 +7,11 @@ import { z } from 'zod';
 
 import { db } from '@/lib/db/client';
 import { activity, ads, payments, profiles, slots } from '@/lib/db/schema';
-import { requireCreator, requireSponsor, requireViewer } from '@/lib/roles';
+import { requireCreator, requireSponsor } from '@/lib/roles';
 import { parseCreative, safeUrl } from '@/lib/creative';
 import { createCheckout, isDodoConfigured } from '@/lib/dodo';
 import { CURRENCY, site, termPrice } from '@/lib/site';
-import { adById, askFor, slotById } from '@/lib/queries';
+import { askFor, slotById } from '@/lib/queries';
 
 /**
  * EVERY WRITE.
@@ -301,34 +301,4 @@ export async function reviewAdAction(
 
   revalidatePath('/studio');
   revalidatePath('/');
-}
-
-/* ── Profile ────────────────────────────────────────────────────────────── */
-
-export async function saveProfileAction(
-  _prev: ActionState,
-  form: FormData
-): Promise<ActionState> {
-  const viewer = await requireViewer('/me');
-  const parsed = z
-    .object({
-      name: z.string().trim().min(1, 'Enter your name.').max(80),
-      brand: z.string().trim().max(40).optional().nullable()
-    })
-    .safeParse({ name: form.get('name'), brand: form.get('brand') || null });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
-
-  await db
-    .update(profiles)
-    .set({ name: parsed.data.name, brand: parsed.data.brand || null })
-    .where(eq(profiles.id, viewer.id));
-
-  revalidatePath('/me');
-  return { ok: 'Saved.' };
-}
-
-/** Used by the studio to look an ad up before deciding on it. */
-export async function peekAd(adId: string) {
-  await requireCreator();
-  return adById(adId);
 }
