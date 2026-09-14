@@ -8,7 +8,7 @@ import { signOutAction } from '@/lib/auth/actions';
 export function SignOut() {
   return (
     <form action={signOutAction}>
-      <button type="submit" className="btn btn-quiet text-sm">
+      <button type="submit" className="sp-btn sp-btn-soft sp-btn-sm">
         Sign out
       </button>
     </form>

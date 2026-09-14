@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 
+import { ArrowRight } from '@/components/icons';
 import { saveAdAction, startCheckoutAction, type ActionState } from '@/lib/actions';
 import { formatPaise } from '@/lib/money';
 import { FORMATS, TERMS, termPrice } from '@/lib/site';
@@ -38,44 +39,45 @@ export function BuyPanel({
 }) {
   if (isCreator) {
     return (
-      <Panel>
-        <p className="text-lg font-semibold">This one&rsquo;s yours</p>
-        <p className="mt-1 text-sm text-ink-600">
+      <div className="sp-panel h-fit p-7 sm:p-9">
+        <p className="sp-h3 font-semibold">This one&rsquo;s yours</p>
+        <p className="mt-2 text-small text-secondary">
           Manage it, and grab the embed tag, in the studio.
         </p>
-        <Link href="/studio" className="btn btn-quiet mt-4 w-full">
+        <Link href="/studio" className="sp-btn sp-btn-soft sp-btn-block mt-6">
           Open studio
         </Link>
-      </Panel>
+      </div>
     );
   }
 
   if (!signedIn) {
     return (
-      <Panel>
-        <p className="label">{kind === 'bid' ? 'To take first' : 'Price'}</p>
-        <p className="tnum mt-1 text-5xl font-semibold">{formatPaise(askPaise)}</p>
-        <p className="mt-1 text-sm text-ink-600">
+      <div className="sp-panel h-fit p-7 sm:p-9">
+        <p className="sp-eyebrow">{kind === 'bid' ? 'To take first' : 'Price'}</p>
+        <p className="sp-num sp-display mt-3">{formatPaise(askPaise)}</p>
+        <p className="mt-2 text-small text-secondary">
           {kind === 'bid' ? 'or bid whatever you like' : 'per month'}
         </p>
         <Link
           href={`/signup?next=${encodeURIComponent(`/slot/${slug}`)}`}
-          className="btn btn-primary mt-6 w-full"
+          className="sp-btn sp-btn-block sp-btn-lg mt-8"
         >
-          Make an account →
+          Make an account
+          <ArrowRight />
         </Link>
         <Link
           href={`/signin?next=${encodeURIComponent(`/slot/${slug}`)}`}
-          className="mt-3 block text-center text-sm text-ink-600 hover:text-ink-900"
+          className="mt-4 block text-center text-small text-secondary transition-colors hover:text-title"
         >
           I already have one
         </Link>
-      </Panel>
+      </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <AdForm slotId={slotId} existing={existing} />
       {existing?.brand ? (
         <PayForm
@@ -86,18 +88,12 @@ export function BuyPanel({
           existing={existing}
         />
       ) : (
-        <Panel>
-          <p className="text-sm text-ink-600">
-            Save your ad above, then you can pay for the slot.
-          </p>
-        </Panel>
+        <div className="sp-callout">
+          Save your ad above, and then you can pay for the slot.
+        </div>
       )}
     </div>
   );
-}
-
-function Panel({ children }: { children: React.ReactNode }) {
-  return <div className="panel h-fit p-6">{children}</div>;
 }
 
 /* ── The creative ───────────────────────────────────────────────────────── */
@@ -107,45 +103,47 @@ function AdForm({ slotId, existing }: { slotId: string; existing: Ad | null }) {
   const [format, setFormat] = useState(existing?.format ?? 'card');
 
   return (
-    <form action={action} className="panel p-6">
+    <form action={action} className="sp-panel p-7 sm:p-9">
       <input type="hidden" name="slotId" value={slotId} />
 
-      <p className="text-lg font-semibold">Your ad</p>
+      <p className="sp-h3 font-semibold">Your ad</p>
+
       {existing?.status === 'rejected' && existing.reviewNote ? (
-        <p className="mt-2 rounded-xl border-2 border-signal-500 bg-signal-50 p-3 text-sm">
-          Not approved: {existing.reviewNote}
+        <p className="sp-callout sp-callout-error mt-4">
+          <strong className="font-semibold text-error">Not approved:</strong>{' '}
+          {existing.reviewNote}
         </p>
       ) : null}
 
-      {/* Four formats, four cells on a hairline grid — the same rig the page
-          is drawn on, so the control looks like part of the page. */}
-      <div className="mt-4 grid grid-cols-2 gap-px border border-ink-200 bg-ink-200">
-        {Object.entries(FORMATS).map(([key, f]) => (
-          <label
-            key={key}
-            className={`cursor-pointer p-3 transition ${
-              format === key ? 'bg-signal-50 ring-1 ring-inset ring-signal-500' : 'bg-white hover:bg-ink-50'
-            }`}
-          >
-            <input
-              type="radio"
-              name="format"
-              value={key}
-              checked={format === key}
-              onChange={() => setFormat(key)}
-              className="sr-only"
-            />
-            <span className="block text-sm font-semibold">{f.label}</span>
-            <span className="block text-[11px] leading-tight text-ink-500">{f.note}</span>
-          </label>
-        ))}
-      </div>
+      {/* Four formats, four choosable tiles. The radio stays in the DOM and
+          keyboard-reachable; the tile is what gets painted. */}
+      <fieldset className="mt-6">
+        <legend className="sp-flabel">Format</legend>
+        <div className="grid grid-cols-2 gap-2">
+          {Object.entries(FORMATS).map(([key, f]) => (
+            <label key={key} className={`sp-choice ${format === key ? 'sp-choice-on' : ''}`}>
+              <input
+                type="radio"
+                name="format"
+                value={key}
+                checked={format === key}
+                onChange={() => setFormat(key)}
+                className="sr-only"
+              />
+              <span className="block text-small font-semibold text-title">{f.label}</span>
+              <span className="mt-0.5 block text-tiny leading-tight text-secondary">
+                {f.note}
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
 
-      <div className="mt-4 flex flex-col gap-3">
-        <div className="grid grid-cols-2 gap-3">
+      <div className="mt-6 flex flex-col gap-5">
+        <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Brand" name="brand" defaultValue={existing?.brand} required maxLength={40} />
-          {/* Shown on the leaderboard beside the website, so a reader can tell
-              what a name IS before deciding whether to click it. */}
+          {/* Shown on the board beside the website, so a reader can tell what
+              a name IS before deciding whether to click it. */}
           <Field
             label="What you do"
             name="tag"
@@ -155,8 +153,8 @@ function AdForm({ slotId, existing }: { slotId: string; existing: Ad | null }) {
           />
         </div>
 
-        {/* The square mark on the leaderboard. Separate from the ad's own
-            artwork below — a wide screenshot makes a poor avatar. */}
+        {/* The circular mark on the board. Separate from the ad's own artwork
+            below — a wide screenshot makes a poor avatar. */}
         <Field
           label="Logo"
           name="logoUrl"
@@ -215,18 +213,18 @@ function AdForm({ slotId, existing }: { slotId: string; existing: Ad | null }) {
 
         {format === 'html' ? (
           <label className="block">
-            <span className="text-sm font-medium">Your HTML</span>
+            <span className="sp-flabel">Your HTML</span>
             <textarea
               name="html"
               rows={6}
               maxLength={8000}
               defaultValue={existing?.html ?? ''}
-              className="field mt-1 font-mono text-xs"
+              className="sp-field sp-field-area"
               placeholder="<div>…</div>"
             />
             {/* Said out loud, because a sponsor pasting a script needs to know
                 before they are surprised by it not running. */}
-            <span className="mt-1 block text-[11px] text-ink-500">
+            <span className="sp-hint">
               Runs in a sandboxed frame — styles and markup work, scripts do not.
             </span>
           </label>
@@ -244,7 +242,7 @@ function AdForm({ slotId, existing }: { slotId: string; existing: Ad | null }) {
       </div>
 
       <Message state={state} />
-      <Submit label={existing ? 'Save ad' : 'Save ad'} className="btn btn-quiet mt-4 w-full" />
+      <Submit label="Save ad" className="sp-btn sp-btn-soft sp-btn-block mt-6" />
     </form>
   );
 }
@@ -271,15 +269,18 @@ function PayForm({
   const total = kind === 'bid' ? rupees * 100 : termPrice(pricePaise, months);
 
   return (
-    <form action={action} className="panel h-fit p-6">
+    <form action={action} className="sp-panel h-fit p-7 sm:p-9">
       <input type="hidden" name="slotId" value={slotId} />
 
       {kind === 'bid' ? (
         <>
-          <p className="label">Your bid</p>
-          <div className="mt-2 flex items-center gap-2 border border-ink-300 bg-white px-4 py-3 focus-within:border-signal-500">
-            <span className="text-2xl font-normal text-ink-400">₹</span>
+          <label className="sp-flabel" htmlFor="bid-rupees">
+            Your bid
+          </label>
+          <div className="sp-money">
+            <span className="text-2xl font-normal text-mute">₹</span>
             <input
+              id="bid-rupees"
               name="rupees"
               type="number"
               inputMode="numeric"
@@ -287,15 +288,19 @@ function PayForm({
               step={1}
               value={rupees}
               onChange={(e) => setRupees(Number(e.target.value))}
-              className="tnum w-full bg-transparent text-3xl font-semibold outline-none"
+              /* A mouse wheel over a focused number input silently rewrites
+                 it in Chrome. This field is the bid — scrolling past it must
+                 not change what somebody is about to pay. */
+              onWheel={(e) => e.currentTarget.blur()}
             />
           </div>
-          <p className="mt-2 text-sm text-ink-600">
+          <p className="sp-hint">
             {formatPaise(askPaise)} or more takes the top spot. This adds to what you have
-            already paid.
+            already paid — a bid is a lifetime total, so nobody is refunded when they are
+            overtaken.
           </p>
 
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
             {[1, 2, 5].map((mult) => {
               const v = Math.ceil((askPaise * mult) / 100);
               return (
@@ -303,7 +308,7 @@ function PayForm({
                   key={mult}
                   type="button"
                   onClick={() => setRupees(v)}
-                  className="label border border-ink-200 px-2 py-1 hover:border-ink-900 hover:text-ink-900"
+                  className="sp-btn sp-btn-soft sp-btn-sm sp-num"
                 >
                   ₹{v.toLocaleString('en-IN')}
                 </button>
@@ -313,23 +318,23 @@ function PayForm({
         </>
       ) : (
         <>
-          <p className="label">How long?</p>
-          <div className="mt-2 grid grid-cols-3 gap-px border border-ink-200 bg-ink-200">
+          <p className="sp-flabel">How long?</p>
+          <div className="grid grid-cols-3 gap-2">
             {TERMS.map((t) => (
               <button
                 key={t.months}
                 type="button"
                 onClick={() => setMonths(t.months)}
                 aria-pressed={months === t.months}
-                className={`p-3 text-center transition ${
-                  months === t.months
-                    ? 'bg-signal-50 ring-1 ring-inset ring-signal-500'
-                    : 'bg-white hover:bg-ink-50'
-                }`}
+                className={`sp-choice text-center ${months === t.months ? 'sp-choice-on' : ''}`}
               >
-                <span className="block text-sm font-semibold">{t.months}mo</span>
+                <span className="sp-num block text-small font-semibold text-title">
+                  {t.months}mo
+                </span>
                 {t.off ? (
-                  <span className="block text-[10px] font-bold text-mint-600">{t.off}</span>
+                  <span className="mt-0.5 block text-[10px] font-semibold text-success">
+                    {t.off}
+                  </span>
                 ) : null}
               </button>
             ))}
@@ -338,20 +343,20 @@ function PayForm({
         </>
       )}
 
-      <div className="mt-5 flex items-end justify-between border-t border-ink-200 pt-4">
-        <span className="label">Total</span>
-        <span className="tnum text-3xl font-semibold">{formatPaise(total)}</span>
+      <div className="mt-7 flex items-end justify-between gap-4 border-t border-line pt-5">
+        <span className="text-small text-secondary">Total</span>
+        <span className="sp-num text-3xl font-semibold text-title">{formatPaise(total)}</span>
       </div>
 
       <Message state={state} />
 
       <Submit
-        label={kind === 'bid' ? 'Place bid →' : 'Buy this slot →'}
+        label={kind === 'bid' ? 'Place bid' : 'Buy this slot'}
         pendingLabel="Opening checkout…"
-        className="btn mt-4 w-full bg-signal-500 text-white"
+        className="sp-btn sp-btn-block sp-btn-lg mt-5"
       />
 
-      <p className="mt-3 text-[11px] leading-snug text-ink-500">
+      <p className="sp-hint">
         Nothing is charged until the payment provider confirms it, and your ad runs once{' '}
         {existing.status === 'live' ? 'it is approved' : 'I approve it'}.
       </p>
@@ -373,8 +378,8 @@ function Field({
 } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <label className="block">
-      <span className="text-sm font-medium text-ink-700">{label}</span>
-      <input name={name} defaultValue={defaultValue ?? ''} className="field mt-1.5" {...rest} />
+      <span className="sp-flabel">{label}</span>
+      <input name={name} defaultValue={defaultValue ?? ''} className="sp-field" {...rest} />
     </label>
   );
 }
@@ -382,14 +387,10 @@ function Field({
 function Message({ state }: { state: ActionState }) {
   if (!state.error && !state.ok) return null;
   return (
-    <p
-      className={`mt-4 border-l-2 py-2 pl-3 text-sm ${
-        state.error
-          ? 'border-signal-500 bg-signal-50 text-signal-700'
-          : 'border-mint-500 bg-mint-50 text-mint-600'
-      }`}
-    >
-      {state.error ?? state.ok}
+    <p className={`sp-callout mt-5 ${state.error ? 'sp-callout-error' : 'sp-callout-success'}`}>
+      <span className={`font-semibold ${state.error ? 'text-error' : 'text-success'}`}>
+        {state.error ?? state.ok}
+      </span>
     </p>
   );
 }

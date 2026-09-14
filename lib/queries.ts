@@ -1,5 +1,5 @@
 import 'server-only';
-import { and, asc, desc, eq, gt, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, gte, or, sql } from 'drizzle-orm';
 
 import { db } from '@/lib/db/client';
 import { activity, ads, payments, profiles, slots, stats } from '@/lib/db/schema';
@@ -263,6 +263,144 @@ export async function statsOverall() {
     })
     .from(stats);
   return { views: row?.views ?? 0, clicks: row?.clicks ?? 0 };
+}
+
+/* ── Daily series ───────────────────────────────────────────────────────────
+ *
+ * `sm_stat.day` is an ISO `YYYY-MM-DD` string, which sorts and range-compares
+ * lexicographically — so a window is a plain string `>=` and needs no date
+ * casting in the query.
+ *
+ * ZERO-FILLING AND RULE 1. A chart is zero-filled across its window, and that
+ * does not break "a number is real or it is absent": a day inside the window
+ * with no row is a day on which nothing was counted, which is a measured zero.
+ * What would break the rule is drawing the chart at all when NOTHING has been
+ * counted, so every caller checks a real total first and renders the empty
+ * state instead. The series alone never claims an audience.
+ */
+
+export type DayPoint = { day: string; views: number; clicks: number };
+
+/** The window, oldest first, as ISO days ending today. */
+function windowDays(days: number): string[] {
+  const out: string[] = [];
+  const now = Date.now();
+  for (let i = days - 1; i >= 0; i--) {
+    out.push(new Date(now - i * 86_400_000).toISOString().slice(0, 10));
+  }
+  return out;
+}
+
+/** Sparse rows → one point per day in the window, in order. */
+function fill(days: number, rows: DayPoint[]): DayPoint[] {
+  const found = new Map(rows.map((r) => [r.day, r]));
+  return windowDays(days).map(
+    (day) => found.get(day) ?? { day, views: 0, clicks: 0 }
+  );
+}
+
+const since = (days: number) =>
+  new Date(Date.now() - (days - 1) * 86_400_000).toISOString().slice(0, 10);
+
+/** Every ad on the platform, by day. The studio's chart. */
+export async function dailyOverall(days = 30): Promise<DayPoint[]> {
+  const rows = await db
+    .select({
+      day: stats.day,
+      views: sql<number>`coalesce(sum(${stats.views}), 0)::int`,
+      clicks: sql<number>`coalesce(sum(${stats.clicks}), 0)::int`
+    })
+    .from(stats)
+    .where(gte(stats.day, since(days)))
+    .groupBy(stats.day)
+    .orderBy(asc(stats.day));
+  return fill(days, rows);
+}
+
+/** One sponsor's ads, by day. Their own chart on /me. */
+export async function dailyForProfile(profileId: string, days = 30): Promise<DayPoint[]> {
+  const rows = await db
+    .select({
+      day: stats.day,
+      views: sql<number>`coalesce(sum(${stats.views}), 0)::int`,
+      clicks: sql<number>`coalesce(sum(${stats.clicks}), 0)::int`
+    })
+    .from(stats)
+    .innerJoin(ads, eq(stats.adId, ads.id))
+    .where(and(eq(ads.profileId, profileId), gte(stats.day, since(days))))
+    .groupBy(stats.day)
+    .orderBy(asc(stats.day));
+  return fill(days, rows);
+}
+
+/** One ad, by day — the sparkline on its card. */
+export async function dailyForAd(adId: string, days = 30): Promise<DayPoint[]> {
+  const rows = await db
+    .select({ day: stats.day, views: stats.views, clicks: stats.clicks })
+    .from(stats)
+    .where(and(eq(stats.adId, adId), gte(stats.day, since(days))))
+    .orderBy(asc(stats.day));
+  return fill(days, rows);
+}
+
+/**
+ * PER-SLOT PERFORMANCE — the studio used to show platform totals only, so the
+ * one question a creator actually has ("which slot is worth anything?") had no
+ * answer on the page that sells them.
+ *
+ * `count(distinct)` on the ad id because the stats join fans a slot's row out
+ * once per ad-day; revenue is a correlated subquery for the same reason —
+ * summing payments across that fan-out would multiply it by the number of
+ * days counted.
+ */
+export async function perSlotStats(days = 30) {
+  const totals = await db
+    .select({
+      slotId: slots.id,
+      publicId: slots.publicId,
+      name: slots.name,
+      kind: slots.kind,
+      active: slots.active,
+      views: sql<number>`coalesce(sum(${stats.views}), 0)::int`,
+      clicks: sql<number>`coalesce(sum(${stats.clicks}), 0)::int`,
+      adCount: sql<number>`count(distinct ${ads.id})::int`,
+      paid: sql<number>`coalesce((
+        select sum(p.amount_paise) from sm_payment p
+        join sm_ad a on a.id = p.ad_id
+        where a.slot_id = ${slots.id} and p.status = 'paid'
+      ), 0)::int`
+    })
+    .from(slots)
+    .leftJoin(ads, eq(ads.slotId, slots.id))
+    .leftJoin(stats, eq(stats.adId, ads.id))
+    .groupBy(slots.id, slots.publicId, slots.name, slots.kind, slots.active)
+    .orderBy(desc(sql`coalesce(sum(${stats.views}), 0)`));
+
+  // The sparkline behind each row, in one query rather than one per slot.
+  const points = await db
+    .select({
+      slotId: ads.slotId,
+      day: stats.day,
+      views: sql<number>`coalesce(sum(${stats.views}), 0)::int`,
+      clicks: sql<number>`coalesce(sum(${stats.clicks}), 0)::int`
+    })
+    .from(stats)
+    .innerJoin(ads, eq(stats.adId, ads.id))
+    .where(gte(stats.day, since(days)))
+    .groupBy(ads.slotId, stats.day)
+    .orderBy(asc(stats.day));
+
+  const bySlot = new Map<string, DayPoint[]>();
+  for (const row of points) {
+    const list = bySlot.get(row.slotId) ?? [];
+    list.push({ day: row.day, views: row.views, clicks: row.clicks });
+    bySlot.set(row.slotId, list);
+  }
+
+  return totals.map((row) => ({
+    ...row,
+    series: fill(days, bySlot.get(row.slotId) ?? [])
+  }));
 }
 
 /* ── Money ──────────────────────────────────────────────────────────────── */

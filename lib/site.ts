@@ -29,14 +29,11 @@ export const CURRENCY = 'INR' as const;
 export const SLOT_KINDS = {
   fixed: {
     label: 'Buy it',
-    tagline: 'One price. It is yours.',
-    // Playful colour per kind, so the two are never confused at a glance.
-    tone: 'teal'
+    tagline: 'One price. It is yours.'
   },
   bid: {
     label: 'Bid for it',
-    tagline: 'Highest bid serves. Everyone else waits.',
-    tone: 'craft'
+    tagline: 'Highest bid serves. Everyone else waits.'
   }
 } as const;
 
@@ -51,12 +48,20 @@ export const SHAPES = {
 
 export type Shape = keyof typeof SHAPES;
 
-/** What an ad can be made of. */
+/**
+ * What an ad can be made of.
+ *
+ * No emoji and no colour here. Both used to be config, and both were the
+ * design leaking into the data: a hue per kind and a glyph per format meant
+ * `lib/` decided how things looked. The stylesheet decides that now — gold
+ * means rank, the accent means "do this", and icons are drawn in
+ * `components/icons.tsx`.
+ */
 export const FORMATS = {
-  card:  { label: 'Card',  emoji: '🃏', note: 'Headline, a line, a button.' },
-  image: { label: 'Image', emoji: '🖼️', note: 'One image, linked.' },
-  video: { label: 'Video', emoji: '📺', note: 'A YouTube video.' },
-  html:  { label: 'HTML',  emoji: '⚡', note: 'Your own markup, sandboxed.' }
+  card:  { label: 'Card',  note: 'Headline, a line, a button.' },
+  image: { label: 'Image', note: 'One image, linked.' },
+  video: { label: 'Video', note: 'A YouTube video.' },
+  html:  { label: 'HTML',  note: 'Your own markup, sandboxed.' }
 } as const;
 
 export type Format = keyof typeof FORMATS;

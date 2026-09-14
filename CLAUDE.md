@@ -51,8 +51,11 @@ and it means nobody is ever refunded when overtaken.
 
 ```
 app/
-  page.tsx            THE homepage — hero, marquee, bid slots (with the
-                      leaderboard), fixed slots, formats, how-it-works.
+  page.tsx            THE homepage — eight stacked sections, in the order a
+                      sponsor asks them: hero (the real unit at real sizes),
+                      ticker, the two kinds, the race (board + simulator),
+                      fixed slots, how-it-works, analytics, the deal, FAQ,
+                      activity + sign-up.
   slot/[slug]/        Buy it or bid on it. Write the ad, then pay.
   me/                 The sponsor's page: every ad they run, on one screen.
   studio/             The creator's page: make slots, get tags, approve ads.
@@ -72,6 +75,14 @@ lib/
   track.ts    view/click counting
   money.ts    integer paise ↔ rupees
 components/   flat, no barrels
+  layout.tsx    Container / Section / SectionHead / Figure / Stat / Empty
+  chrome.tsx    Wordmark, Header, Footer   nav.tsx  the menu + scroll-spy
+  leaderboard.tsx  Podium + Field, @container-responsive
+  analytics.tsx / charts.tsx   the panel, and Sparkline + Meter
+  bid-simulator.tsx  "what would it take?" against the live board
+  hero-showcase.tsx  the real ad at the three shapes' real sizes
+  icons.tsx     24-grid strokes; no icon package, no emoji
+  theme-toggle.tsx / reveal.tsx / faq.tsx
 public/sponsor.js   the embed script — vanilla, zero deps
 ```
 
@@ -132,71 +143,165 @@ database). Email + password only.
 ## §4 — Design
 
 **Tailwind v4**, configured entirely in `app/globals.css` — there is no
-`tailwind.config`. The palette is lifted from imswarnil.com's design system in
-OKLCH, so this app is the same colours as the rest of the network.
+`tailwind.config`.
 
-**THE IDEA: THE GRID IS VISIBLE.** Twelve hairline columns (`components/rig.tsx`)
-sit fixed behind the whole page at exactly the content width, and every
-component sits in a `.bay` that shares that width and padding — so a panel
-spanning columns 4–9 visibly starts and ends on a line. `.band` adds the
-horizontal rule that starts a section, so the grid reads in both axes.
+> **Rebuilt on 2026-09-14.** The previous design was a *visible twelve-column
+> grid*: hairline columns fixed behind the page, `.rig` / `.bay` / `.band`,
+> one hairline weight, square corners, an OKLCH palette named
+> `ink`/`signal`/`craft`/`teal`/`iris`/`mint`, and a mono uppercase `.label`
+> on everything. All of it is gone — the palette, `components/rig.tsx`, and
+> the `.panel` / `.btn` / `.label` / `.field` / `.tnum` classes. If you find
+> those names anywhere, they are from before this date.
 
-That structure is doing the work decoration used to. So: **no shadows, no
-chunky outlines, one hairline weight.** An earlier pass on this app was
-neo-brutalist — 2px borders and offset solid shadows — and it read as a toy.
-If you find `.card-pop`, `.btn-pop` or `.sticker` anywhere, they are from that
-pass and should go.
+### THE IDEA: DEPTH BY TINT, NOT BY LINE
 
-| Hue | Meaning |
+Four background levels and one nearly-invisible border. Surfaces separate by
+**tone**, not by outline: a card is a step up from the page, not a box drawn
+around content. Corners are round, buttons are pills, brand marks are circles,
+and hierarchy is carried by weight and colour on a four-step text ladder
+(`contrast → foreground → secondary → mute`).
+
+### Every value is a `--sponsor-*` token
+
+The token block at the top of `globals.css` is the whole contract. Nothing in
+this app may invent a colour, a radius, a font or a spacing step — if a value
+is needed it is added there and used by name. Tailwind sees them through
+`@theme inline`, which matters: `bg-surface-100` compiles to
+`background-color: var(--sponsor-color-background-100)`, so the utility
+follows the token and the token follows the theme.
+
+`--color-*: initial` clears Tailwind's stock palette, so `bg-gray-500` and
+`text-white` do not exist. That is deliberate — a colour you cannot name in
+the token file is a colour you cannot use.
+
+| Meaning | Token |
 |---|---|
-| `ink` (275) | everything structural |
-| `signal` (34) | the brand's orange-red. The primary action, rationed. |
-| `craft` (78) | **gold — first place, and almost nothing else** |
-| `teal` / `iris` / `mint` / `azure` | one per section, so the page has rhythm |
+| structure, text, surfaces | `--sponsor-color-{contrast,foreground,secondary,mute,background,background-100/200/300,border}` |
+| **"do this"** — rationed to one control per view | `--sponsor-accent`, `-hover`, `-ink`, `-soft`, `-foreground` |
+| **first place, and nothing else** | `--sponsor-gold`, `-fill`, `-line`, `-soft` |
+| states | `--sponsor-color-{success,error}` + `-soft` |
 
-**The rule that stops it being a clown car: a colour means a thing.** Gold is
-rank one. Signal is "do this". The rest is a section's personality, never a
-control.
+**A colour means a thing.** Gold is rank one. The accent is the primary
+action. Nothing is a section's personality — that was the old design's rule
+and it is not this one's.
 
-The look is built from four component classes in `globals.css` — `.card-pop`,
-`.btn-pop`, `.sticker`, `.field-pop` — all sharing one device: a hard 2px edge
-and an offset **solid** shadow, never a blur. That single decision is what makes
-it read as a sticker book instead of a dashboard.
+### Dark mode is decided once, in that file
 
-**A leaderboard is not a grid.** A grid says "here are some things, equally". A
-leaderboard says "these are in an ORDER, and the order is the point".
-`components/leaderboard.tsx` says it twice on purpose:
+`[data-color-scheme='dark']` and `@media (prefers-color-scheme: dark)
+[data-color-scheme='system']` re-declare the same names. **No component
+anywhere carries a dark-mode branch, and none should.** Three consequences
+worth knowing:
 
-- **`Podium`** — 2nd, 1st, 3rd, laid out the way a podium actually stands, at
-  three physical heights. The height difference says "there is a gap, and
-  roughly this big" before a figure has been read. Each step carries its own
-  numeral: a bare tinted rectangle reads as a broken image.
+- The blocks key off the **attribute**, not `:root`, so a subtree can be
+  pinned to a scheme. That is how `/embed` honours `data-theme` on a host's
+  script tag.
+- Light values are declared on `:root, [data-color-scheme='light']` together —
+  without the second selector, a subtree asking for light inside a dark root
+  would simply inherit dark.
+- `app/layout.tsx` writes the attribute in an inline pre-paint script and the
+  `<html>` element carries `suppressHydrationWarning`. That is **required**,
+  not cosmetic: React would otherwise reconcile the attribute back to
+  `"system"` and flash the wrong theme.
+
+### Component classes, not utility soup
+
+`.sp-*` in the `components` layer: `sp-container` / `sp-section` / `sp-rule`,
+`sp-card` / `sp-panel` / `sp-lift` / `sp-rows`, `sp-btn` (+ `-solid` `-soft`
+`-outline` `-quiet` `-danger` `-sm` `-lg` `-icon` `-block`), `sp-seg`,
+`sp-field` (+ `-area`, `sp-select`, `sp-money`), `sp-choice`, `sp-badge`,
+`sp-mark`, `sp-callout`, `sp-code`, `sp-table`, `sp-faq`, `sp-sheet`,
+`sp-nav-link`, `sp-display` / `sp-h1..h4` / `sp-lead` / `sp-eyebrow` /
+`sp-num` / `sp-link`, and the chart parts `sp-track` / `sp-col` /
+`sp-chart-rules` / `sp-ordinal`.
+
+Two that are easy to get wrong:
+
+- **`.sp-card` is tinted; `.sp-panel` is bordered white.** A form gets a
+  panel, because the fields inside it are already tinted planes and a tint
+  inside a tint is mush.
+- **`.sp-num` on every figure.** Tabular numerals, so a number that changes
+  while somebody is looking at it never reflows its row.
+
+### Patterns, and the tone trap they exist to avoid
+
+`sp-dots`, `sp-rings`, `sp-glow`, `sp-glow-gold`, `sp-stripes` (which is what
+"unsold" looks like), plus `sp-fade-b/-t/-x` masks, all drawn from
+`--sponsor-color-border` / `-background-300` / `-accent-soft` so they re-tone
+with the theme. They live on a `.sp-backdrop` layer with content in
+`.sp-fore`, never on the content's own box.
+
+⚠️ **This is why sections use a pattern rather than a tint.** A card in this
+system *is* a tint — one step up from the page — so painting a section that
+same step makes every card in it vanish and the reading inverts: the gaps look
+like panels. `Section`'s `pattern` prop gives rhythm without spending the one
+tone the cards need. `.sp-plane` still exists, but **only** for sections whose
+content is bordered white panels: `app/page.tsx` has exactly two.
+The same trap bit the leaderboard's share bar, which is `surface-200` for the
+same reason.
+
+### A leaderboard is not a grid
+
+`components/leaderboard.tsx` says the order twice on purpose:
+
+- **`Podium`** — 2nd, 1st, 3rd at three real heights, so the gap is visible
+  before a figure is read. **Bar heights are computed from the amount**
+  (`STEP_MAX`/`STEP_MIN`): three fixed heights made a runaway leader and three
+  near-equal bids draw the same picture, which is the one thing a podium
+  exists to tell apart. The three fills are gold, `mute` and `background-300`
+  — a ladder with real gaps, because two adjacent background steps read as one
+  colour and a mistake. `scripts/verify.mjs` reads `STEP_MAX` out of this file
+  rather than duplicating it.
 - **`Field`** — everybody in order, each row backed by a bar whose width is
-  their share of the leader's, so the gap is a picture rather than arithmetic.
+  their share of the leader's.
 
-**Podium step heights are computed from the amount, not fixed.** Three fixed
-heights made every board draw the same picture — a runaway leader and three
-near-equal bids looked identical, which is the one thing a podium exists to
-tell apart. `STEP_MAX`/`STEP_MIN` scale the real ratio.
-
-**An entry is an ADVERT, not a table row**: logo (`sm_ad.logoUrl`), brand,
-website, a tag saying what they do (`sm_ad.tag`), and a CTA that goes
-somewhere. "Linear" means nothing alone; "linear.app · Issue tracker · Try it"
-does. A missing logo falls back to the initial on a tinted tile — and the `img`
-carries `onError` to REMOVE itself, because it has a white background and a
-404 would otherwise paint a blank square over that fallback.
+**An entry is an ADVERT, not a table row**: mark, brand, website, what they do,
+and a CTA that goes somewhere. A missing logo falls back to the initial on a
+tinted disc — and the `img` carries `onError` to REMOVE itself, because it has
+a white backing and a 404 would otherwise paint a blank disc over that
+fallback.
 
 **The board is responsive to its CONTAINER, not the viewport** (`@container`).
 It renders in a 300px sidebar, a wide article, and this site's own pages from
 one component — and inside an iframe the viewport IS the iframe, so a viewport
-query would be wrong in the one place that matters most. Narrow drops the
-amount and the CTA; the brand and the logo never go.
+query would be wrong in the one place that matters most. The podium needs
+~672px of container before it lays three abreast, which is why the homepage
+gives it 8 of 12 columns at `--sponsor-container-max--width`.
 
-**One gutter, `--gutter`, shared by the rig and the bay.** If those two ever
-use different numbers, components stop landing on the grid lines, which is the
-single thing this design depends on.
+### Interactive parts
 
----
+None of these is decoration; each answers a question the page was otherwise
+asking the reader to imagine.
+
+| Component | What it is for |
+|---|---|
+| `bid-simulator.tsx` | Type an amount, see where it lands on the **real** board — rank, who you pass, what is still above. Nobody should have to sign up and reach a checkout to learn they are ₹500 short. Uses the database's own tie rule (`>=`, so matching the leader leaves you second) and says out loud that it is a preview, not a quote. |
+| `hero-showcase.tsx` | The real winning ad, at the three shapes' true pixel sizes, inside a pretend host page. |
+| `analytics.tsx` | One metric at a time (views / clicks / rate) over 7 or 30 days, with a hover readout. One series because views and clicks differ by two orders of magnitude: on a shared axis the clicks are a flat line, on two axes the chart lies. |
+| `charts.tsx` | `Sparkline` and `Meter`, hand-drawn SVG. A flat-zero series draws **nothing** — a line along the floor implies a measurement. |
+| `nav.tsx` | Sections inline on wide screens with an IntersectionObserver marking the one on screen; a sheet on narrow ones. |
+| `reveal.tsx` | Withholds opacity until near the viewport. Fails **open**: reduced motion and `scripting: none` both force it visible in CSS. |
+| `theme-toggle.tsx` | light / dark / **system** — three states, because a reader whose laptop flips at sunset wants the site to flip with it. |
+| `faq.tsx` | Native `<details>`: works with JS off, and find-in-page searches closed answers. |
+
+**A money field must blur on wheel.** `onWheel={(e) => e.currentTarget.blur()}`
+on both amount inputs: Chrome silently rewrites a focused `<input type=number>`
+when the page scrolls past it, and these are rupees.
+
+### Icons, not emoji
+
+`components/icons.tsx` — 24-grid strokes at `strokeWidth 1.75`, inheriting
+`currentColor`. Emoji used to do this job and it read as a toy: an emoji is
+rendered by the reader's OS, so its weight, colour and size are all outside
+this system's control. `lib/site.ts` no longer carries an `emoji` per format
+or a palette `tone` per slot kind — both were the design leaking into the
+config.
+
+### Type
+
+**Geist** and **Geist Mono** (`next/font/google`), one family for headings,
+body and controls. Sizes come from `--sponsor-font-{display,h1..h4,large,
+small,x-small}`; `display` and `h1`/`h2` are `clamp()`d so no heading wraps to
+three lines on a phone.
 
 ## §5 — Dependencies
 
@@ -217,7 +322,11 @@ yes/no, because "allow everything" is how a dependency's postinstall gets to
 run arbitrary code on your machine. `@tailwindcss/oxide`, `esbuild` and
 `workerd` are on; `sharp` and `core-js` are off and say why.
 
-No icon package: icons are emoji or inline SVG. No charting library.
+**No icon package and no charting library**, and both are load-bearing
+decisions rather than omissions: `components/icons.tsx` is fifteen 24-grid
+strokes, and every chart in this app is one series of daily integers —
+`components/charts.tsx` draws them as a polyline and a `<div>`. A library for
+that is 40kB to avoid twenty lines.
 
 **Dead code is deleted, not kept "just in case".** `lib/money.ts` is one
 function because one is all anything calls; `lib/auth/actions.ts` has sign-in,
@@ -245,6 +354,13 @@ the action comes back with it.
   surface. That is why the embed has its own layout.
 - **Nothing about the reader is collected** — no IP, no user agent, no cookie,
   no visitor id. A per-day counter is all a sponsor was sold.
+- **The host chooses the theme, not us and not the session.** `data-theme` on
+  the script tag (`"light"` | `"dark"`) is forwarded as `?theme=` and pins the
+  unit; left off, it follows the reader's own system setting. The value is
+  whitelisted in both places — it lands in a URL and then in an HTML
+  attribute, and the set of legal schemes is three words long. The embed paints
+  **no background** (`body:has(.sp-embed)`), because a white plate behind a
+  transparent unit is a white box on somebody's dark site.
 - **Sponsor HTML never touches this origin's DOM.** `format = 'html'` renders
   into a `sandbox=""` srcDoc iframe. Injecting it — even "just for trusted
   sponsors" — would be a stored XSS with a price list attached.
@@ -340,11 +456,18 @@ acknowledges and ignores them).
 
 - Schema pushed, both constraints applied, creator + demo accounts seeded, four
   slots seeded (one `bid`, three `fixed`). Old `bms_*` and `sb_*` tables dropped.
-- **Verified locally**: gates 307 signed-out; homepage, slot page and studio all
-  render (studio checked with an authenticated smoke test — slots, tag, review
-  queue and sponsor table all present); the embed serves the winning ad and
-  records a view; the click hop 307s to the real destination; a malformed ad id
-  is 400; an unsigned webhook is 401.
+- **Verified locally**: `npm run verify` is **30/30**. Gates 307 signed-out;
+  homepage, slot page, studio and both auth pages render; the embed serves the
+  winning ad and records a view (and honours `?theme=`); the click hop 307s to
+  the real destination; a malformed ad id is 400; an unsigned webhook is 401.
+- **The redesign was checked in a real browser**, light and dark: the podium
+  lays three abreast, the analytics panel switches metric and shows its hover
+  readout, the mobile sheet opens and closes on Escape, and no hydration
+  warning is logged. Four things that only a browser would have found are
+  fixed: the `<html>` hydration mismatch from the pre-paint theme script, a
+  money `<input type=number>` silently rewritten by a mouse wheel, and two
+  tone collisions where a tinted card or bar sat on an equally tinted plane
+  (§4, "the tone trap").
 - **No real checkout has been put through, even in test mode.** That is the
   first item in §11, and it is first for a reason.
 - The board is **empty on purpose** (§0, rule 1).
@@ -396,9 +519,10 @@ in `drizzle/manual/` and are applied by `npm run setup`.
 
 ### Known gaps
 
-- [ ] **An expired fixed ad still shows on the sponsor's own page.**
-      `contendersFor()` correctly stops serving it, but `/me` renders every ad
-      the sponsor has without saying "this run has ended". Add the state.
+- [x] ~~**An expired fixed ad still shows on the sponsor's own page.**~~
+      Fixed 2026-09-14: `/me` reads `endsAt`, shows an **Ended** badge, says
+      the run has ended and how to restart it, and labels the date "Ran until"
+      rather than "Runs until".
 - [ ] **Refunds and disputes** are acknowledged and ignored, so a refunded ad
       keeps serving. Decide the policy before writing the handler.
 - [ ] **Email verification** — signup auto-confirms, and no transactional email
@@ -406,8 +530,14 @@ in `drizzle/manual/` and are applied by `npm run setup`.
       forgot-password pages in this build.)
 - [ ] **Rate limiting** on the actions. Needs Redis/Upstash.
 - [ ] **A strict `script-src` CSP.**
-- [ ] **Per-slot stats in the studio** — `sm_stat` has the data, the studio only
-      shows platform totals.
+- [x] ~~**Per-slot stats in the studio.**~~ Fixed 2026-09-14:
+      `perSlotStats()` gives the studio a **By slot** table — views, clicks,
+      rate, revenue and a 30-day sparkline per slot — under an `Analytics`
+      panel of the platform total. `/me` gets the same panel for the
+      sponsor's own ads, plus a sparkline and a position meter per ad.
+      Zero-filling a window does not break §0 rule 1 (a day inside the window
+      with no row is a measured zero), but the panel is only drawn when a real
+      total exists; otherwise `EmptyAnalytics` says nothing has been counted.
 
 ### Ideas
 
