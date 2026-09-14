@@ -24,16 +24,32 @@ export const dynamic = 'force-dynamic';
 /** Never indexed: this is a fragment of the host's page, not a page. */
 export const metadata = { robots: { index: false, follow: false } };
 
+/**
+ * THE HOST CHOOSES THE THEME, not this app and not the reader's session.
+ *
+ * `data-theme` on the script tag arrives here as `?theme=`. Left off, the unit
+ * follows the reader's own system setting, which is right most of the time; a
+ * site that is always dark (or always light) pins it and stops guessing.
+ *
+ * Whitelisted rather than passed through: this value lands in an HTML
+ * attribute, and the set of legal schemes is three words long.
+ */
+function scheme(value: string | undefined): 'light' | 'dark' | 'system' {
+  return value === 'light' || value === 'dark' ? value : 'system';
+}
+
 export default async function Embed({
   params,
   searchParams
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ view?: string }>;
+  searchParams: Promise<{ view?: string; theme?: string }>;
 }) {
-  const [{ slug }, { view }] = await Promise.all([params, searchParams]);
+  const [{ slug }, { view, theme }] = await Promise.all([params, searchParams]);
   const slot = await slotByPublicId(slug);
   if (!slot || !slot.active) notFound();
+
+  const colorScheme = scheme(theme);
 
   /**
    * TWO THINGS CAN BE EMBEDDED, and they are different products.
@@ -55,7 +71,7 @@ export default async function Embed({
     }
     const ask = await askFor(slot);
     return (
-      <div className="embed-root p-2">
+      <div className="sp-embed flex flex-1 flex-col p-2" data-color-scheme={colorScheme}>
         <Board rows={rows} base={site.self} ask={ask} view="list" />
         <EmbedHeight slot={slot.publicId} />
       </div>
@@ -75,16 +91,11 @@ export default async function Embed({
   }
 
   return (
-    <div className="flex flex-1 flex-col p-1">
+    <div className="sp-embed flex flex-1 flex-col p-1" data-color-scheme={colorScheme}>
       {winner ? (
         <AdRender ad={winner} base={site.self} shape={slot.shape} />
       ) : (
-        <AdEmpty
-          ask={formatPaise(ask)}
-          kind={slot.kind}
-          slug={slot.publicId}
-          base={site.self}
-        />
+        <AdEmpty ask={formatPaise(ask)} kind={slot.kind} slug={slot.publicId} base={site.self} />
       )}
       <EmbedHeight slot={slot.publicId} />
     </div>

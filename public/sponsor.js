@@ -9,6 +9,11 @@
  * sidebar and a 900px article get different layouts from the same tag — so
  * there is nothing to configure beyond the width of the element it lands in.
  *
+ * THE THEME. By default the unit follows the reader's own light/dark setting.
+ * A site that is always one or the other pins it and stops guessing:
+ *
+ *   <script src="…/sponsor.js" data-slot="…" data-theme="dark" async></script>
+ *
  * Or, to place it somewhere specific rather than where the tag sits:
  *
  *   <div id="my-ad"></div>
@@ -46,10 +51,18 @@
   var origin = new URL(script.src, window.location.href).origin;
   var target = script.getAttribute('data-target');
   var view = script.getAttribute('data-view');
+  // Only the two words the embed acts on. Anything else is dropped rather
+  // than forwarded, because this value ends up in the URL of a page request.
+  var theme = script.getAttribute('data-theme');
+  if (theme !== 'light' && theme !== 'dark') theme = null;
+
+  var query = [];
+  if (view) query.push('view=' + encodeURIComponent(view));
+  if (theme) query.push('theme=' + theme);
 
   var frame = document.createElement('iframe');
   frame.src =
-    origin + '/embed/' + encodeURIComponent(slot) + (view ? '?view=' + encodeURIComponent(view) : '');
+    origin + '/embed/' + encodeURIComponent(slot) + (query.length ? '?' + query.join('&') : '');
   frame.title = 'Sponsored';
   frame.loading = 'lazy';
   frame.setAttribute('scrolling', 'no');
@@ -60,10 +73,14 @@
   /* A board is taller than a single unit, so it starts taller — the frame
      posts its real height back and the script grows to it, but the reserved
      height is what stops the host page shifting before that happens. */
+  /* `color-scheme: light dark` rather than `normal`: the embed supports a dark
+     theme now, and pinning the frame to light would leave its scrollbars and
+     form controls light inside a dark unit. The unit paints no background of
+     its own, so the host page shows through either way. */
   frame.style.cssText =
     'display:block;width:100%;border:0;height:' +
     (view ? 520 : 300) +
-    'px;color-scheme:normal;background:transparent;';
+    'px;color-scheme:light dark;background:transparent;';
 
   var mount = target ? document.querySelector(target) : null;
   if (mount) mount.appendChild(frame);

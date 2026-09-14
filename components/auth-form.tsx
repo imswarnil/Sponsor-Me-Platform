@@ -20,50 +20,54 @@ export function AuthForm({ mode, next }: { mode: 'signin' | 'signup'; next?: str
   );
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form action={action} className="flex flex-col gap-5">
       {next ? <input type="hidden" name="next" value={next} /> : null}
 
       {mode === 'signup' ? (
         <label className="block">
-          <span className="text-sm font-bold">Your name</span>
-          <input name="name" required maxLength={80} autoComplete="name" className="field mt-1" />
+          <span className="sp-flabel">Your name</span>
+          <input name="name" required maxLength={80} autoComplete="name" className="sp-field" />
         </label>
       ) : null}
 
       <label className="block">
-        <span className="text-sm font-bold">Email</span>
-        <input name="email" type="email" required autoComplete="email" className="field mt-1" />
+        <span className="sp-flabel">Email</span>
+        <input name="email" type="email" required autoComplete="email" className="sp-field" />
       </label>
 
       <label className="block">
-        <span className="text-sm font-bold">Password</span>
+        <span className="sp-flabel">Password</span>
         <input
           name="password"
           type="password"
           required
           minLength={8}
           autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-          className="field mt-1"
+          className="sp-field"
         />
-        <span className="mt-1 block text-xs text-ink-500">At least 8 characters.</span>
+        <span className="sp-hint">At least 8 characters.</span>
       </label>
 
       {state.error ? (
-        <p className=" border-l-2 border-signal-500 bg-signal-50 py-2 pl-3 text-sm font-semibold text-signal-700">
-          {state.error}
-        </p>
+        <p className="sp-callout sp-callout-error font-semibold text-error">{state.error}</p>
       ) : null}
 
       <Submit label={mode === 'signup' ? 'Create account' : 'Sign in'} />
 
-      <p className="text-center text-sm text-ink-600">
+      <p className="text-center text-small text-secondary">
         {mode === 'signup' ? (
           <>
-            Already have one? <Link href="/signin" className="font-bold underline">Sign in</Link>
+            Already have one?{' '}
+            <Link href="/signin" className="sp-link font-semibold">
+              Sign in
+            </Link>
           </>
         ) : (
           <>
-            No account? <Link href="/signup" className="font-bold underline">Make one</Link>
+            No account?{' '}
+            <Link href="/signup" className="sp-link font-semibold">
+              Make one
+            </Link>
           </>
         )}
       </p>
@@ -74,7 +78,7 @@ export function AuthForm({ mode, next }: { mode: 'signin' | 'signup'; next?: str
 function Submit({ label }: { label: string }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" className="btn w-full bg-signal-500 text-white" disabled={pending}>
+    <button type="submit" className="sp-btn sp-btn-block sp-btn-lg mt-1" disabled={pending}>
       {pending ? 'Working…' : label}
     </button>
   );

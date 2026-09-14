@@ -21,6 +21,8 @@
  * A happy-path test would pass on all five of those while the product was
  * broken, which is the whole reason they are here.
  */
+import { readFileSync } from 'node:fs';
+
 import { neon } from '@neondatabase/serverless';
 import { config } from 'dotenv';
 
@@ -29,6 +31,19 @@ config({ path: '.env' });
 const PROD = process.argv.includes('production');
 const BASE = PROD ? 'https://sponsor.imswarnil.com' : 'http://localhost:3500';
 const sql = neon(process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL);
+
+/**
+ * The podium's maximum bar height, READ OUT OF THE COMPONENT rather than
+ * copied here.
+ *
+ * It used to be a literal `200` in the assertion below, and the moment the
+ * design moved to 190 the test started failing while the behaviour it checks
+ * — that the leader's bar is the full height — was still correct. A test that
+ * duplicates a constant tests the copy, not the code.
+ */
+const STEP_MAX = Number(
+  /const STEP_MAX = (\d+)/.exec(readFileSync('components/leaderboard.tsx', 'utf8'))?.[1]
+);
 
 let pass = 0;
 const failures = [];
@@ -182,8 +197,10 @@ try {
   );
   check(
     'step height is proportional to the amount, not fixed',
-    /"height":\s*200/.test(slotPage) || /height:200px/.test(slotPage),
-    'the leader\'s step should be the full STEP_MAX'
+    Number.isFinite(STEP_MAX) &&
+      (new RegExp(`"height":\\s*${STEP_MAX}`).test(slotPage) ||
+        new RegExp(`height:${STEP_MAX}px`).test(slotPage)),
+    `the leader's step should be the full STEP_MAX (${STEP_MAX})`
   );
   check('brand logos render', slotPage.includes('logo') || slotPage.includes('Logo'));
   check('every entry offers a way through', (slotPage.match(/api\/go\?ad=/g) ?? []).length >= 3);
